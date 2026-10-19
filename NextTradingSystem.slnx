@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="NEXT.Application/NEXT.Application.csproj" />
+  <Project Path="NEXT.Domain/NEXT.Domain.csproj" />
+  <Project Path="NEXT.Infrastructure/NEXT.Infrastructure.csproj" />
+  <Project Path="NEXT.Web/NEXT.Web.csproj" DisplayName="NEXT.web" Id="14468dc6-9f68-49ce-bc1b-d7f62a241f2f" />
+</Solution>

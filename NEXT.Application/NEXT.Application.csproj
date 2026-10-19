@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup>
+  <ProjectReference Include="..\NEXT.Domain\NEXT.Domain.csproj" />
+  <ProjectReference Include="..\NEXT.Infrastructure\NEXT.Infrastructure.csproj" />
+</ItemGroup><ItemGroup>
+  <Folder Include="Abstractions\Persistence\" />
+</ItemGroup></Project>

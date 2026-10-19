@@ -1,0 +1,11 @@
+using NEXT.Domain.Entities;
+using NEXT.Application.Abstractions.Persistence;
+
+namespace NEXT.Application.Abstractions.Persistence.Repositories;
+
+/// <summary>Persistence contract for Account. Domain-specific queries live here; EF Core details remain in Infrastructure.</summary>
+public interface IAccountRepository : IRepository<Account, Guid>
+{
+    Task<Account?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
+    Task<List<Account>> GetChartAsync(CancellationToken cancellationToken = default);
+}
