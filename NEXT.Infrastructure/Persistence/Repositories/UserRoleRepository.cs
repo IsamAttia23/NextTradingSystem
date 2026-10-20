@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for UserRole; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class UserRoleRepository(NEXTDbContext context) : Repository<UserRole, object[]>(context), IUserRoleRepository
+public sealed class UserRoleRepository(NEXTDbContext context) : TRepository<UserRole, object[]>(context), IUserRoleRepository
 {
 
 }

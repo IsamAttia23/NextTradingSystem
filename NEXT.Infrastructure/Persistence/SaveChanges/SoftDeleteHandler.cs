@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using NEXT.Domain.Common;
+using NEXT.Domain.Common.Entities;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
 

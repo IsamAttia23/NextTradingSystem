@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Linq.Expressions;
-using NEXT.Domain.Common;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence.SaveChanges;
+using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Infrastructure.Persistence;
 

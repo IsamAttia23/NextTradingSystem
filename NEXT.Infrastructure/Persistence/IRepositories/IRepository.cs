@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Infrastructure.Persistence.IRepositories;
 
@@ -14,23 +15,15 @@ public interface IRepository<TEntity, in TKey> where TEntity : class
 
     Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default);
 
-    Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+    IQueryable<TEntity> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<List<TEntity>> FindAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken = default);
+    IQueryable<TEntity> FindAsync( Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
-    Task<TEntity?> FirstOrDefaultAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken = default);
+    Task<TEntity?> FirstOrDefaultAsync( Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
-    Task<bool> AnyAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        CancellationToken cancellationToken = default);
+    Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate,CancellationToken cancellationToken = default);
 
-    Task<int> CountAsync(
-        Expression<Func<TEntity, bool>>? predicate = null,
-        CancellationToken cancellationToken = default);
+    Task<int> CountAsync( Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default);
 
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
@@ -41,4 +34,8 @@ public interface IRepository<TEntity, in TKey> where TEntity : class
     void Remove(TEntity entity);
 
     void RemoveRange(IEnumerable<TEntity> entities);
+
+    void SetRowVersion<Entity>(Entity entity, byte[] rowVersion) where Entity : class, IRowVersionProperty;
+
+    Task<bool> HasActiveRelationsAsync(TEntity entity);
 }
