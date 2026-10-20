@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using NEXT.Domain.Common;
+using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Infrastructure.Persistence.SaveChanges;
 

@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for PurchaseInvoice; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : Repository<PurchaseInvoice, Guid>(context), IPurchaseInvoiceRepository
+public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : TRepository<PurchaseInvoice, Guid>(context), IPurchaseInvoiceRepository
 {
     public Task<PurchaseInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => context.PurchaseInvoices.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

@@ -1,4 +1,4 @@
-﻿using NEXT.Domain.Common;
+﻿using NEXT.Domain.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;

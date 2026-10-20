@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Customer; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class CustomerRepository(NEXTDbContext context) : Repository<Customer, Guid>(context), ICustomerRepository
+public sealed class CustomerRepository(NEXTDbContext context) : TRepository<Customer, Guid>(context), ICustomerRepository
 {
     public Task<List<Customer>> SearchAsync(string? term, bool? isActive, int skip, int take, CancellationToken cancellationToken = default)
     {

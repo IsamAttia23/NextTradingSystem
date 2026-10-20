@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for ProductBatch; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class ProductBatchRepository(NEXTDbContext context) : Repository<ProductBatch, Guid>(context), IProductBatchRepository
+public sealed class ProductBatchRepository(NEXTDbContext context) : TRepository<ProductBatch, Guid>(context), IProductBatchRepository
 {
 
 }

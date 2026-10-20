@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for JournalLine; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class JournalLineRepository(NEXTDbContext context) : Repository<JournalLine, Guid>(context), IJournalLineRepository
+public sealed class JournalLineRepository(NEXTDbContext context) : TRepository<JournalLine, Guid>(context), IJournalLineRepository
 {
 
 }

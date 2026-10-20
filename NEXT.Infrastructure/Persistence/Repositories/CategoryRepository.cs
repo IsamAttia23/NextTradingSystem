@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Category; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class CategoryRepository(NEXTDbContext context) : Repository<Category, Guid>(context), ICategoryRepository
+public sealed class CategoryRepository(NEXTDbContext context) : TRepository<Category, Guid>(context), ICategoryRepository
 {
 
 }

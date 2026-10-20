@@ -1,4 +1,4 @@
-using NEXT.Domain.Common;
+using NEXT.Domain.Common.Entities;
 using NEXT.Domain.Enums;
 
 namespace NEXT.Domain.Entities;

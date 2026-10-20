@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for StockMovement; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class StockMovementRepository(NEXTDbContext context) : Repository<StockMovement, Guid>(context), IStockMovementRepository
+public sealed class StockMovementRepository(NEXTDbContext context) : TRepository<StockMovement, Guid>(context), IStockMovementRepository
 {
     public Task<List<StockMovement>> GetForProductAsync(Guid productId, Guid? warehouseId, DateTimeOffset? from, DateTimeOffset? to, int skip, int take, CancellationToken cancellationToken = default)
     {

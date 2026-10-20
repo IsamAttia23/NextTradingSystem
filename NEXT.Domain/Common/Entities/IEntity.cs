@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace NEXT.Domain.Common
+namespace NEXT.Domain.Common.Entities
 {
     public interface IEntity<TId> : TIdType<TId>
         where TId : struct

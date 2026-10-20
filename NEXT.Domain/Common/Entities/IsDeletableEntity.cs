@@ -1,4 +1,4 @@
-﻿namespace NEXT.Domain.Common
+﻿namespace NEXT.Domain.Common.Entities
 {
     public class IsDeletableEntity<TId> : AuditableEntity<TId>, IIsDeletableEntity where TId : struct
     {

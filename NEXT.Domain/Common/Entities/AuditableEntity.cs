@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace NEXT.Domain.Common
+namespace NEXT.Domain.Common.Entities
 {
     public abstract class AuditableEntity<TId> : IEntity<TId>
         where TId : struct

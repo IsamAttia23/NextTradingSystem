@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using NEXT.Domain.Common;
+using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Domain.Entities
 {
