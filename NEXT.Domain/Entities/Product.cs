@@ -22,6 +22,8 @@ public class Product : IsDeletableEntity<Guid>
     public bool HasExpiry { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
+    public byte[] RowVersion { get; set; }
+
     public ICollection<Stock> Stocks { get; set; } = new List<Stock>();
     public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
     public ICollection<SalesInvoiceItem> SalesInvoiceItems { get; set; } = new List<SalesInvoiceItem>();

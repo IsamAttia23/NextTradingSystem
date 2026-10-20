@@ -16,6 +16,7 @@ public class Supplier : IsDeletableEntity<Guid>
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
     public Guid TagId { get; set; }
+    public byte[] RowVersion { get; set; }
 
     public Tag Tag { get; set; }
     public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new List<PurchaseOrder>();

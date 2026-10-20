@@ -1,4 +1,4 @@
-namespace NEXT.Application.Abstractions.Persistence;
+namespace NEXT.Infrastructure.Persistence.IRepositories;
 
 /// <summary>
 /// Provides generic repositories and a single save boundary for a unit of work.

@@ -16,5 +16,6 @@ public sealed class PurchaseOrderConfiguration : IEntityTypeConfiguration<Purcha
         builder.Property(x => x.Number).HasMaxLength(50).IsRequired();
         builder.HasIndex(x => x.Number).IsUnique();
         builder.Property(x => x.TotalAmount).HasPrecision(15, 2);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

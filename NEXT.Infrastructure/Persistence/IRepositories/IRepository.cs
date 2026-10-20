@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace NEXT.Application.Abstractions.Persistence;
+namespace NEXT.Infrastructure.Persistence.IRepositories;
 
 /// <summary>
 /// Generic repository contract. The TKey type matches the entity's primary key type.

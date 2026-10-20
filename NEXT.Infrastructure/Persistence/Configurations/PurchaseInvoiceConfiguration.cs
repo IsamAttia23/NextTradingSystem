@@ -23,5 +23,6 @@ public sealed class PurchaseInvoiceConfiguration : IEntityTypeConfiguration<Purc
         builder.Property(x => x.TotalAmount).HasPrecision(15, 2);
         builder.Property(x => x.PaidAmount).HasPrecision(15, 2);
         builder.Property(x => x.RemainingAmount).HasPrecision(15, 2);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

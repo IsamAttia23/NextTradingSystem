@@ -12,5 +12,6 @@ public sealed class SystemSettingConfiguration : IEntityTypeConfiguration<System
         builder.Property(x => x.ValueJson).HasColumnType("jsonb");
         builder.Property(x => x.Key).HasMaxLength(150);
         builder.Property(x => x.Category).HasMaxLength(100);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

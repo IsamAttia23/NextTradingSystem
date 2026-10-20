@@ -16,5 +16,6 @@ public sealed class ProductBatchConfiguration : IEntityTypeConfiguration<Product
         builder.HasIndex(x => new { x.ProductId, x.WarehouseId, x.BatchNumber }).IsUnique();
         builder.Property(x => x.Quantity).HasPrecision(15, 3);
         builder.Property(x => x.CostPrice).HasPrecision(15, 2);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

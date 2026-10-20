@@ -11,15 +11,19 @@ public sealed class NEXTDbContextFactory : IDesignTimeDbContextFactory<NEXTDbCon
 {
     public NEXTDbContext CreateDbContext(string[] args)
     {
-        var environmentConnection = Environment.GetEnvironmentVariable("ConnectionStrings__NEXTDatabase");
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddEnvironmentVariables()
-            .Build();
-        var connectionString = environmentConnection ?? configuration.GetConnectionString("NEXTDatabase")
-            ?? "Host=localhost;Port=5432;Database=next_trading;Username=postgres;Password=postgres";
+     .AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629")
+     .AddEnvironmentVariables()
+     .Build();
 
+        var connectionString =
+            configuration.GetConnectionString("NEXTDatabase");
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "Connection string 'NEXTDatabase' was not found.");
+        }
         var options = new DbContextOptionsBuilder<NEXTDbContext>()
             .UseNpgsql(connectionString)
             .Options;

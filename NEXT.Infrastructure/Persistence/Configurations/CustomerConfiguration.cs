@@ -13,5 +13,6 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(x => x.CreditLimit).HasPrecision(15, 2);
         builder.Property(x => x.CurrentBalance).HasPrecision(15, 2);
         builder.HasQueryFilter(x => x.DeletedAt == null);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

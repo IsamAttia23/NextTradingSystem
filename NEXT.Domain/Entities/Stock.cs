@@ -14,4 +14,5 @@ public class Stock : AuditableEntity<Guid>
     public decimal AvailableQuantity => Quantity - ReservedQuantity;
     public decimal AverageCost { get; set; }
     public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.UtcNow;
+    public byte[] RowVersion { get; set; }
 }

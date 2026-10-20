@@ -26,6 +26,8 @@ public class SalesInvoice : AuditableEntity<Guid>
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
     public string? Notes { get; set; }
     public Guid? ParentInvoiceId { get; set; }
+    public byte[] RowVersion { get; set; }
+
     public SalesInvoice? ParentInvoice { get; set; }
     public ICollection<SalesInvoice> Returns { get; set; } = new List<SalesInvoice>();
     public ICollection<SalesInvoiceItem> Items { get; set; } = new List<SalesInvoiceItem>();

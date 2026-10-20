@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NEXT.Application.Abstractions.Persistence;
+using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Infrastructure.Persistence.Repositories;
 

@@ -21,5 +21,6 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(x => x.PaymentNumber).IsUnique();
         builder.HasIndex(x => x.PaymentDate);
         builder.Property(x => x.Amount).HasPrecision(15, 2);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

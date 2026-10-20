@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using NEXT.Application.Abstractions.Persistence;
+using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Infrastructure.Persistence.Repositories;
 

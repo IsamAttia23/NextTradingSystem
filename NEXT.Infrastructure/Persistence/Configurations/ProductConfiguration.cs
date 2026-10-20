@@ -24,5 +24,6 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.MinStock).HasPrecision(15, 3);
         builder.Property(x => x.MaxStock).HasPrecision(15, 3);
         builder.HasQueryFilter(x => x.DeletedAt == null);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

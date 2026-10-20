@@ -18,5 +18,6 @@ public sealed class StockConfiguration : IEntityTypeConfiguration<Stock>
         builder.Property(x => x.Quantity).HasPrecision(15, 3);
         builder.Property(x => x.ReservedQuantity).HasPrecision(15, 3);
         builder.Property(x => x.AverageCost).HasPrecision(15, 2);
+        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
     }
 }

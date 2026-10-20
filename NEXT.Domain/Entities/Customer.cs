@@ -21,6 +21,8 @@ public class Customer : IsDeletableEntity<Guid>
     public bool IsActive { get; set; } = true;
     public Guid TagId { get; set; }
     public Tag Tag { get; set; }
+    public byte[] RowVersion { get; set; }
+
     public ICollection<CustomerContact> Contacts { get; set; } = new List<CustomerContact>();
     public ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
 }

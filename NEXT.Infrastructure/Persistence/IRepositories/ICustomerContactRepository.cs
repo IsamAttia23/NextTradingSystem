@@ -1,5 +1,5 @@
 using NEXT.Domain.Entities;
-using NEXT.Application.Abstractions.Persistence;
+using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
 

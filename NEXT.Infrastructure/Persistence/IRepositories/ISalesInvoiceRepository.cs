@@ -1,6 +1,6 @@
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Application.Abstractions.Persistence;
+using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
 

@@ -12,5 +12,7 @@ public class JournalEntry : AuditableEntity<Guid>
     public Guid? ReferenceId { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
+    public byte[] RowVersion { get; set; }
+
     public ICollection<JournalLine> Lines { get; set; } = new List<JournalLine>();
 }
