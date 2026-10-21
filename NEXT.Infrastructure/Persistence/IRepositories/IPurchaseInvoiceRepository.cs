@@ -1,5 +1,6 @@
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
+using NEXT.Domain.QueryModels;
 using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
@@ -8,5 +9,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 public interface IPurchaseInvoiceRepository : IRepository<PurchaseInvoice, Guid>
 {
     Task<PurchaseInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<List<PurchaseInvoice>> SearchAsync(DateTimeOffset? from, DateTimeOffset? to, Guid? supplierId, InvoiceStatus? status, int skip, int take, CancellationToken cancellationToken = default);
+    IQueryable<PurchaseInvoice> Search(PurchaseInvoiceQueryModel queryModel);
 }
