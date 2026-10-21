@@ -1,4 +1,5 @@
 using NEXT.Domain.Entities;
+using NEXT.Domain.QueryModels;
 using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
@@ -7,5 +8,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 public interface IJournalEntryRepository : IRepository<JournalEntry, Guid>
 {
     Task<JournalEntry?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<List<JournalEntry>> SearchAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default);
+   IQueryable<JournalEntry> Search(JournalEntryQueryModel queryModel, CancellationToken cancellationToken = default);
 }
