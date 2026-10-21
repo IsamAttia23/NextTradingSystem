@@ -7,7 +7,7 @@ namespace NEXT.Infrastructure.Persistence.SaveChanges;
 /// Prevents already-written entity changes from being sent to the database a second time
 /// when the caller uses SaveChanges(false) and audit rows require a second save.
 /// </summary>
-internal sealed class SaveChangesStatePreserver(DbContext context)
+internal sealed class SaveChangesStatePreserver(NEXTDbContext context)
 {
     public IReadOnlyList<EntryStateSnapshot> Capture() => context.ChangeTracker.Entries()
         .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)

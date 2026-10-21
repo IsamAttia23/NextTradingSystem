@@ -7,6 +7,7 @@ using NEXT.Infrastructure.Identity;
 using NEXT.Infrastructure.Persistence;
 using NEXT.Infrastructure.Persistence.IRepositories;
 using NEXT.Infrastructure.Persistence.Repositories;
+using NEXT.Infrastructure.Persistence.SaveChanges;
 using NEXT.Infrastructure.Services;
 
 namespace NEXT.Infrastructure;
@@ -25,7 +26,7 @@ public static class DependencyInjection
         });
 
         services.AddIdentityCore<ApplicationUser>()
-                 .AddRoles<IdentityRole>()
+                 .AddRoles<Role>()
                  .AddEntityFrameworkStores<NEXTDbContext>();
 
         services.AddHttpContextAccessor();
@@ -37,6 +38,20 @@ public static class DependencyInjection
         });
         services.AddScoped(typeof(IRepository<,>), typeof(TRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddScoped<AuditEntryFactory>();
+        services.AddScoped<AuditFieldsHandler>();
+        services.AddScoped<AuditValueSerializer>();
+        services.AddScoped<SaveChangesStatePreserver>();
+        services.AddScoped<SoftDeleteHandler>();
+        services.AddScoped<TrackedChangesProcessor>();
+
+        var serializerRegistration = services
+    .Any(service => service.ServiceType == typeof(AuditValueSerializer));
+
+        Console.WriteLine(
+            $"AuditValueSerializer registered: {serializerRegistration}");
+
 
         services.AddNEXTIdentity();
         return services;
