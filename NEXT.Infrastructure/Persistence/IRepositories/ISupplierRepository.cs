@@ -1,4 +1,5 @@
 using NEXT.Domain.Entities;
+using NEXT.Domain.QueryModels;
 using NEXT.Infrastructure.Persistence.IRepositories;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
@@ -7,5 +8,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 public interface ISupplierRepository : IRepository<Supplier, Guid>
 {
     Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
-    Task<List<Supplier>> SearchAsync(string? term, bool? isActive, int skip, int take, CancellationToken cancellationToken = default);
+    IQueryable<Supplier> Search(SupplierQueryModel queryModel);
 }

@@ -7,5 +7,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 public interface ISystemSettingRepository : IRepository<SystemSetting, string>
 {
     Task<SystemSetting?> GetByKeyAsync(string key, CancellationToken cancellationToken = default);
-    Task<List<SystemSetting>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default);
+    IQueryable<SystemSetting> GetByCategoryAsync(string category);
 }

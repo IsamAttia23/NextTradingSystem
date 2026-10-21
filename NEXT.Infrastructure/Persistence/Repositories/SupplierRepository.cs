@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
+using NEXT.Domain.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -11,16 +12,66 @@ public sealed class SupplierRepository(NEXTDbContext context) : TRepository<Supp
 {
     public Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
         => context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
-    public Task<List<Supplier>> SearchAsync(string? term, bool? isActive, int skip, int take, CancellationToken cancellationToken = default)
+
+    public IQueryable<Supplier> Search(SupplierQueryModel queryModel)
     {
-        var q = context.Suppliers.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(term))
+        ArgumentNullException.ThrowIfNull(queryModel);
+
+        var query = context.Suppliers
+            .AsNoTracking()
+            .AsQueryable();
+
+        query = ApplySearchTerm(query, queryModel.SearchTerm);
+        query = ApplyActiveFilter(query, queryModel.IsActive);
+
+        return ApplySorting(
+            query,
+            queryModel.SortBy,
+            queryModel.SortDirection);
+    }
+
+    private static IQueryable<Supplier> ApplySearchTerm(IQueryable<Supplier> query, string? searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return query;
+
+        var term = searchTerm.Trim();
+
+        return query.Where(x =>
+            x.Name.Contains(term) ||
+            (x.Code != null && x.Code.Contains(term)) ||
+            (x.Phone != null && x.Phone.Contains(term)) ||
+            (x.Email != null && x.Email.Contains(term)));
+    }
+
+    private static IQueryable<Supplier> ApplyActiveFilter(IQueryable<Supplier> query, bool? isActive)
+    {
+        if (isActive.HasValue)
         {
-            var t = term.Trim();
-            q = q.Where(x => x.Name.Contains(t) || (x.Code != null && x.Code.Contains(t))
-            || (x.Phone != null && x.Phone.Contains(t)) || (x.Email != null && x.Email.Contains(t)));
+            query = query.Where(
+                x => x.IsActive == isActive.Value);
         }
-        if (isActive.HasValue) q = q.Where(x => x.IsActive == isActive);
-        return q.OrderBy(x => x.Name).Skip(Math.Max(0, skip)).Take(Math.Clamp(take, 1, 200)).ToListAsync(cancellationToken);
+
+        return query;
+    }
+
+    private static IQueryable<Supplier> ApplySorting(IQueryable<Supplier> query, string? sortBy, SortDirection? direction)
+    {
+        var descending = direction == SortDirection.Descending;
+
+        return sortBy?.Trim().ToLowerInvariant() switch
+        {
+            "name" => descending
+                ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
+                : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
+
+            "code" => descending
+                ? query.OrderByDescending(x => x.Code).ThenBy(x => x.Id)
+                : query.OrderBy(x => x.Code).ThenBy(x => x.Id),
+
+            _ => descending
+                ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
+                : query.OrderBy(x => x.Name).ThenBy(x => x.Id)
+        };
     }
 }
