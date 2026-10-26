@@ -36,10 +36,6 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IRequestMetadataService, RequestMetadataService>();
-        services.AddDbContext<NEXTDbContext>(options =>
-        {
-            options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
-        });
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
