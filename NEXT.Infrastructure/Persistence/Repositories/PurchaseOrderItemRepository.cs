@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for PurchaseOrderItem; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class PurchaseOrderItemRepository(NEXTDbContext context) : TRepository<PurchaseOrderItem, Guid>(context), IPurchaseOrderItemRepository
+public sealed class PurchaseOrderItemRepository(NEXTDbContext context) : KeyRepository<PurchaseOrderItem, Guid>(context), IPurchaseOrderItemRepository
 {
 
 }

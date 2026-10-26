@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Permission; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class PermissionRepository(NEXTDbContext context) : TRepository<Permission, Guid>(context), IPermissionRepository
+public sealed class PermissionRepository(NEXTDbContext context) : KeyRepository<Permission, Guid>(context), IPermissionRepository
 {
 
 }

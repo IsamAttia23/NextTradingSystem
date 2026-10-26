@@ -8,7 +8,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for StockMovement; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class StockMovementRepository(NEXTDbContext context) : TRepository<StockMovement, Guid>(context), IStockMovementRepository
+public sealed class StockMovementRepository(NEXTDbContext context) : KeyRepository<StockMovement, Guid>(context), IStockMovementRepository
 {
     public IQueryable<StockMovement> GetForProduct(StockMovementQueryModel queryModel, CancellationToken cancellationToken = default)
     {

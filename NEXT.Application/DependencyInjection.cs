@@ -1,17 +1,22 @@
-﻿using Microsoft.Extensions.Configuration;
+using Mapster;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NEXT.Infrastructure;
-using System.Net.Http.Headers;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using NEXT.Application.Abstractions.IServices;
+using NEXT.Application.Services;
+using NEXT.Application.Validation;
 
-namespace NEXT.Application
+namespace NEXT.Application;
+
+public static class EntityServiceRegistrationExtensions
 {
-    public static class DependencyInjection
+    /// <summary>Registers generic application services and their default entity validator.</summary>
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddInfrastructureServices(configuration);
-
-            return services;
-        }
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddMapster();
+        services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
+        services.TryAddScoped(typeof(IEntityServices<,,,>), typeof(TEntityService<,,,,>));
+        return services;
     }
 }

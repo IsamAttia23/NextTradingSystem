@@ -5,7 +5,7 @@ using NEXT.Domain.Entities;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Stock; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class StockRepository(NEXTDbContext context) : TRepository<Stock, Guid>(context), IStockRepository
+public sealed class StockRepository(NEXTDbContext context) : KeyRepository<Stock, Guid>(context), IStockRepository
 {
     public Task<Stock?> GetForProductAsync(Guid productId, Guid warehouseId, CancellationToken cancellationToken = default)
         => context.Stocks.AsNoTracking()

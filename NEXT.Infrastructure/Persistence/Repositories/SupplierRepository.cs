@@ -8,7 +8,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Supplier; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class SupplierRepository(NEXTDbContext context) : TRepository<Supplier, Guid>(context), ISupplierRepository
+public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Supplier, Guid>(context), ISupplierRepository
 {
     public Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
         => context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);

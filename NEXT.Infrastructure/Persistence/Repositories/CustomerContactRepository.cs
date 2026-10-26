@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for CustomerContact; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class CustomerContactRepository(NEXTDbContext context) : TRepository<CustomerContact, Guid>(context), ICustomerContactRepository
+public sealed class CustomerContactRepository(NEXTDbContext context) : KeyRepository<CustomerContact, Guid>(context), ICustomerContactRepository
 {
 
 }

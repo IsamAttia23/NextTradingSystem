@@ -7,11 +7,9 @@ namespace NEXT.Infrastructure.Persistence.IRepositories;
 /// Generic repository contract. The TKey type matches the entity's primary key type.
 /// Use GetByKeyAsync for entities with composite primary keys.
 /// </summary>
-public interface IRepository<TEntity, in TKey> where TEntity : class
+public interface IRepository<TEntity> where TEntity : class
 {
     IQueryable<TEntity> Query(bool asNoTracking = true);
-
-    Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
 
     Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default);
 
@@ -29,11 +27,7 @@ public interface IRepository<TEntity, in TKey> where TEntity : class
 
     Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
 
-    void Update(TEntity entity);
-
-    void Remove(TEntity entity);
-
-    void RemoveRange(IEnumerable<TEntity> entities);
+    Task Update(TEntity entity);
 
     void SetRowVersion<Entity>(Entity entity, byte[] rowVersion) where Entity : class, IRowVersionProperty;
 

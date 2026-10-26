@@ -7,7 +7,7 @@ using NEXT.Domain.QueryModels;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for JournalEntry; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class JournalEntryRepository(NEXTDbContext context) : TRepository<JournalEntry, Guid>(context), IJournalEntryRepository
+public sealed class JournalEntryRepository(NEXTDbContext context) : KeyRepository<JournalEntry, Guid>(context), IJournalEntryRepository
 {
     public Task<JournalEntry?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => context.JournalEntries.AsNoTracking()

@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for UnitOfMeasure; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class UnitOfMeasureRepository(NEXTDbContext context) : TRepository<UnitOfMeasure, Guid>(context), IUnitOfMeasureRepository
+public sealed class UnitOfMeasureRepository(NEXTDbContext context) : KeyRepository<UnitOfMeasure, Guid>(context), IUnitOfMeasureRepository
 {
 
 }

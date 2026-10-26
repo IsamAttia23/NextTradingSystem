@@ -4,7 +4,7 @@ using NEXT.Infrastructure.Persistence.IRepositories;
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
 
 /// <summary>Persistence contract for PurchaseInvoiceItem. Domain-specific queries live here; EF Core details remain in Infrastructure.</summary>
-public interface IPurchaseInvoiceItemRepository : IRepository<PurchaseInvoiceItem, Guid>
+public interface IPurchaseInvoiceItemRepository : IKeyRepository<PurchaseInvoiceItem, Guid>
 {
 
 }

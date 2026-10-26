@@ -8,7 +8,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Product; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class ProductRepository(NEXTDbContext context) : TRepository<Product, Guid>(context), IProductRepository
+public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
     public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
     public IQueryable<Product> Search(ProductQueryModel queryModel)

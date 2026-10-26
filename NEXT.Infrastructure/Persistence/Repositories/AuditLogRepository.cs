@@ -8,7 +8,7 @@ using NEXT.Domain.Queries;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for AuditLog; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class AuditLogRepository(NEXTDbContext context) : TRepository<AuditLog, Guid>(context), IAuditLogRepository
+public sealed class AuditLogRepository(NEXTDbContext context) : KeyRepository<AuditLog, Guid>(context), IAuditLogRepository
 {
     public IQueryable<AuditLog> SearchAsync(AuditLogQueryModel queryModel, CancellationToken cancellationToken = default)
     {

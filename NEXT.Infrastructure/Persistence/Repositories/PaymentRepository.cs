@@ -8,7 +8,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Payment; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class PaymentRepository(NEXTDbContext context) : TRepository<Payment, Guid>(context), IPaymentRepository
+public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Payment, Guid>(context), IPaymentRepository
 {
     public IQueryable<Payment> SearchAsync(PaymentQueryModel queryModel, CancellationToken cancellationToken = default)
     {

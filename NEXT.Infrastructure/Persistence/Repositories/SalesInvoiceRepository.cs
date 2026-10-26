@@ -8,7 +8,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for SalesInvoice; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class SalesInvoiceRepository(NEXTDbContext context) : TRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
+public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
 {
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => context.SalesInvoices.AsNoTracking()

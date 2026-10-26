@@ -2,7 +2,7 @@
 
 namespace NEXT.Infrastructure.Persistence.IRepositories
 {
-    public interface ITagRepository : IRepository<Tag, Guid>
+    public interface ITagRepository : IKeyRepository<Tag, Guid>
     {
     }
 }

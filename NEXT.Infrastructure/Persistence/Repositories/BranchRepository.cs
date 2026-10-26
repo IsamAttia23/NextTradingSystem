@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for Branch; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class BranchRepository(NEXTDbContext context) : TRepository<Branch, Guid>(context), IBranchRepository
+public sealed class BranchRepository(NEXTDbContext context) : KeyRepository<Branch, Guid>(context), IBranchRepository
 {
 
 }

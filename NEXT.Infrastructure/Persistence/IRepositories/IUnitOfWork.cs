@@ -5,7 +5,7 @@ namespace NEXT.Infrastructure.Persistence.IRepositories;
 /// </summary>
 public interface IUnitOfWork
 {
-    IRepository<TEntity, TKey> Repository<TEntity, TKey>() where TEntity : class;
+    IRepository<TEntity> Repository<TEntity, TKey>() where TEntity : class;
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

@@ -1,0 +1,9 @@
+﻿using NEXT.Domain.Common.QueryModels;
+
+namespace NEXT.Application.Abstractions.Services
+{
+    public interface IPaginationServices
+    {
+        Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query) where T : class;
+    }
+}

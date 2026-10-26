@@ -9,8 +9,8 @@ public sealed class UnitOfWork(
     NEXTDbContext context,
     IServiceProvider serviceProvider) : IUnitOfWork
 {
-    public IRepository<TEntity, TKey> Repository<TEntity, TKey>() where TEntity : class
-        => serviceProvider.GetRequiredService<IRepository<TEntity, TKey>>();
+    public IRepository<TEntity> Repository<TEntity, TKey>() where TEntity : class
+        => serviceProvider.GetRequiredService<IRepository<TEntity>>();
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => context.SaveChangesAsync(cancellationToken);

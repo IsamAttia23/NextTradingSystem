@@ -12,7 +12,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// </summary>
 public sealed class CustomerRepository(
     NEXTDbContext context)
-    : TRepository<Customer, Guid>(context), ICustomerRepository
+    : KeyRepository<Customer, Guid>(context), ICustomerRepository
 {
     public IQueryable<Customer> Search(
         CustomerQueryModel customerQuery)

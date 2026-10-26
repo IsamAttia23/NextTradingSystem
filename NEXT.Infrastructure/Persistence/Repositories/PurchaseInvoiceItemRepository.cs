@@ -7,7 +7,7 @@ using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 /// <summary>EF Core repository for PurchaseInvoiceItem; inherits common CRUD behavior from the generic repository.</summary>
-public sealed class PurchaseInvoiceItemRepository(NEXTDbContext context) : TRepository<PurchaseInvoiceItem, Guid>(context), IPurchaseInvoiceItemRepository
+public sealed class PurchaseInvoiceItemRepository(NEXTDbContext context) : KeyRepository<PurchaseInvoiceItem, Guid>(context), IPurchaseInvoiceItemRepository
 {
 
 }

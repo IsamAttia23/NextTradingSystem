@@ -36,7 +36,8 @@ public static class DependencyInjection
         {
             options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
         });
-        services.AddScoped(typeof(IRepository<,>), typeof(TRepository<,>));
+        services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
+        services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddScoped<AuditEntryFactory>();
