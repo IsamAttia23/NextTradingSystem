@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using NEXT.Infrastructure.Exceptions;
+using NEXT.Application.Exceptions;
 namespace NEXT.Infrastructure.Middleware
 {
 
