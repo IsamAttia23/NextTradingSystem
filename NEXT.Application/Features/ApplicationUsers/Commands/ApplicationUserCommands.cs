@@ -1,12 +1,12 @@
-using System.Security.Claims;
 using MediatR;
-using NEXT.Domain.Entities;
 using NEXT.Application.Abstractions.Identity;
+using NEXT.Application.DTOs.ApplicationUsers;
+using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed record CreateApplicationUserCommand(ApplicationUser User, string Password) : IRequest<UserOperationResult>;
-public sealed record UpdateApplicationUserCommand(ApplicationUser User) : IRequest<UserOperationResult>;
+public sealed record CreateApplicationUserCommand(UserCreationDto User) : IRequest<UserOperationResult>;
+public sealed record UpdateApplicationUserCommand(string UserId, UserUpdateDto User) : IRequest<UserOperationResult>;
 public sealed record ChangeApplicationUserPasswordCommand(ApplicationUser User, string CurrentPassword, string NewPassword) : IRequest<UserOperationResult>;
 public sealed record SetApplicationUserNameCommand(ApplicationUser User, string UserName) : IRequest<UserOperationResult>;
 public sealed record SetApplicationUserEmailCommand(ApplicationUser User, string Email) : IRequest<UserOperationResult>;
