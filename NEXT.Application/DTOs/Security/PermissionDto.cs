@@ -1,6 +1,8 @@
+using NEXT.Domain.Common.Entities;
+
 namespace NEXT.Application.DTOs.Security;
 
-public sealed class PermissionDto
+public sealed class PermissionDto : TIdType<Guid>
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
