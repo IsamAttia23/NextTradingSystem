@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace NEXT.Infrastructure.Exceptions;
 
 /// <summary>
@@ -7,9 +5,7 @@ namespace NEXT.Infrastructure.Exceptions;
 /// </summary>
 public abstract class AppException : NEXT.Application.Exceptions.AppException
 {
-    public HttpStatusCode _statusCode => StatusCode;
-
-    protected AppException(string message, HttpStatusCode statusCode)
+    protected AppException(string message, System.Net.HttpStatusCode statusCode)
         : base(message, statusCode)
     {
     }
