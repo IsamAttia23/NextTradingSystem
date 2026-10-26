@@ -13,6 +13,9 @@ public sealed class UserCommandService(UserManager<ApplicationUser> userManager)
     public async Task<UserOperationResult> UpdateUserAsync(ApplicationUser user) =>
         ToApplicationResult(await userManager.UpdateAsync(user));
 
+    public async Task<UserOperationResult> DeleteUserAsync(ApplicationUser user) =>
+        ToApplicationResult(await userManager.DeleteAsync(user));
+
     public async Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword) =>
         ToApplicationResult(await userManager.ChangePasswordAsync(user, currentPassword, newPassword));
 
