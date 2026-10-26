@@ -32,9 +32,12 @@ public static class DependencyInjection
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
 
-        services.AddIdentityCore<ApplicationUser>()
-                 .AddRoles<Role>()
-                 .AddEntityFrameworkStores<NEXTDbContext>();
+        services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddRoles<Role>()
+            .AddEntityFrameworkStores<NEXTDbContext>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
