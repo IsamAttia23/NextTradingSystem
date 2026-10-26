@@ -3,27 +3,29 @@ using MediatR;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.ApplicationUsers;
 using NEXT.Application.Exceptions;
+using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
 public sealed class CreateApplicationUserHandler(
     IUserCommandService commands,
-    IUserQueryService queries) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
+    IUserQueryService queries,
+    IEntityValidator<UserCreationDto> validator) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(CreateApplicationUserCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request.User);
         var dto = request.User;
-        var errors = new Dictionary<string, string[]>();
+        validator.Validate(dto);
 
+        var errors = new Dictionary<string, string[]>();
         if (dto.BranchId == Guid.Empty)
             errors[nameof(dto.BranchId)] = ["A valid branch is required."];
         if (await queries.IsUserNameTakenAsync(dto.UserName))
             errors[nameof(dto.UserName)] = ["This username is already in use."];
         if (await queries.IsEmailTakenAsync(dto.Email))
             errors[nameof(dto.Email)] = ["This email address is already in use."];
-
         if (errors.Count != 0)
             throw new AppValidationException(errors);
 
@@ -38,11 +40,14 @@ public sealed class CreateApplicationUserHandler(
 
 public sealed class UpdateApplicationUserHandler(
     IUserQueryService queries,
-    IUserCommandService commands) : IRequestHandler<UpdateApplicationUserCommand, UserOperationResult>
+    IUserCommandService commands,
+    IEntityValidator<UserUpdateDto> validator) : IRequestHandler<UpdateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(UpdateApplicationUserCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request.User);
+        validator.Validate(request.User);
+
         if (!Guid.TryParse(request.UserId, out var userId))
             throw new AppValidationException(new Dictionary<string, string[]> {
                 [nameof(request.UserId)] = ["The user ID is invalid."]
