@@ -17,6 +17,9 @@ public sealed record UserUpdateDto
     [Phone, StringLength(32)]
     public string? PhoneNumber { get; init; }
 
+    /// <summary>Optional replacement profile image content. Null preserves the current image.</summary>
+    public byte[]? AvatarUrl { get; init; }
+
     public bool IsActive { get; init; }
 
     [Required]
