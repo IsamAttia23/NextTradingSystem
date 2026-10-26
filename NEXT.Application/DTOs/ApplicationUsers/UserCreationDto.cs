@@ -17,6 +17,9 @@ public sealed record UserCreationDto
     [Phone, StringLength(32)]
     public string? PhoneNumber { get; init; }
 
+    /// <summary>Optional profile image content. The current model stores image bytes.</summary>
+    public byte[]? AvatarUrl { get; init; }
+
     [Required, MinLength(8)]
     public string Password { get; init; } = string.Empty;
 
