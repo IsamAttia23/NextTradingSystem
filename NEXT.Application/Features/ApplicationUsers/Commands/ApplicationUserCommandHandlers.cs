@@ -1,10 +1,9 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using NEXT.Application.Abstractions.Identity;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed class CreateApplicationUserHandler(IUserCommandService users) : IRequestHandler<CreateApplicationUserCommand, IdentityResult>
+public sealed class CreateApplicationUserHandler(IUserCommandService users) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
 {
     public Task<IdentityResult> Handle(CreateApplicationUserCommand request, CancellationToken cancellationToken) =>
         users.CreateUserAsync(request.User, request.Password);
