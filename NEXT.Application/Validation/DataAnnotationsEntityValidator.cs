@@ -1,4 +1,4 @@
-using NEXT.Infrastructure.Exceptions;
+using NEXT.Application.Exceptions;
 using System.ComponentModel.DataAnnotations;
 
 namespace NEXT.Application.Validation;
