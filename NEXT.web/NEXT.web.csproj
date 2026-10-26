@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NEXT.Application\NEXT.Application.csproj" />
+    <ProjectReference Include="..\NEXT.Infrastructure\NEXT.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
