@@ -13,7 +13,11 @@ public sealed class CreatePermissionHandler(IEntityServices<Guid, PermissionDto,
 public sealed class UpdatePermissionHandler(IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto> service)
     : IRequestHandler<UpdatePermissionCommand, PermissionDto>
 {
-    public Task<PermissionDto> Handle(UpdatePermissionCommand request, CancellationToken cancellationToken) => service.Update(request.Id, request.Data with { Id = request.Id });
+    public Task<PermissionDto> Handle(UpdatePermissionCommand request, CancellationToken cancellationToken)
+    {
+        request.Data.Id = request.Id;
+        return service.Update(request.Id, request.Data);
+    }
 }
 public sealed class DeletePermissionHandler(IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto> service)
     : IRequestHandler<DeletePermissionCommand>
