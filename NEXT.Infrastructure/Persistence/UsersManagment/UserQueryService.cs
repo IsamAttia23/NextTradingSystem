@@ -18,6 +18,18 @@ public sealed class UserQueryService(UserManager<ApplicationUser> userManager) :
     public Task<ApplicationUser?> FindUserByNameAsync(string userName) =>
         userManager.FindByNameAsync(userName);
 
+    public async Task<bool> IsUserNameTakenAsync(string userName, string? excludingUserId = null)
+    {
+        var user = await userManager.FindByNameAsync(userName.Trim());
+        return user is not null && !string.Equals(user.Id.ToString(), excludingUserId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public async Task<bool> IsEmailTakenAsync(string email, string? excludingUserId = null)
+    {
+        var user = await userManager.FindByEmailAsync(email.Trim());
+        return user is not null && !string.Equals(user.Id.ToString(), excludingUserId, StringComparison.OrdinalIgnoreCase);
+    }
+
     public async Task<IEnumerable<ApplicationUser>> GetUsersAsync(CancellationToken cancellationToken = default) =>
         await userManager.Users.ToListAsync(cancellationToken);
 
