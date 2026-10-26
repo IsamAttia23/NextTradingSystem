@@ -27,7 +27,8 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
         });
 
-        services.AddScoped<IUserManagementService, UserManagmentServices>();
+        services.AddScoped<IUserCommandService, UserCommandService>();
+        services.AddScoped<IUserQueryService, UserQueryService>();
 
         services.AddIdentityCore<ApplicationUser>()
                  .AddRoles<Role>()
