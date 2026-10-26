@@ -12,7 +12,9 @@ public sealed class GetApplicationUserByIdHandler(IUserQueryService users) : IRe
     public async Task<UserDto?> Handle(GetApplicationUserByIdQuery request, CancellationToken cancellationToken)
     {
         var user = await users.FindUserAsync(request.UserId);
-        return user is null ? null : ApplicationUserDtoMapper.ToDto(user);
+        if (user is null) return null;
+        var roles = await users.GetUserRoles(user);
+        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
     }
 }
 
