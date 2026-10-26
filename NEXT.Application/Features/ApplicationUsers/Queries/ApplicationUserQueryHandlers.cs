@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace NEXT.Application.Features.ApplicationUsers.Queries;
 
-public sealed class GetApplicationUserByIdHandler(IUserManagementService users) : IRequestHandler<GetApplicationUserByIdQuery, ApplicationUser?>
+public sealed class GetApplicationUserByIdHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByIdQuery, ApplicationUser?>
 {
     public Task<ApplicationUser?> Handle(GetApplicationUserByIdQuery request, CancellationToken cancellationToken) =>
         users.FindUserAsync(request.UserId);
@@ -26,7 +26,7 @@ public sealed class GetApplicationUserByNameHandler(IUserManagementService users
 public sealed class GetApplicationUsersHandler(IUserManagementService users) : IRequestHandler<GetApplicationUsersQuery, IEnumerable<ApplicationUser>>
 {
     public Task<IEnumerable<ApplicationUser>> Handle(GetApplicationUsersQuery request, CancellationToken cancellationToken) =>
-        users.GetUsersAsync();
+        users.GetUsersAsync(request: cancellationToken);
 }
 
 public sealed class CheckApplicationUserPasswordHandler(IUserManagementService users) : IRequestHandler<CheckApplicationUserPasswordQuery, bool>
