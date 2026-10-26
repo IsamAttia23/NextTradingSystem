@@ -26,7 +26,7 @@ public sealed class GetApplicationUserByNameHandler(IUserManagementService users
 public sealed class GetApplicationUsersHandler(IUserManagementService users) : IRequestHandler<GetApplicationUsersQuery, IEnumerable<ApplicationUser>>
 {
     public Task<IEnumerable<ApplicationUser>> Handle(GetApplicationUsersQuery request, CancellationToken cancellationToken) =>
-        users.GetUsersAsync(request: cancellationToken);
+        users.GetUsersAsync(cancellationToken);
 }
 
 public sealed class CheckApplicationUserPasswordHandler(IUserManagementService users) : IRequestHandler<CheckApplicationUserPasswordQuery, bool>
