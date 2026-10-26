@@ -23,7 +23,9 @@ public sealed class GetApplicationUserByEmailHandler(IUserQueryService users) : 
     public async Task<UserDto?> Handle(GetApplicationUserByEmailQuery request, CancellationToken cancellationToken)
     {
         var user = await users.FindUserByEmailAsync(request.Email);
-        return user is null ? null : ApplicationUserDtoMapper.ToDto(user);
+        if (user is null) return null;
+        var roles = await users.GetUserRoles(user);
+        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
     }
 }
 
