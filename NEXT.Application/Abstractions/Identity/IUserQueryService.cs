@@ -9,7 +9,7 @@ public interface IUserQueryService
     Task<ApplicationUser?> FindUserAsync(string userId);
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
     Task<ApplicationUser?> FindUserByNameAsync(string userName);
-    Task<IReadOnlyList<ApplicationUser>> GetUsersAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<ApplicationUser>> GetUsersAsync(CancellationToken cancellationToken = default);
     Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
     Task<IEnumerable<Claim>> GetUserClaims(ApplicationUser user);
     Task<IList<string>> GetUserRoles(ApplicationUser user);
