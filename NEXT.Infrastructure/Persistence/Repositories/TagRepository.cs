@@ -1,5 +1,5 @@
 ﻿using NEXT.Domain.Entities;
-using NEXT.Infrastructure.Persistence.IRepositories;
+using NEXT.Application.Abstractions.Persistence.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Text;
