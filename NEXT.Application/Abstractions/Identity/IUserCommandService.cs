@@ -6,10 +6,10 @@ namespace NEXT.Application.Abstractions.Identity;
 public interface IUserCommandService
 {
     Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password);
-    Task<IdentityResult> UpdateUserAsync(ApplicationUser user);
-    Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
-    Task<IdentityResult> SetUserNameAsync(ApplicationUser user, string userName);
-    Task<IdentityResult> SetUserEmailAsync(ApplicationUser user, string email);
-    Task<IdentityResult> SetPhoneNumberAsync(ApplicationUser user, string phoneNumber);
-    Task<IdentityResult> AddUserToRole(ApplicationUser user, string role);
+    Task<UserOperationResult> UpdateUserAsync(ApplicationUser user);
+    Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
+    Task<UserOperationResult> SetUserNameAsync(ApplicationUser user, string userName);
+    Task<UserOperationResult> SetUserEmailAsync(ApplicationUser user, string email);
+    Task<UserOperationResult> SetPhoneNumberAsync(ApplicationUser user, string phoneNumber);
+    Task<UserOperationResult> AddUserToRole(ApplicationUser user, string role);
 }
