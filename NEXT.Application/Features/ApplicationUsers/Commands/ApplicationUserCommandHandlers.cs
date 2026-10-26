@@ -1,24 +1,39 @@
+using Mapster;
 using MediatR;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.ApplicationUsers;
-using NEXT.Application.Features.ApplicationUsers.Mapping;
+using NEXT.Application.Exceptions;
+using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed class CreateApplicationUserHandler(IUserCommandService commands) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
+public sealed class CreateApplicationUserHandler(
+    IUserCommandService commands,
+    IUserQueryService queries) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(CreateApplicationUserCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request.User);
-        if (request.User.BranchId == Guid.Empty)
-            return UserOperationResult.Failure([new UserOperationError("BranchRequired", "A valid branch is required.")]);
+        var dto = request.User;
+        var errors = new Dictionary<string, string[]>();
 
-        var user = ApplicationUserDtoMapper.ToEntity(request.User);
-        var result = await commands.CreateUserAsync(user, request.User.Password);
-        if (!result.Succeeded || string.IsNullOrWhiteSpace(request.User.Role))
+        if (dto.BranchId == Guid.Empty)
+            errors[nameof(dto.BranchId)] = ["A valid branch is required."];
+        if (await queries.IsUserNameTakenAsync(dto.UserName))
+            errors[nameof(dto.UserName)] = ["This username is already in use."];
+        if (await queries.IsEmailTakenAsync(dto.Email))
+            errors[nameof(dto.Email)] = ["This email address is already in use."];
+
+        if (errors.Count != 0)
+            throw new AppValidationException(errors);
+
+        var user = dto.Adapt<ApplicationUser>();
+        var result = await commands.CreateUserAsync(user, dto.Password);
+        if (!result.Succeeded || string.IsNullOrWhiteSpace(dto.Role))
             return result;
 
-        return await commands.AddUserToRole(user, request.User.Role.Trim());
+        // Identity may fail role assignment after the user has been created; report the failure explicitly.
+        return await commands.AddUserToRole(user, dto.Role.Trim());
     }
 }
 
@@ -29,16 +44,28 @@ public sealed class UpdateApplicationUserHandler(
     public async Task<UserOperationResult> Handle(UpdateApplicationUserCommand request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request.User);
-        if (!Guid.TryParse(request.UserId, out _))
-            return UserOperationResult.Failure([new UserOperationError("InvalidUserId", "The user ID is invalid.")]);
-        if (request.User.BranchId == Guid.Empty)
-            return UserOperationResult.Failure([new UserOperationError("BranchRequired", "A valid branch is required.")]);
+        if (!Guid.TryParse(request.UserId, out var userId))
+            throw new AppValidationException(new Dictionary<string, string[]> {
+                [nameof(request.UserId)] = ["The user ID is invalid."]
+            });
 
         var user = await queries.FindUserAsync(request.UserId);
         if (user is null)
-            return UserOperationResult.Failure([new UserOperationError("UserNotFound", "The user was not found.")]);
+            throw new NotFoundException($"User '{request.UserId}' was not found.");
 
-        ApplicationUserDtoMapper.ApplyUpdate(user, request.User);
+        var dto = request.User;
+        var errors = new Dictionary<string, string[]>();
+        if (dto.BranchId == Guid.Empty)
+            errors[nameof(dto.BranchId)] = ["A valid branch is required."];
+        if (await queries.IsUserNameTakenAsync(dto.UserName, userId.ToString()))
+            errors[nameof(dto.UserName)] = ["This username is already in use by another user."];
+        if (await queries.IsEmailTakenAsync(dto.Email, userId.ToString()))
+            errors[nameof(dto.Email)] = ["This email address is already in use by another user."];
+
+        if (errors.Count != 0)
+            throw new AppValidationException(errors);
+
+        dto.Adapt(user);
         return await commands.UpdateUserAsync(user);
     }
 }
