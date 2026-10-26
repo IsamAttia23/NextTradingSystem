@@ -1,14 +1,16 @@
-﻿using System.Net;
+using System.Net;
 
-namespace NEXT.Infrastructure.Exceptions
+namespace NEXT.Infrastructure.Exceptions;
+
+/// <summary>
+/// Compatibility base for Infrastructure-specific exceptions. The shared exception contract lives in Application.
+/// </summary>
+public abstract class AppException : NEXT.Application.Exceptions.AppException
 {
-    public abstract class AppException : Exception
-    {
-        public HttpStatusCode _statusCode { get; }
+    public HttpStatusCode _statusCode => StatusCode;
 
-        protected AppException(string message, HttpStatusCode statusCode) : base(message)
-        {
-            _statusCode = statusCode;
-        }
+    protected AppException(string message, HttpStatusCode statusCode)
+        : base(message, statusCode)
+    {
     }
 }
