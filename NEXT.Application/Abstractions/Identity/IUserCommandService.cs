@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Abstractions.Identity;
@@ -6,7 +5,7 @@ namespace NEXT.Application.Abstractions.Identity;
 /// <summary>Write operations for ApplicationUser identity management.</summary>
 public interface IUserCommandService
 {
-    Task<IdentityResult> CreateUserAsync(ApplicationUser user, string password);
+    Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password);
     Task<IdentityResult> UpdateUserAsync(ApplicationUser user);
     Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
     Task<IdentityResult> SetUserNameAsync(ApplicationUser user, string userName);
