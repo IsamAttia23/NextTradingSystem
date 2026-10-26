@@ -1,7 +1,7 @@
+using Mapster;
 using MediatR;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.ApplicationUsers;
-using NEXT.Application.Features.ApplicationUsers.Mapping;
 using NEXT.Domain.Entities;
 using System.Security.Claims;
 
@@ -14,7 +14,7 @@ public sealed class GetApplicationUserByIdHandler(IUserQueryService users) : IRe
         var user = await users.FindUserAsync(request.UserId);
         if (user is null) return null;
         var roles = await users.GetUserRoles(user);
-        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
+        return user.Adapt<UserDto>() with { Roles = roles.ToArray() };
     }
 }
 
@@ -25,7 +25,7 @@ public sealed class GetApplicationUserByEmailHandler(IUserQueryService users) : 
         var user = await users.FindUserByEmailAsync(request.Email);
         if (user is null) return null;
         var roles = await users.GetUserRoles(user);
-        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
+        return user.Adapt<UserDto>() with { Roles = roles.ToArray() };
     }
 }
 
@@ -34,7 +34,9 @@ public sealed class GetApplicationUserByNameHandler(IUserQueryService users) : I
     public async Task<UserDto?> Handle(GetApplicationUserByNameQuery request, CancellationToken cancellationToken)
     {
         var user = await users.FindUserByNameAsync(request.UserName);
-        return user is null ? null : ApplicationUserDtoMapper.ToDto(user);
+        if (user is null) return null;
+        var roles = await users.GetUserRoles(user);
+        return user.Adapt<UserDto>() with { Roles = roles.ToArray() };
     }
 }
 
@@ -43,7 +45,7 @@ public sealed class GetApplicationUsersHandler(IUserQueryService users) : IReque
     public async Task<IEnumerable<UserResponseDto>> Handle(GetApplicationUsersQuery request, CancellationToken cancellationToken)
     {
         var usersList = await users.GetUsersAsync(cancellationToken);
-        return usersList.Select(ApplicationUserDtoMapper.ToResponseDto).ToArray();
+        return usersList.Adapt<IEnumerable<UserResponseDto>>();
     }
 }
 
