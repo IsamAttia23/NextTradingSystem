@@ -1,6 +1,8 @@
 namespace NEXT.Application.DTOs.ApplicationUsers;
 
-/// <summary>Detailed user representation. Sensitive authentication internals are intentionally excluded.</summary>
+/// <summary>
+/// Detailed administrative user representation. Password hashes, security stamps, and tokens are never exposed.
+/// </summary>
 public sealed record UserDto(
     Guid Id,
     string FullName,
@@ -11,6 +13,9 @@ public sealed record UserDto(
     bool PhoneNumberConfirmed,
     bool TwoFactorEnabled,
     bool IsActive,
+    int AccessFailedCount,
+    bool LockoutEnabled,
+    DateTimeOffset? LockoutEnd,
     DateTime? LastLogin,
     DateTime? LastInvalidLoginAttempt,
     DateTimeOffset CreatedOn,
@@ -20,4 +25,5 @@ public sealed record UserDto(
     Guid? DeletedBy,
     string? DeletionReason,
     byte[]? AvatarUrl,
-    Guid BranchId);
+    Guid BranchId,
+    IReadOnlyList<string> Roles);
