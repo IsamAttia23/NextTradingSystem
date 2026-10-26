@@ -32,7 +32,6 @@ public sealed class CreateApplicationUserHandler(
         if (!result.Succeeded || string.IsNullOrWhiteSpace(dto.Role))
             return result;
 
-        // Identity may fail role assignment after the user has been created; report the failure explicitly.
         return await commands.AddUserToRole(user, dto.Role.Trim());
     }
 }
@@ -53,20 +52,25 @@ public sealed class UpdateApplicationUserHandler(
         if (user is null)
             throw new NotFoundException($"User '{request.UserId}' was not found.");
 
-        var dto = request.User;
-        var errors = new Dictionary<string, string[]>();
-        if (dto.BranchId == Guid.Empty)
-            errors[nameof(dto.BranchId)] = ["A valid branch is required."];
-        if (await queries.IsUserNameTakenAsync(dto.UserName, userId.ToString()))
-            errors[nameof(dto.UserName)] = ["This username is already in use by another user."];
-        if (await queries.IsEmailTakenAsync(dto.Email, userId.ToString()))
-            errors[nameof(dto.Email)] = ["This email address is already in use by another user."];
+        await ValidateUniqueIdentityFieldsAsync(queries, request.User.UserName, request.User.Email, userId);
+        if (request.User.BranchId == Guid.Empty)
+            throw new AppValidationException(new Dictionary<string, string[]> {
+                [nameof(request.User.BranchId)] = ["A valid branch is required."]
+            });
 
-        if (errors.Count != 0)
-            throw new AppValidationException(errors);
-
-        dto.Adapt(user);
+        request.User.Adapt(user);
         return await commands.UpdateUserAsync(user);
+    }
+
+    internal static async Task ValidateUniqueIdentityFieldsAsync(IUserQueryService queries, string userName, string email, Guid? excludingId = null)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (await queries.IsUserNameTakenAsync(userName, excludingId?.ToString()))
+            errors[nameof(UserUpdateDto.UserName)] = ["This username is already in use by another user."];
+        if (await queries.IsEmailTakenAsync(email, excludingId?.ToString()))
+            errors[nameof(UserUpdateDto.Email)] = ["This email address is already in use by another user."];
+        if (errors.Count > 0)
+            throw new AppValidationException(errors);
     }
 }
 
@@ -76,16 +80,24 @@ public sealed class ChangeApplicationUserPasswordHandler(IUserCommandService use
         users.ChangePasswordAsync(request.User, request.CurrentPassword, request.NewPassword);
 }
 
-public sealed class SetApplicationUserNameHandler(IUserCommandService users) : IRequestHandler<SetApplicationUserNameCommand, UserOperationResult>
+public sealed class SetApplicationUserNameHandler(IUserCommandService users, IUserQueryService queries) : IRequestHandler<SetApplicationUserNameCommand, UserOperationResult>
 {
-    public Task<UserOperationResult> Handle(SetApplicationUserNameCommand request, CancellationToken cancellationToken) =>
-        users.SetUserNameAsync(request.User, request.UserName);
+    public async Task<UserOperationResult> Handle(SetApplicationUserNameCommand request, CancellationToken cancellationToken)
+    {
+        if (await queries.IsUserNameTakenAsync(request.UserName, request.User.Id.ToString()))
+            throw new AppValidationException(new Dictionary<string, string[]> { ["UserName"] = ["This username is already in use."] });
+        return await users.SetUserNameAsync(request.User, request.UserName.Trim());
+    }
 }
 
-public sealed class SetApplicationUserEmailHandler(IUserCommandService users) : IRequestHandler<SetApplicationUserEmailCommand, UserOperationResult>
+public sealed class SetApplicationUserEmailHandler(IUserCommandService users, IUserQueryService queries) : IRequestHandler<SetApplicationUserEmailCommand, UserOperationResult>
 {
-    public Task<UserOperationResult> Handle(SetApplicationUserEmailCommand request, CancellationToken cancellationToken) =>
-        users.SetUserEmailAsync(request.User, request.Email);
+    public async Task<UserOperationResult> Handle(SetApplicationUserEmailCommand request, CancellationToken cancellationToken)
+    {
+        if (await queries.IsEmailTakenAsync(request.Email, request.User.Id.ToString()))
+            throw new AppValidationException(new Dictionary<string, string[]> { ["Email"] = ["This email address is already in use."] });
+        return await users.SetUserEmailAsync(request.User, request.Email.Trim());
+    }
 }
 
 public sealed class SetApplicationUserPhoneNumberHandler(IUserCommandService users) : IRequestHandler<SetApplicationUserPhoneNumberCommand, UserOperationResult>
