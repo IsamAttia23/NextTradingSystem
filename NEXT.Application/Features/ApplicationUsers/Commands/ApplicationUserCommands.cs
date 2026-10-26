@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using NEXT.Domain.Entities;
+using NEXT.Application.Abstractions.Identity;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed record CreateApplicationUserCommand(ApplicationUser User, string Password) : IRequest<IdentityResult>;
+public sealed record CreateApplicationUserCommand(ApplicationUser User, string Password) : IRequest<UserOperationResult>;
 public sealed record UpdateApplicationUserCommand(ApplicationUser User) : IRequest<IdentityResult>;
 public sealed record ChangeApplicationUserPasswordCommand(ApplicationUser User, string CurrentPassword, string NewPassword) : IRequest<IdentityResult>;
 public sealed record SetApplicationUserNameCommand(ApplicationUser User, string UserName) : IRequest<IdentityResult>;
