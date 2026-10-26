@@ -7,15 +7,17 @@ using NEXT.Application.Features.ApplicationUsers.Commands;
 using NEXT.Application.Abstractions.Services;
 using NEXT.Application.Services;
 using NEXT.Application.Validation;
+using NEXT.Application.Features.ApplicationUsers.Mapping;
 
 namespace NEXT.Application;
 
 public static class EntityServiceRegistrationExtensions
 {
-    /// <summary>Registers generic application services, CQRS handlers, and the default entity validator.</summary>
+    /// <summary>Registers generic application services, CQRS handlers, Mapster, and entity validation.</summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
+        TypeAdapterConfig.GlobalSettings.Scan(typeof(ApplicationUserMappingRegister).Assembly);
         services.AddMapster();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
