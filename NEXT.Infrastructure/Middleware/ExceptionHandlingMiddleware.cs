@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using NEXT.Infrastructure.Exceptions;
+using NEXT.Application.Exceptions;
 namespace NEXT.Infrastructure.Middleware
 {
 
@@ -25,7 +25,7 @@ namespace NEXT.Infrastructure.Middleware
 
                 if (ex is AppException appException)
                 {
-                    context.Response.StatusCode = (int)appException._statusCode;
+                    context.Response.StatusCode = (int)appException.StatusCode;
 
                     await context.Response.WriteAsJsonAsync(new
                     {

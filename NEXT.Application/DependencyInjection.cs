@@ -3,8 +3,8 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NEXT.Application.Abstractions.IServices;
-using NEXT.Application.Features.ApplicationUsers;
+using NEXT.Application.Features.ApplicationUsers.Commands;
+using NEXT.Application.Abstractions.Services;
 using NEXT.Application.Services;
 using NEXT.Application.Validation;
 
@@ -19,7 +19,7 @@ public static class EntityServiceRegistrationExtensions
         services.AddMapster();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
-        services.TryAddScoped(typeof(IEntityServices<,,,>), typeof(TEntityService<,,,,>));
+        services.TryAddScoped<IPaginationServices, PaginationServices>();
         return services;
     }
 }

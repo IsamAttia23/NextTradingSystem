@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NEXT.Domain.Common.Entities;
-using NEXT.Infrastructure.Persistence.IRepositories;
+using NEXT.Application.Abstractions.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Text;

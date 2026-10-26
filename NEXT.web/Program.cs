@@ -1,4 +1,5 @@
 using NEXT.Application;
+using NEXT.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -6,6 +7,7 @@ var configuration = builder.Configuration;
 // Add services to the container.
 
 services.AddApplicationServices(configuration);
+services.AddInfrastructureServices(configuration);
 
 builder.Services.AddControllersWithViews();
 
