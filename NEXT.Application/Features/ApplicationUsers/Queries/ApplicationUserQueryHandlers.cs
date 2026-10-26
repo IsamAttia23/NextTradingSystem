@@ -1,32 +1,50 @@
 using MediatR;
 using NEXT.Application.Abstractions.Identity;
+using NEXT.Application.DTOs.ApplicationUsers;
+using NEXT.Application.Features.ApplicationUsers.Mapping;
 using NEXT.Domain.Entities;
 using System.Security.Claims;
 
 namespace NEXT.Application.Features.ApplicationUsers.Queries;
 
-public sealed class GetApplicationUserByIdHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByIdQuery, ApplicationUser?>
+public sealed class GetApplicationUserByIdHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByIdQuery, UserDto?>
 {
-    public Task<ApplicationUser?> Handle(GetApplicationUserByIdQuery request, CancellationToken cancellationToken) =>
-        users.FindUserAsync(request.UserId);
+    public async Task<UserDto?> Handle(GetApplicationUserByIdQuery request, CancellationToken cancellationToken)
+    {
+        var user = await users.FindUserAsync(request.UserId);
+        if (user is null) return null;
+        var roles = await users.GetUserRoles(user);
+        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
+    }
 }
 
-public sealed class GetApplicationUserByEmailHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByEmailQuery, ApplicationUser?>
+public sealed class GetApplicationUserByEmailHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByEmailQuery, UserDto?>
 {
-    public Task<ApplicationUser?> Handle(GetApplicationUserByEmailQuery request, CancellationToken cancellationToken) =>
-        users.FindUserByEmailAsync(request.Email);
+    public async Task<UserDto?> Handle(GetApplicationUserByEmailQuery request, CancellationToken cancellationToken)
+    {
+        var user = await users.FindUserByEmailAsync(request.Email);
+        if (user is null) return null;
+        var roles = await users.GetUserRoles(user);
+        return ApplicationUserDtoMapper.ToDto(user, roles.ToArray());
+    }
 }
 
-public sealed class GetApplicationUserByNameHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByNameQuery, ApplicationUser?>
+public sealed class GetApplicationUserByNameHandler(IUserQueryService users) : IRequestHandler<GetApplicationUserByNameQuery, UserDto?>
 {
-    public Task<ApplicationUser?> Handle(GetApplicationUserByNameQuery request, CancellationToken cancellationToken) =>
-        users.FindUserByNameAsync(request.UserName);
+    public async Task<UserDto?> Handle(GetApplicationUserByNameQuery request, CancellationToken cancellationToken)
+    {
+        var user = await users.FindUserByNameAsync(request.UserName);
+        return user is null ? null : ApplicationUserDtoMapper.ToDto(user);
+    }
 }
 
-public sealed class GetApplicationUsersHandler(IUserQueryService users) : IRequestHandler<GetApplicationUsersQuery, IEnumerable<ApplicationUser>>
+public sealed class GetApplicationUsersHandler(IUserQueryService users) : IRequestHandler<GetApplicationUsersQuery, IEnumerable<UserResponseDto>>
 {
-    public Task<IEnumerable<ApplicationUser>> Handle(GetApplicationUsersQuery request, CancellationToken cancellationToken) =>
-        users.GetUsersAsync(cancellationToken);
+    public async Task<IEnumerable<UserResponseDto>> Handle(GetApplicationUsersQuery request, CancellationToken cancellationToken)
+    {
+        var usersList = await users.GetUsersAsync(cancellationToken);
+        return usersList.Select(ApplicationUserDtoMapper.ToResponseDto).ToArray();
+    }
 }
 
 public sealed class CheckApplicationUserPasswordHandler(IUserQueryService users) : IRequestHandler<CheckApplicationUserPasswordQuery, bool>
