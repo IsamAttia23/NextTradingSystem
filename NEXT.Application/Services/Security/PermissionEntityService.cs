@@ -4,26 +4,22 @@ using NEXT.Application.Abstractions.Persistence;
 using NEXT.Application.Abstractions.Services;
 using NEXT.Application.DTOs.Security;
 using NEXT.Application.Exceptions;
-using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Services.Security;
 
-/// <summary>Permission CRUD reuses shared TEntityService while enforcing permission-specific rules.</summary>
+/// <summary>Permission CRUD reuses shared TEntityService while enforcing permission-specific uniqueness.</summary>
 public sealed class PermissionEntityService(
     IRepository<Permission> repository,
     IMapper mapper,
     IPaginationServices pagination,
     IUnitOfWork unitOfWork,
-    IKeyRepository<Permission, Guid> keyRepository,
-    IEntityValidator<PermissionCreationDto> creationValidator,
-    IEntityValidator<PermissionUpdateDto> updateValidator)
+    IKeyRepository<Permission, Guid> keyRepository)
     : TEntityService<Permission, Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>(
         repository, mapper, pagination, unitOfWork, keyRepository)
 {
     public override async Task<PermissionDto> Add(PermissionCreationDto creationDTO)
     {
-        creationValidator.Validate(creationDTO);
         var code = creationDTO.Code.Trim().ToUpperInvariant();
         if (await repository.AnyAsync(permission => permission.Code.ToUpper() == code))
             throw new AppValidationException(new Dictionary<string, string[]> {
@@ -35,7 +31,6 @@ public sealed class PermissionEntityService(
     public override async Task<PermissionDto> Update(Guid id, PermissionUpdateDto updateDto)
     {
         updateDto.Id = id;
-        updateValidator.Validate(updateDto);
         var code = updateDto.Code.Trim().ToUpperInvariant();
         if (await repository.AnyAsync(permission => permission.Id != id && permission.Code.ToUpper() == code))
             throw new AppValidationException(new Dictionary<string, string[]> {
