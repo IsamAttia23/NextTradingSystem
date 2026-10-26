@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NEXT.Application.Abstractions.IServices;
-using NEXT.Application.Features.ApplicationUsers;
+using NEXT.Application.Features.ApplicationUsers.Commands;
 using NEXT.Application.Services;
 using NEXT.Application.Validation;
 
