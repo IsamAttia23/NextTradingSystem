@@ -1,0 +1,9 @@
+using MediatR;
+using NEXT.Application.DTOs.Security;
+
+namespace NEXT.Application.Features.Security.RolePermissions;
+
+public sealed record AssignPermissionToRoleCommand(Guid RoleId, Guid PermissionId) : IRequest;
+public sealed record RevokePermissionFromRoleCommand(Guid RoleId, Guid PermissionId) : IRequest;
+public sealed record GetRolePermissionsQuery : IRequest<IReadOnlyList<RolePermissionDto>>;
+public sealed record GetPermissionsForRoleQuery(Guid RoleId) : IRequest<IReadOnlyList<RolePermissionDto>>;
