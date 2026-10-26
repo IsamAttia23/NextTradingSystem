@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using NEXT.Domain.Common.Entities;
-using NEXT.Infrastructure.Persistence.IRepositories;
+using NEXT.Application.Abstractions.Persistence;
 using System.Linq.Expressions;
 using System.Reflection;
 
