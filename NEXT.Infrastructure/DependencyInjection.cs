@@ -8,6 +8,7 @@ using NEXT.Infrastructure.Persistence;
 using NEXT.Infrastructure.Persistence.IRepositories;
 using NEXT.Infrastructure.Persistence.Repositories;
 using NEXT.Infrastructure.Persistence.SaveChanges;
+using NEXT.Infrastructure.Persistence.UsersManagment;
 using NEXT.Infrastructure.Services;
 
 namespace NEXT.Infrastructure;
@@ -24,6 +25,8 @@ public static class DependencyInjection
         {
             options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
         });
+
+        services.AddScoped<IUserManagmentServices, UserManagmentServices>();
 
         services.AddIdentityCore<ApplicationUser>()
                  .AddRoles<Role>()
