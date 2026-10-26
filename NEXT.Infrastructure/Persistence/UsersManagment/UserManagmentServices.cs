@@ -2,10 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using NEXT.Domain.Entities;
+using NEXT.Application.Abstractions.Identity;
 
 namespace NEXT.Infrastructure.Persistence.UsersManagment
 {
-    public class UserManagmentServices : IUserManagmentServices
+    public class UserManagmentServices : IUserManagementService
     {
         private readonly UserManager<ApplicationUser> _userManager;
 
@@ -40,19 +41,19 @@ namespace NEXT.Infrastructure.Persistence.UsersManagment
             return result;
         }
 
-        public async Task<ApplicationUser> FindUserAsync(string userId)
+        public async Task<ApplicationUser?> FindUserAsync(string userId)
         {
             var result = await _userManager.FindByIdAsync(userId);
             return result;
         }
 
-        public async Task<ApplicationUser> FindUserByEmailAsync(string email)
+        public async Task<ApplicationUser?> FindUserByEmailAsync(string email)
         {
             var result = await _userManager.FindByEmailAsync(email);
             return result;
         }
 
-        public async Task<ApplicationUser> FindUserByNameAsync(string userName)
+        public async Task<ApplicationUser?> FindUserByNameAsync(string userName)
         {
             var result = await _userManager.FindByNameAsync(userName);
             return result;
