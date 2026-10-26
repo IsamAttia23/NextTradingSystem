@@ -8,7 +8,6 @@ using NEXT.Application.Abstractions.Services;
 using NEXT.Application.Services;
 using NEXT.Application.Validation;
 using NEXT.Application.Features.ApplicationUsers.Mapping;
-using NEXT.Application.Features.Security.Mapping;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.DTOs.Security;
 using NEXT.Application.Services.Security;
@@ -22,7 +21,6 @@ public static class EntityServiceRegistrationExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         TypeAdapterConfig.GlobalSettings.Scan(typeof(ApplicationUserMappingRegister).Assembly);
-        TypeAdapterConfig.GlobalSettings.Scan(typeof(SecurityMappingRegister).Assembly);
         services.AddMapster();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
