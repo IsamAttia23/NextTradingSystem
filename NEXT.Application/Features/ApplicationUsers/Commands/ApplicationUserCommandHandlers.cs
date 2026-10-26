@@ -34,7 +34,16 @@ public sealed class CreateApplicationUserHandler(
         if (!result.Succeeded || string.IsNullOrWhiteSpace(dto.Role))
             return result;
 
-        return await commands.AddUserToRole(user, dto.Role.Trim());
+        var roleResult = await commands.AddUserToRole(user, dto.Role.Trim());
+        if (roleResult.Succeeded)
+            return roleResult;
+
+        var cleanupResult = await commands.DeleteUserAsync(user);
+        if (cleanupResult.Succeeded)
+            return roleResult;
+
+        return UserOperationResult.Failure(roleResult.Errors.Concat(cleanupResult.Errors).Append(
+            new UserOperationError("UserCleanupFailed", "The user could not be removed after role assignment failed.")));
     }
 }
 
