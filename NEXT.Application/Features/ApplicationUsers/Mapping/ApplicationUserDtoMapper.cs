@@ -9,7 +9,7 @@ public static class ApplicationUserDtoMapper
     public static UserResponseDto ToResponseDto(ApplicationUser user) => new(
         user.Id, user.FullName, user.UserName, user.Email, user.IsActive, user.BranchId);
 
-    public static UserDto ToDto(ApplicationUser user) => new(
+    public static UserDto ToDto(ApplicationUser user, IReadOnlyList<string> roles) => new(
         user.Id,
         user.FullName,
         user.UserName,
@@ -19,6 +19,9 @@ public static class ApplicationUserDtoMapper
         user.PhoneNumberConfirmed,
         user.TwoFactorEnabled,
         user.IsActive,
+        user.AccessFailedCount,
+        user.LockoutEnabled,
+        user.LockoutEnd,
         user.LastLogin,
         user.LastInvalidLoginAttempt,
         user.CreatedOn,
@@ -28,7 +31,8 @@ public static class ApplicationUserDtoMapper
         user.DeletedBy,
         user.DeletionReason,
         user.AvatarUrl,
-        user.BranchId);
+        user.BranchId,
+        roles);
 
     public static ApplicationUser ToEntity(UserCreationDto dto) => new()
     {
