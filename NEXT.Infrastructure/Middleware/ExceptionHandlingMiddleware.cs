@@ -25,7 +25,7 @@ namespace NEXT.Infrastructure.Middleware
 
                 if (ex is AppException appException)
                 {
-                    context.Response.StatusCode = (int)appException._statusCode;
+                    context.Response.StatusCode = (int)appException.StatusCode;
 
                     await context.Response.WriteAsJsonAsync(new
                     {
