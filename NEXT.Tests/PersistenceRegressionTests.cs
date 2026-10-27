@@ -13,6 +13,20 @@ namespace NEXT.Tests;
 
 public class PersistenceRegressionTests
 {
+    [Fact]
+    public async Task KeyLookupDoesNotReturnTrackedSoftDeletedEntity()
+    {
+        await using var db = CreateContext();
+        var tag = new Tag { Name = "Deleted", Color = "blue" };
+        db.Add(tag);
+        await db.SaveChangesAsync();
+        var repository = new KeyRepository<Tag, Guid>(db);
+        await repository.DeleteAsync(tag);
+        await db.SaveChangesAsync();
+        Assert.Null(await repository.GetByIdAsync(tag.Id));
+        Assert.Null(await repository.GetByKeyAsync([tag.Id]));
+    }
+
     private readonly InMemoryDatabaseRoot root = new();
     private NEXTDbContext CreateContext()
     {

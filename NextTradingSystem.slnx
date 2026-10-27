@@ -3,5 +3,5 @@
   <Project Path="NEXT.Domain/NEXT.Domain.csproj" />
   <Project Path="NEXT.Infrastructure/NEXT.Infrastructure.csproj" />
   <Project Path="NEXT.Tests/NEXT.Tests.csproj" />
-  <Project Path="NEXT.Web/NEXT.Web.csproj" Id="14468dc6-9f68-49ce-bc1b-d7f62a241f2f" />
+  <Project Path="NEXT.web/NEXT.web.csproj" Id="14468dc6-9f68-49ce-bc1b-d7f62a241f2f" />
 </Solution>

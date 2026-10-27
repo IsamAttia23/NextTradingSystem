@@ -13,11 +13,8 @@ namespace NEXT.Infrastructure.Persistence.Repositories
     {
         private readonly DbSet<TEntity> _set = context.Set<TEntity>();
 
-        public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
-        {
-            object?[] keys = [id];
-            return await _set.FindAsync(keys, cancellationToken);
-        }
+        public Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
+            => GetByKeyAsync([id], cancellationToken);
 
         public virtual Task DeleteAsync(TEntity entity)
         {

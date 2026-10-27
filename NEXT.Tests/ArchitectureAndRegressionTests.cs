@@ -25,6 +25,40 @@ namespace NEXT.Tests;
 
 public class ArchitectureAndRegressionTests
 {
+    [Fact]
+    public void AllFivePermissionRequestHandlersResolve()
+    {
+        using var provider = CreateProvider();
+        using var scope = provider.CreateScope();
+        Type[] definitions = [
+            typeof(NEXT.Application.Features.Common.CQRS.CreateEntityCommand<,,,>),
+            typeof(NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<,,,>),
+            typeof(NEXT.Application.Features.Common.CQRS.DeleteEntityCommand<,,,>),
+            typeof(NEXT.Application.Features.Common.CQRS.GetEntityByIdQuery<,,,>),
+            typeof(NEXT.Application.Features.Common.CQRS.GetEntitiesQuery<,,,>)];
+        foreach (var definition in definitions)
+        {
+            var request = definition.MakeGenericType(typeof(Guid), typeof(PermissionDto),
+                typeof(PermissionCreationDto), typeof(PermissionUpdateDto));
+            var responseContract = request.GetInterfaces().SingleOrDefault(type =>
+                type.IsGenericType && type.GetGenericTypeDefinition() == typeof(MediatR.IRequest<>));
+            var handler = responseContract is null
+                ? typeof(MediatR.IRequestHandler<>).MakeGenericType(request)
+                : typeof(MediatR.IRequestHandler<,>).MakeGenericType(request, responseContract.GenericTypeArguments[0]);
+            Assert.NotNull(scope.ServiceProvider.GetRequiredService(handler));
+        }
+    }
+
+    [Fact]
+    public async Task MediatorResolvesPermissionCreateAndRunsValidation()
+    {
+        using var provider = CreateProvider();
+        using var scope = provider.CreateScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
+        var request = new NEXT.Application.Features.Common.CQRS.CreateEntityCommand<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>(new());
+        await Assert.ThrowsAsync<AppValidationException>(() => mediator.Send(request));
+    }
+
     private static ServiceProvider CreateProvider()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
