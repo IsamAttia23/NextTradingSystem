@@ -13,5 +13,5 @@ public class ProductBatch : AuditableEntity<Guid>
     public Guid WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
     public decimal CostPrice { get; set; }
-    public byte[] RowVersion { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 }

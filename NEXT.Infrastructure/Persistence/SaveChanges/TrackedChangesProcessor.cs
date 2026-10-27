@@ -1,3 +1,4 @@
+using NEXT.Application.Abstractions.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -35,6 +36,7 @@ public sealed class TrackedChangesProcessor(
 
             var wasSoftDeleted = softDeleteHandler.TryHandle(context, entry, now, userId);
             auditFieldsHandler.Apply(entry, now, userId);
+            ConcurrencyTokenHandler.Apply(entry);
 
             var action = GetAction(entry, wasSoftDeleted);
             if (action is null)
@@ -55,9 +57,9 @@ public sealed class TrackedChangesProcessor(
 
     private static bool ShouldSkip(EntityEntry entry) =>
         entry.Entity is AuditLog or RecycleBinEntry or UserRole or
-            IdentityUserToken<long> or IdentityUserLogin<long> or
-            IdentityUserClaim<long> or IdentityRoleClaim<long> or
-            IdentityUserRole<long> ||
+            IdentityUserToken<Guid> or IdentityUserLogin<Guid> or
+            IdentityUserClaim<Guid> or IdentityRoleClaim<Guid> or
+            IdentityUserRole<Guid> ||
         entry.Metadata.IsOwned();
 
     private static AuditAction? GetAction(EntityEntry entry, bool wasSoftDeleted)

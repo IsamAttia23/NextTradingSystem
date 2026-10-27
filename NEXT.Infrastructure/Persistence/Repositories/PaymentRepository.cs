@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -12,14 +12,15 @@ public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Pay
 {
     public IQueryable<Payment> SearchAsync(PaymentQueryModel queryModel, CancellationToken cancellationToken = default)
     {
-        var payments = context.Payments.AsNoTracking()
+        ArgumentNullException.ThrowIfNull(queryModel);
+        var payments = Context.Payments.AsNoTracking()
             .Include(x => x.Customer)
             .Include(x => x.Supplier)
             .AsQueryable();
         if (queryModel.From.HasValue) payments = payments.Where(x => x.PaymentDate >= queryModel.From);
         if (queryModel.To.HasValue) payments = payments.Where(x => x.PaymentDate <= queryModel.To);
-        if (!string.IsNullOrEmpty(queryModel.CustomerName)) payments = payments.Where(x => x.Customer.Name == queryModel.CustomerName);
-        if (!string.IsNullOrEmpty(queryModel.SupplierName)) payments = payments.Where(x => x.Supplier.Name == queryModel.SupplierName);
+        if (!string.IsNullOrEmpty(queryModel.CustomerName)) payments = payments.Where(x => x.Customer != null && x.Customer.Name == queryModel.CustomerName);
+        if (!string.IsNullOrEmpty(queryModel.SupplierName)) payments = payments.Where(x => x.Supplier != null && x.Supplier.Name == queryModel.SupplierName);
 
         payments = queryModel.SortDirection switch
         {
@@ -36,8 +37,6 @@ public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Pay
                 .ThenByDescending(x => x.Id)
         };
 
-        return payments.OrderByDescending(x => x.PaymentDate);
+        return payments;
     }
 }
-
-    

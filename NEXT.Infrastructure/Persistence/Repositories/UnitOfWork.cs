@@ -1,17 +1,12 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using NEXT.Application.Abstractions.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories;
 
 public sealed class UnitOfWork(
-    NEXTDbContext context,
-    IServiceProvider serviceProvider) : IUnitOfWork
+    NEXTDbContext context) : IUnitOfWork
 {
-    public IRepository<TEntity> Repository<TEntity, TKey>() where TEntity : class
-        => serviceProvider.GetRequiredService<IRepository<TEntity>>();
-
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => context.SaveChangesAsync(cancellationToken);
 

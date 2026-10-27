@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -11,12 +11,12 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class PurchaseOrderRepository(NEXTDbContext context) : KeyRepository<PurchaseOrder, Guid>(context), IPurchaseOrderRepository
 {
     public Task<PurchaseOrder?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => context.PurchaseOrders.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        => Context.PurchaseOrders.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     public IQueryable<PurchaseOrder> Search(PurchaseOrderQueryModel queryModel)
     {
         ArgumentNullException.ThrowIfNull(queryModel);
 
-        var orders = context.PurchaseOrders
+        var orders = Context.PurchaseOrders
             .AsNoTracking()
             .Include(x => x.Supplier)
             .AsQueryable();

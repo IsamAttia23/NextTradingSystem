@@ -13,6 +13,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories;
 public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     where TEntity : class
 {
+    protected NEXTDbContext Context { get; } = context;
     private readonly DbSet<TEntity> _set = context.Set<TEntity>();
 
     public IQueryable<TEntity> Query(bool asNoTracking = true) => asNoTracking ? _set.AsNoTracking() : _set;
@@ -74,13 +75,13 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
 
     public void SetRowVersion<Entity>(Entity entity, byte[] rowVersion) where Entity : class, IRowVersionProperty
     {
-        context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
+        Context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
     }
 
 
     public virtual async Task<bool> HasActiveRelationsAsync(TEntity entity)
     {
-        var entityType = context.Model.FindEntityType(typeof(TEntity));
+        var entityType = Context.Model.FindEntityType(typeof(TEntity));
         if (entityType == null)
             return false;
 
@@ -89,19 +90,13 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
 
         foreach (var fk in entityType.GetReferencingForeignKeys())
         {
-            var principalKey = fk.PrincipalKey.Properties[0];
-            var foreignKey = fk.Properties[0];
-
-            var id = context.Entry(entity).Property(principalKey.Name).CurrentValue;
-            if (id == null)
+            var values = fk.PrincipalKey.Properties
+                .Select(p => Context.Entry(entity).Property(p.Name).CurrentValue).ToArray();
+            if (values.Any(value => value is null))
                 continue;
-
             var dependentType = fk.DeclaringEntityType.ClrType;
-            var hasDeletedOn = fk.DeclaringEntityType.FindProperty("DeletedOn") != null;
-
-            var task = (Task<bool>)method
-                .MakeGenericMethod(dependentType)
-                .Invoke(this, new object[] { foreignKey, id, hasDeletedOn })!;
+            var task = (Task<bool>)method.MakeGenericMethod(dependentType)
+                .Invoke(this, new object[] { fk.Properties, values })!;
 
             if (await task)
                 return true;
@@ -110,30 +105,21 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         return false;
     }
 
-    private async Task<bool> AnyDependentAsync<TDependent>(IProperty foreignKey, object id, bool hasDeletedOn) where TDependent : class
+    private Task<bool> AnyDependentAsync<TDependent>(IReadOnlyList<IProperty> foreignKeys, object[] values)
+        where TDependent : class
     {
-        var param = Expression.Parameter(typeof(TDependent), "x");
-
-        // EF.Property<TFk>(x, "ForeignKeyName") == id
-        var fkAccess = Expression.Call(
-            typeof(EF), nameof(EF.Property), new[] { foreignKey.ClrType },
-            param, Expression.Constant(foreignKey.Name));
-
-        Expression body = Expression.Equal(fkAccess, Expression.Constant(id, foreignKey.ClrType));
-
-        // && EF.Property<DateTimeOffset?>(x, "DeletedOn") == null
-        if (hasDeletedOn)
+        var parameter = Expression.Parameter(typeof(TDependent), "entity");
+        Expression body = Expression.Constant(true);
+        for (var index = 0; index < foreignKeys.Count; index++)
         {
-            var deletedOn = Expression.Call(
-                typeof(EF), nameof(EF.Property), new[] { typeof(DateTimeOffset?) },
-                param, Expression.Constant("DeletedOn"));
-
-            body = Expression.AndAlso(
-                body,
-                Expression.Equal(deletedOn, Expression.Constant(null, typeof(DateTimeOffset?))));
+            var property = foreignKeys[index];
+            var access = Expression.Call(typeof(EF), nameof(EF.Property), [property.ClrType],
+                parameter, Expression.Constant(property.Name));
+            var value = Expression.Convert(Expression.Constant(values[index]), property.ClrType);
+            body = Expression.AndAlso(body, Expression.Equal(access, value));
         }
-
-        var lambda = Expression.Lambda<Func<TDependent, bool>>(body, param);
-        return await context.Set<TDependent>().AnyAsync(lambda);
+        // Global query filters already exclude soft-deleted dependents, including DeletedAt.
+        var predicate = Expression.Lambda<Func<TDependent, bool>>(body, parameter);
+        return Context.Set<TDependent>().AnyAsync(predicate);
     }
 }

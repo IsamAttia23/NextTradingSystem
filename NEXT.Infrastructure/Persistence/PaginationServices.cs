@@ -1,13 +1,13 @@
-﻿using Mapster;
+using Mapster;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using NEXT.Application.Abstractions.Services;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using Microsoft.EntityFrameworkCore;
-using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 
-namespace NEXT.Application.Services
+namespace NEXT.Infrastructure.Persistence
 {
     public class PaginationServices : IPaginationServices
     {
@@ -17,6 +17,11 @@ namespace NEXT.Application.Services
             var pageSize = query?.PageSize > 0 ? query.PageSize : 10;
             pageSize = Math.Min(pageSize, 50);
 
+            ArgumentNullException.ThrowIfNull(entities);
+            if ((long)(pageNumber - 1) * pageSize > int.MaxValue)
+                throw new NEXT.Application.Exceptions.AppValidationException(new Dictionary<string, string[]> {
+                    [nameof(query.PageNumber)] = ["The requested page is too large."]
+                });
             var totalCount = await entities.CountAsync();
 
             var pagedList = await entities.Skip((pageNumber - 1) * pageSize)

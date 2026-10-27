@@ -10,7 +10,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SystemSettingRepository(NEXTDbContext context) : TRepository<SystemSetting>(context), ISystemSettingRepository
 {
     public Task<SystemSetting?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
-        => context.SystemSettings.AsNoTracking().FirstOrDefaultAsync(x=>x.Key==key,cancellationToken);
+        => Context.SystemSettings.AsNoTracking().FirstOrDefaultAsync(x=>x.Key==key,cancellationToken);
     public IQueryable<SystemSetting> GetByCategoryAsync(string category)
-        => context.SystemSettings.AsNoTracking().Where(x=>x.Category==category).OrderBy(x=>x.Key).AsQueryable();
+        => Context.SystemSettings.AsNoTracking().Where(x=>x.Category==category).OrderBy(x=>x.Key).AsQueryable();
 }

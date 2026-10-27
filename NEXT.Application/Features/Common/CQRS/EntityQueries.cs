@@ -1,6 +1,6 @@
 using MediatR;
 using NEXT.Domain.Common.Entities;
-using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 
 namespace NEXT.Application.Features.Common.CQRS;
 

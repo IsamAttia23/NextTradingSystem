@@ -1,5 +1,5 @@
-﻿using NEXT.Domain.Common.Entities;
-using NEXT.Domain.Common.QueryModels;
+using NEXT.Domain.Common.Entities;
+using NEXT.Application.Common.QueryModels;
 using System;
 using System.Collections.Generic;
 using System.Text;

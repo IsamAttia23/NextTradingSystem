@@ -14,8 +14,21 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     : IdentityDbContext<ApplicationUser, Role, Guid, IdentityUserClaim<Guid>, UserRole,
         IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>(options)
 {
+    private readonly HashSet<object> _permanentDeletions = new(ReferenceEqualityComparer.Instance);
+    internal bool IsPermanentDeletion(object entity) => _permanentDeletions.Contains(entity);
+
+    internal async Task PermanentlyDeleteAsync<TEntity>(TEntity entity, CancellationToken ct) where TEntity : class
+    {
+        _permanentDeletions.Add(entity);
+        try
+        {
+            Remove(entity);
+            await SaveChangesAsync(ct);
+        }
+        finally { _permanentDeletions.Remove(entity); }
+    }
+
     public DbSet<Permission> Permissions => Set<Permission>();
-    public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Customer> Customers => Set<Customer>();

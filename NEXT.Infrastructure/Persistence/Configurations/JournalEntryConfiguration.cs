@@ -15,6 +15,6 @@ public sealed class JournalEntryConfiguration : IEntityTypeConfiguration<Journal
         builder.HasIndex(x => new { x.ReferenceType, x.ReferenceId });
         builder.Property(x => x.TotalDebit).HasPrecision(15, 2);
         builder.Property(x => x.TotalCredit).HasPrecision(15, 2);
-        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
+        builder.Property(x => x.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
     }
 }

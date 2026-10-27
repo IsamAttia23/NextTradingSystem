@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -14,7 +14,7 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
     {
         ArgumentNullException.ThrowIfNull(queryModel);
 
-        var query = context.StockMovements
+        var query = Context.StockMovements
             .AsNoTracking()
             .Include(x => x.Product)
             .Include(x => x.Warehouse)

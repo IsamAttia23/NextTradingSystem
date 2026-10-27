@@ -10,5 +10,5 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class RecycleBinEntryRepository(NEXTDbContext context) : TRepository<RecycleBinEntry>(context), IRecycleBinEntryRepository
 {
     public Task<List<RecycleBinEntry>> GetActiveAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
-        => context.RecycleBinEntries.AsNoTracking().Where(x=>x.ExpiresAt==null||x.ExpiresAt>now).OrderByDescending(x=>x.DeletedAt).ToListAsync(cancellationToken);
+        => Context.RecycleBinEntries.AsNoTracking().Where(x=>x.ExpiresAt==null||x.ExpiresAt>now).OrderByDescending(x=>x.DeletedAt).ToListAsync(cancellationToken);
 }

@@ -26,6 +26,6 @@ public sealed class SalesInvoiceConfiguration : IEntityTypeConfiguration<SalesIn
         builder.Property(x => x.PaidAmount).HasPrecision(15, 2);
         builder.Property(x => x.RemainingAmount).HasPrecision(15, 2);
         builder.Property(x => x.ChangeAmount).HasPrecision(15, 2);
-        builder.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken().ValueGeneratedOnAddOrUpdate();
+        builder.Property(x => x.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
     }
 }

@@ -1,6 +1,6 @@
 using NEXT.Domain.Entities;
 using NEXT.Application.Abstractions.Persistence;
-using NEXT.Domain.Queries;
+using NEXT.Application.QueryModels;
 
 namespace NEXT.Application.Abstractions.Persistence.Repositories;
 

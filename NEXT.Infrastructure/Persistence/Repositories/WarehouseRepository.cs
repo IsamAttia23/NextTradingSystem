@@ -10,5 +10,5 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class WarehouseRepository(NEXTDbContext context) : KeyRepository<Warehouse, Guid>(context), IWarehouseRepository
 {
     public IQueryable<Warehouse> GetByBranchAsync(Guid? branchId)
-        => context.Warehouses.AsNoTracking().Where(x=>x.BranchId==branchId).OrderBy(x=>x.Name).AsQueryable();
+        => Context.Warehouses.AsNoTracking().Where(x=>x.BranchId==branchId).OrderBy(x=>x.Name).AsQueryable();
 }

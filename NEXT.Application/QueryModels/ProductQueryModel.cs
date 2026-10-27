@@ -1,7 +1,7 @@
-﻿
+
 using NEXT.Domain.Enums;
 
-namespace NEXT.Domain.QueryModels;
+namespace NEXT.Application.QueryModels;
 
 public sealed class ProductQueryModel
 {

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -11,13 +11,13 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Supplier, Guid>(context), ISupplierRepository
 {
     public Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
-        => context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        => Context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
 
     public IQueryable<Supplier> Search(SupplierQueryModel queryModel)
     {
         ArgumentNullException.ThrowIfNull(queryModel);
 
-        var query = context.Suppliers
+        var query = Context.Suppliers
             .AsNoTracking()
             .AsQueryable();
 

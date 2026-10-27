@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -10,12 +10,12 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for Product; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
-    public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
+    public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
     public IQueryable<Product> Search(ProductQueryModel queryModel)
     {
         ArgumentNullException.ThrowIfNull(queryModel);
 
-        var products = context.Products
+        var products = Context.Products
             .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.UnitOfMeasure)
@@ -34,7 +34,7 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
 
     public Task<List<Product>> GetLowStockAsync(Guid? warehouseId = null, CancellationToken cancellationToken = default)
     {
-        var q = context.Products.AsNoTracking()
+        var q = Context.Products.AsNoTracking()
             .Include(x => x.Stocks)
             .Where(x => x.IsActive && x.Stocks
             .Any(s => s.Quantity - s.ReservedQuantity <= x.MinStock));
