@@ -7,6 +7,7 @@ public interface IUserCommandService
 {
     Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password);
     Task<UserOperationResult> UpdateUserAsync(ApplicationUser user);
+    Task<UserOperationResult> DeleteUserAsync(ApplicationUser user);
     Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
     Task<UserOperationResult> SetUserNameAsync(ApplicationUser user, string userName);
     Task<UserOperationResult> SetUserEmailAsync(ApplicationUser user, string email);

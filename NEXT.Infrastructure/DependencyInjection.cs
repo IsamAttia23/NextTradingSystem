@@ -29,10 +29,15 @@ public static class DependencyInjection
 
         services.AddScoped<IUserCommandService, UserCommandService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
+        services.AddScoped<IRoleManagementService, RoleManagementService>();
+        services.AddScoped<IRolePermissionService, RolePermissionService>();
 
-        services.AddIdentityCore<ApplicationUser>()
-                 .AddRoles<Role>()
-                 .AddEntityFrameworkStores<NEXTDbContext>();
+        services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+            })
+            .AddRoles<Role>()
+            .AddEntityFrameworkStores<NEXTDbContext>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -47,13 +52,6 @@ public static class DependencyInjection
         services.AddScoped<SaveChangesStatePreserver>();
         services.AddScoped<SoftDeleteHandler>();
         services.AddScoped<TrackedChangesProcessor>();
-
-        var serializerRegistration = services
-    .Any(service => service.ServiceType == typeof(AuditValueSerializer));
-
-        Console.WriteLine(
-            $"AuditValueSerializer registered: {serializerRegistration}");
-
 
         services.AddNEXTIdentity();
         return services;
