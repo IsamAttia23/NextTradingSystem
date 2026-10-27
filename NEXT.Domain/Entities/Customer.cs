@@ -20,8 +20,8 @@ public class Customer : IsDeletableEntity<Guid>
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
     public Guid TagId { get; set; }
-    public Tag Tag { get; set; }
-    public byte[] RowVersion { get; set; }
+    public Tag Tag { get; set; } = null!;
+    public byte[] RowVersion { get; set; } = [];
 
     public ICollection<CustomerContact> Contacts { get; set; } = new List<CustomerContact>();
     public ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();

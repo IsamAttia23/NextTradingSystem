@@ -24,7 +24,7 @@ public static class EntityServiceRegistrationExtensions
         services.AddMapster();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
-        services.TryAddScoped<IPaginationServices, PaginationServices>();
+
         services.AddScoped<IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>, PermissionEntityService>();
         return services;
     }

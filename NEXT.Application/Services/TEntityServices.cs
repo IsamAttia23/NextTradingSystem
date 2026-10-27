@@ -1,9 +1,9 @@
-﻿using Mapster;
+using Mapster;
 using MapsterMapper;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Abstractions.Services;
 using NEXT.Domain.Common.Entities;
-using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Abstractions.Persistence;
 using System;
@@ -21,7 +21,7 @@ namespace NEXT.Application.Services
      where TCreationDto : class
      where TUpdateDto : class, TIdType<TId>
     {
-        private readonly IRepository<TEntity> _repository;
+        protected IRepository<TEntity> Repository { get; }
         private readonly IKeyRepository<TEntity, TId> _keyRepository;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -32,7 +32,7 @@ namespace NEXT.Application.Services
             IPaginationServices paginationServices,IUnitOfWork unitOfWork
             ,IKeyRepository<TEntity,TId> keyRepository)
         {
-            _repository = repository;
+            Repository = repository;
             _paginationServices = paginationServices;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
@@ -43,9 +43,9 @@ namespace NEXT.Application.Services
         {
             var entity = _mapper.Map<TEntity>(creationDTO);
 
-            entity.CreatedAt = DateTimeOffset.Now;
+            entity.CreatedAt = DateTimeOffset.UtcNow;
 
-            await _repository.AddAsync(entity);
+            await Repository.AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<TDto>(entity);
@@ -56,7 +56,7 @@ namespace NEXT.Application.Services
         public virtual async Task Delete(TId id)
         {
             var entity = await _keyRepository.GetByIdAsync(id)
-                ?? throw new NotFoundException("The request entity dosen't exits");
+                ?? throw new NotFoundException("The requested entity does not exist.");
 
             await HasActiveRelationsAsync(entity);
 
@@ -66,7 +66,7 @@ namespace NEXT.Application.Services
 
         public virtual async Task<TPaginationQueryModel<TDto>> GetAll(PaginationQuery query)
         {
-            var entities = _repository.GetAllAsync();
+            var entities = Repository.GetAllAsync().OrderBy(entity => entity.Id);
 
             var result = await _paginationServices.GetPaggedList(entities.ProjectToType<TDto>(), query);
 
@@ -77,7 +77,7 @@ namespace NEXT.Application.Services
         {
             var entity = await _keyRepository.GetByIdAsync(id);
             if (entity == null)
-                throw new NotFoundException("The request entity dosen't exits");
+                throw new NotFoundException("The requested entity does not exist.");
 
             var result = _mapper.Map<TDto>(entity);
 
@@ -89,13 +89,13 @@ namespace NEXT.Application.Services
             var entity = await _keyRepository.GetByIdAsync(id);
 
             if (entity == null)
-                throw new NotFoundException("The request entity dosen't exits");
+                throw new NotFoundException("The requested entity does not exist.");
 
             var mappedEntity = _mapper.Map(updateDto, entity);
 
-            mappedEntity.UpdatedAt = DateTimeOffset.Now;
+            mappedEntity.UpdatedAt = DateTimeOffset.UtcNow;
 
-            await _repository.Update(mappedEntity);
+            await Repository.Update(mappedEntity);
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<TDto>(mappedEntity);
@@ -107,12 +107,12 @@ namespace NEXT.Application.Services
             var isExists = await _keyRepository.IsExistsAsync(id);
 
             if (!isExists)
-                throw new NotFoundException("The request entity dosen't exits");
+                throw new NotFoundException("The requested entity does not exist.");
         }
 
         public async Task HasActiveRelationsAsync(TEntity entity)
         {
-            var hasRealation = await _repository.HasActiveRelationsAsync(entity);
+            var hasRealation = await Repository.HasActiveRelationsAsync(entity);
             if (hasRealation)
                 throw new UnprocessableEntityException("Cannot Delete : This Entity has a Realation with Another Entity");
         }

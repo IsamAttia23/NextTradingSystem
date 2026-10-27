@@ -22,7 +22,7 @@ public class PurchaseInvoice : AuditableEntity<Guid>
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
     public string? Notes { get; set; }
-    public byte[] RowVersion { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 
     public ICollection<PurchaseInvoiceItem> Items { get; set; } = new List<PurchaseInvoiceItem>();
 }

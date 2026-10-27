@@ -1,9 +1,9 @@
-﻿using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NEXT.Domain.QueryModels
+namespace NEXT.Application.QueryModels
 {
     public class JournalEntryQueryModel : PaginationQuery
     {

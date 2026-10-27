@@ -1,3 +1,4 @@
+using NEXT.Application.Abstractions.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,12 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
 
-        services.AddIdentityCore<ApplicationUser>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddRoles<Role>()
-            .AddEntityFrameworkStores<NEXTDbContext>();
+        services.AddScoped<NEXT.Application.Abstractions.Services.IPaginationServices, PaginationServices>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -45,14 +41,23 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        // Register only dedicated repository contracts, without a service locator in UnitOfWork.
+        foreach (var implementation in typeof(TRepository<>).Assembly.GetTypes()
+            .Where(type => type.IsClass && !type.IsAbstract && !type.ContainsGenericParameters))
+        {
+            foreach (var contract in implementation.GetInterfaces().Where(contract =>
+                contract.Namespace == "NEXT.Application.Abstractions.Persistence.Repositories"))
+                services.AddScoped(contract, implementation);
+        }
 
         services.AddScoped<AuditEntryFactory>();
         services.AddScoped<AuditFieldsHandler>();
         services.AddScoped<AuditValueSerializer>();
-        services.AddScoped<SaveChangesStatePreserver>();
+
         services.AddScoped<SoftDeleteHandler>();
         services.AddScoped<TrackedChangesProcessor>();
 
+        services.AddScoped(typeof(NEXT.Application.Features.RecycleBin.IRecycleBinService<,>), typeof(NEXT.Infrastructure.Features.RecycleBin.RecycleBinService<,>));
         services.AddNEXTIdentity();
         return services;
     }

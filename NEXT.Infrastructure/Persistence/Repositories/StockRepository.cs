@@ -8,13 +8,13 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class StockRepository(NEXTDbContext context) : KeyRepository<Stock, Guid>(context), IStockRepository
 {
     public Task<Stock?> GetForProductAsync(Guid productId, Guid warehouseId, CancellationToken cancellationToken = default)
-        => context.Stocks.AsNoTracking()
+        => Context.Stocks.AsNoTracking()
         .Include(x => x.Product)
         .Include(x => x.Warehouse)
         .FirstOrDefaultAsync(x => x.ProductId == productId && x.WarehouseId == warehouseId, cancellationToken);
 
     public IQueryable<Stock> GetByWarehouseAsync(Guid warehouseId)
-        => context.Stocks.AsNoTracking()
+        => Context.Stocks.AsNoTracking()
         .Include(x => x.Product)
         .Where(x => x.WarehouseId == warehouseId)
         .OrderBy(x => x.Product.Name).AsQueryable();

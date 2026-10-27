@@ -1,9 +1,9 @@
-﻿namespace NEXT.Domain.Common.QueryModels;
+namespace NEXT.Application.Common.QueryModels;
 
 public class TPaginationQueryModel<TEntity>
     where TEntity : class
 {
-    public IList<TEntity> Data { get; set; }
+    public IList<TEntity> Data { get; set; } = new List<TEntity>();
 
     public int PageNumber { get; set; }
 

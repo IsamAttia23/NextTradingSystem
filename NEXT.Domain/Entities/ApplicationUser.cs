@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Domain.Entities
 {
     public class ApplicationUser : IdentityUser<Guid>, IIsDeletableEntity
     {
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime? LastLogin { get; set; }
         public DateTime? LastInvalidLoginAttempt { get; set; }

@@ -5,6 +5,7 @@ using NEXT.Application.Abstractions.Services;
 using NEXT.Application.DTOs.Security;
 using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
+using NEXT.Application.Validation;
 
 namespace NEXT.Application.Services.Security;
 
@@ -14,14 +15,17 @@ public sealed class PermissionEntityService(
     IMapper mapper,
     IPaginationServices pagination,
     IUnitOfWork unitOfWork,
-    IKeyRepository<Permission, Guid> keyRepository)
+    IKeyRepository<Permission, Guid> keyRepository,
+    IEntityValidator<PermissionCreationDto> creationValidator,
+    IEntityValidator<PermissionUpdateDto> updateValidator)
     : TEntityService<Permission, Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>(
         repository, mapper, pagination, unitOfWork, keyRepository)
 {
     public override async Task<PermissionDto> Add(PermissionCreationDto creationDTO)
     {
+        creationValidator.Validate(creationDTO);
         var code = creationDTO.Code.Trim().ToUpperInvariant();
-        if (await repository.AnyAsync(permission => permission.Code.ToUpper() == code))
+        if (await Repository.AnyAsync(permission => permission.Code.ToUpper() == code))
             throw new AppValidationException(new Dictionary<string, string[]> {
                 [nameof(creationDTO.Code)] = ["This permission code already exists."]
             });
@@ -30,9 +34,9 @@ public sealed class PermissionEntityService(
 
     public override async Task<PermissionDto> Update(Guid id, PermissionUpdateDto updateDto)
     {
-        updateDto.Id = id;
+        updateValidator.Validate(updateDto);
         var code = updateDto.Code.Trim().ToUpperInvariant();
-        if (await repository.AnyAsync(permission => permission.Id != id && permission.Code.ToUpper() == code))
+        if (await Repository.AnyAsync(permission => permission.Id != id && permission.Code.ToUpper() == code))
             throw new AppValidationException(new Dictionary<string, string[]> {
                 [nameof(updateDto.Code)] = ["This permission code already exists."]
             });

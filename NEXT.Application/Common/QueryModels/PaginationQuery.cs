@@ -1,6 +1,6 @@
-﻿using NEXT.Domain.Enums;
+using NEXT.Domain.Enums;
 
-namespace NEXT.Domain.Common.QueryModels;
+namespace NEXT.Application.Common.QueryModels;
 
 public class PaginationQuery
 {

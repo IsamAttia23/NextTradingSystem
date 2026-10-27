@@ -1,4 +1,4 @@
-﻿using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 
 namespace NEXT.Application.Abstractions.Services
 {

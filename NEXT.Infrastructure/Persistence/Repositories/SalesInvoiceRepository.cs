@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Domain.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -11,7 +11,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
 {
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => context.SalesInvoices.AsNoTracking()
+        => Context.SalesInvoices.AsNoTracking()
         .Include(x => x.Customer)
         .Include(x => x.Warehouse)
         .Include(x => x.User)
@@ -23,7 +23,7 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
     {
         ArgumentNullException.ThrowIfNull(queryModel);
 
-        var invoices = context.SalesInvoices
+        var invoices = Context.SalesInvoices
             .AsNoTracking()
             .AsQueryable();
 
@@ -67,7 +67,7 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
             var customerName = queryModel.CustomerName.Trim();
 
             invoices = invoices.Where(
-                x => x.Customer.Name.Contains(customerName));
+                x => x.Customer != null && x.Customer.Name.Contains(customerName));
         }
 
         return invoices;

@@ -1,8 +1,8 @@
-﻿
-using NEXT.Domain.Common.QueryModels;
+
+using NEXT.Application.Common.QueryModels;
 using NEXT.Domain.Enums;
 
-namespace NEXT.Domain.QueryModels;
+namespace NEXT.Application.QueryModels;
 
 public sealed class PurchaseInvoiceQueryModel : PaginationQuery
 {

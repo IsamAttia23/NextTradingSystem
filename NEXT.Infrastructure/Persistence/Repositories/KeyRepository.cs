@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NEXT.Domain.Common.Entities;
 using NEXT.Application.Abstractions.Persistence;
 using System;
@@ -12,23 +12,20 @@ namespace NEXT.Infrastructure.Persistence.Repositories
         where TKey : struct
     {
         private readonly DbSet<TEntity> _set = context.Set<TEntity>();
-        
+
         public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            object?[] keys = id is object?[] compositeKeys ? compositeKeys : [id];
+            object?[] keys = [id];
             return await _set.FindAsync(keys, cancellationToken);
         }
 
-        public virtual async Task DeleteAsync(TEntity entity)
+        public virtual Task DeleteAsync(TEntity entity)
         {
-            if (entity is IsDeletableEntity<TKey> deletableEntity)
-            {
-                deletableEntity.DeletedAt = DateTime.UtcNow;
-
-                _set.Update(entity);
-            }
+            ArgumentNullException.ThrowIfNull(entity);
+            // SaveChanges converts deletions to soft deletes and records the recycle-bin snapshot.
+            _set.Remove(entity);
+            return Task.CompletedTask;
         }
-
         public virtual async Task<bool> IsExistsAsync(TKey id)
         {
             return await _set.AnyAsync(x => x.Id.Equals(id));

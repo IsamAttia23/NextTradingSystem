@@ -15,7 +15,7 @@ public sealed class SoftDeleteHandler(AuditValueSerializer valueSerializer)
         DateTimeOffset now,
         Guid? userId)
     {
-        if (entry.State != EntityState.Deleted)
+        if (entry.State != EntityState.Deleted || context.IsPermanentDeletion(entry.Entity))
             return false;
 
         var snapshot = valueSerializer.Serialize(entry, originalValues: true);

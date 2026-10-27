@@ -19,5 +19,5 @@ public class Payment : AuditableEntity<Guid>
     public PaymentMethod PaymentMethod { get; set; }
     public DateOnly PaymentDate { get; set; }
     public string? Notes { get; set; }
-    public byte[] RowVersion { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 }

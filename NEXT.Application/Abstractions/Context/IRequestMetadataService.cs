@@ -1,4 +1,4 @@
-namespace NEXT.Infrastructure.Services;
+namespace NEXT.Application.Abstractions.Context;
 
 public interface IRequestMetadataService
 {

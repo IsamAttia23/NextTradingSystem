@@ -15,7 +15,7 @@ public class PurchaseOrder : AuditableEntity<Guid>
     public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.Draft;
     public decimal TotalAmount { get; set; }
     public string? Notes { get; set; }
-    public byte[] RowVersion { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 
     public ICollection<PurchaseOrderItem> Items { get; set; } = new List<PurchaseOrderItem>();
 }

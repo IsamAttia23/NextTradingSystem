@@ -9,6 +9,7 @@ public static class IdentityOptionsSetup
 {
     public static IdentityBuilder AddNEXTIdentity(this IServiceCollection services)
     {
+        services.AddDataProtection();
         return services.AddIdentityCore<ApplicationUser>(options =>
         {
             options.User.RequireUniqueEmail = true;

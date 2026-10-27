@@ -1,9 +1,9 @@
-﻿using NEXT.Domain.Common.QueryModels;
+using NEXT.Application.Common.QueryModels;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NEXT.Domain.Queries
+namespace NEXT.Application.QueryModels
 
 {
     public sealed class AuditLogQueryModel : PaginationQuery
