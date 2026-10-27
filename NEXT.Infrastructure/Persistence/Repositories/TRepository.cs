@@ -24,7 +24,9 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         if (keyValues.Length == 0)
             throw new ArgumentException("At least one key value is required.", nameof(keyValues));
 
-        return await _set.FindAsync(keyValues, cancellationToken);
+        var entity = await _set.FindAsync(keyValues, cancellationToken);
+        // FindAsync can return a tracked instance without executing the soft-delete query filter.
+        return entity is IIsDeletableEntity { DeletedAt: not null } ? null : entity;
     }
 
     public IQueryable<TEntity> GetAllAsync(CancellationToken cancellationToken = default)

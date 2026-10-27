@@ -11,6 +11,9 @@ using NEXT.Application.Features.ApplicationUsers.Mapping;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.DTOs.Security;
 using NEXT.Application.Services.Security;
+using NEXT.Application.Features.Common.CQRS;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Application;
 
@@ -25,7 +28,31 @@ public static class EntityServiceRegistrationExtensions
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
 
-        services.AddScoped<IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>, PermissionEntityService>();
+        services.AddEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto, PermissionEntityService>();
+        return services;
+    }
+
+    /// <summary>Registers a service and its five closed generic request handlers together.</summary>
+    public static IServiceCollection AddEntityServices<TId, TDto, TCreationDto, TUpdateDto, TService>(
+        this IServiceCollection services)
+        where TId : struct
+        where TDto : class, TIdType<TId>
+        where TCreationDto : class
+        where TUpdateDto : class, TIdType<TId>
+        where TService : class, IEntityServices<TId, TDto, TCreationDto, TUpdateDto>
+    {
+        services.TryAddScoped<IEntityServices<TId, TDto, TCreationDto, TUpdateDto>, TService>();
+        // Assembly scanning does not close these four-parameter generic handler types.
+        services.TryAddScoped<IRequestHandler<CreateEntityCommand<TId, TDto, TCreationDto, TUpdateDto>, TDto>,
+            CreateEntityCommandHandler<TId, TDto, TCreationDto, TUpdateDto>>();
+        services.TryAddScoped<IRequestHandler<UpdateEntityCommand<TId, TDto, TCreationDto, TUpdateDto>, TDto>,
+            UpdateEntityCommandHandler<TId, TDto, TCreationDto, TUpdateDto>>();
+        services.TryAddScoped<IRequestHandler<DeleteEntityCommand<TId, TDto, TCreationDto, TUpdateDto>>,
+            DeleteEntityCommandHandler<TId, TDto, TCreationDto, TUpdateDto>>();
+        services.TryAddScoped<IRequestHandler<GetEntityByIdQuery<TId, TDto, TCreationDto, TUpdateDto>, TDto?>,
+            GetEntityByIdQueryHandler<TId, TDto, TCreationDto, TUpdateDto>>();
+        services.TryAddScoped<IRequestHandler<GetEntitiesQuery<TId, TDto, TCreationDto, TUpdateDto>, TPaginationQueryModel<TDto>>,
+            GetEntitiesQueryHandler<TId, TDto, TCreationDto, TUpdateDto>>();
         return services;
     }
 }
