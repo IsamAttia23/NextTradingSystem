@@ -1,3 +1,4 @@
+using NEXT.web.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Abstractions.IServices;
@@ -10,7 +11,7 @@ using NEXT.web.Models;
 namespace NEXT.web.Controllers;
 
 public sealed class AssignmentsController(ISender sender,
-    IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto> permissions) : WorkspaceController
+    PermissionOptionsProvider permissionOptions) : WorkspaceController
 {
     public async Task<IActionResult> Index(CancellationToken ct)
     {
@@ -22,16 +23,7 @@ public sealed class AssignmentsController(ISender sender,
     [HttpGet] public async Task<IActionResult> Create(CancellationToken ct)
     {
         var roles = await sender.Send(new GetRolesQuery(), ct);
-        List<FieldOption> options = [];
-        // Read all pages so permission choices are never silently truncated at 50.
-        var page = 1;
-        TPaginationQueryModel<PermissionDto> result;
-        do
-        {
-            result = await permissions.GetAll(new PaginationQuery { PageNumber = page++, PageSize = 50 });
-            options.AddRange(result.Data.Select(x => new FieldOption(x.Id.ToString(), x.Module + " / " + x.Code)));
-            ct.ThrowIfCancellationRequested();
-        } while (page <= result.TotalPages);
+        var options = await permissionOptions.GetAsync(ct);
         return Form(new("AssignPermission", Route("Create"),
             [new("RoleId", "Role", Type: "select", Required: true, Options: roles.Select(x => new FieldOption(x.Id.ToString(), x.Name ?? "")).ToArray()),
              new("PermissionId", "Permissions", Type: "select", Required: true, Options: options)]));
