@@ -59,11 +59,21 @@ public class ArchitectureAndRegressionTests
         await Assert.ThrowsAsync<AppValidationException>(() => mediator.Send(request));
     }
 
+    private sealed class TestHostEnvironment : Microsoft.Extensions.Hosting.IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = "Production";
+        public string ApplicationName { get; set; } = "NEXT.Tests";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+    }
+
     private static ServiceProvider CreateProvider()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         { ["ConnectionStrings:NEXTDatabase"] = "Host=localhost;Database=next_tests;Username=test;Password=test" }).Build();
         var services = new ServiceCollection().AddLogging();
+        services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
+        services.AddSingleton<Microsoft.Extensions.Hosting.IHostEnvironment>(new TestHostEnvironment());
         services.AddAuthentication(Microsoft.AspNetCore.Identity.IdentityConstants.ApplicationScheme).AddIdentityCookies();
         services.AddApplicationServices(configuration);
         services.AddInfrastructureServices(configuration);

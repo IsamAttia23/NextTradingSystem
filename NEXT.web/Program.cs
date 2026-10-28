@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using NEXT.web.Middleware;
 using NEXT.Application;
 using NEXT.Infrastructure;
+using NEXT.web;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -16,10 +18,16 @@ services.AddAuthentication(options =>
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 }).AddIdentityCookies();
 
-builder.Services.AddControllersWithViews();
+services.AddPresentation(configuration);
+if (builder.Environment.IsDevelopment() && configuration.GetValue<bool>("DevelopmentAccess:EphemeralKeys"))
+    services.AddDataProtection().UseEphemeralDataProtectionProvider();
 
 var app = builder.Build();
+await using (var scope = app.Services.CreateAsyncScope())
+    await scope.ServiceProvider.GetRequiredService<NEXT.Infrastructure.Identity.TemporaryAdministratorBootstrapper>().InitializeAsync();
+app.UseStatusCodePagesWithReExecute("/Status/{0}");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseRequestLocalization();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

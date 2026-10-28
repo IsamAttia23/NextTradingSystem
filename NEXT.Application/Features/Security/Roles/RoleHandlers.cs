@@ -35,6 +35,8 @@ public sealed class UpdateRoleHandler(
         validator.Validate(request.Data);
         var role = await roles.FindByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"Role '{request.Id}' was not found.");
+        if (role.IsSystem && !string.Equals(role.Name, request.Data.Name, StringComparison.Ordinal))
+            throw new UnprocessableEntityException("System roles cannot be renamed.");
         if (await roles.NameExistsAsync(request.Data.Name, request.Id, cancellationToken))
             throw new AppValidationException(new Dictionary<string, string[]> { [nameof(request.Data.Name)] = ["This role name already exists."] });
         request.Data.Adapt(role);

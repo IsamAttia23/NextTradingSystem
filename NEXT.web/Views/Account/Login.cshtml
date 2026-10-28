@@ -1,0 +1,15 @@
+@model LoginInput
+@{ ViewData["Title"] = L["Login"]; }
+<section class="login-grid">
+    <div class="login-intro"><span class="eyebrow">NEXT / @L["TradingSystem"]</span><h1>@L["WelcomeHeadline"]</h1><p>@L["WelcomeDescription"]</p><div class="connection-art" aria-hidden="true"><i></i><i></i><i></i><i></i><span>N</span></div></div>
+    <section class="content-card login-card"><span class="eyebrow">@L["Welcome"]</span><h2>@L["Login"]</h2><p>@L["LoginDescription"]</p>
+    <form asp-action="Login" method="post">
+        <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+        <input asp-for="ReturnUrl" type="hidden" />
+        <div class="mb-3"><label asp-for="UserName" class="form-label">@L["UserName"]</label><input asp-for="UserName" class="form-control" autocomplete="username" required /></div>
+        <div class="mb-3"><label asp-for="Password" class="form-label">@L["Password"]</label><input asp-for="Password" type="password" class="form-control" autocomplete="current-password" required /></div>
+        <div class="form-check mb-4"><input asp-for="RememberMe" class="form-check-input" /><label asp-for="RememberMe" class="form-check-label">@L["RememberMe"]</label></div>
+        <button class="btn btn-primary w-100" type="submit">@L["Login"]</button>
+    </form>
+    <p class="login-note">@L["LoginNote"]</p></section>
+</section>

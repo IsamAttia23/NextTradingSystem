@@ -1,0 +1,3 @@
+@model int
+@{ ViewData["Title"] = L["RequestFailed"]; }
+<section class="content-card empty-state"><span class="eyebrow">NEXT / @Model</span><h1>@L["RequestFailed"]</h1><p>@L["ErrorDetail"]</p><a asp-controller="Home" asp-action="Index" class="btn btn-primary">@L["Dashboard"]</a></section>

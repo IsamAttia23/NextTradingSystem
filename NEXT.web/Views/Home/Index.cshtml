@@ -1,8 +1,22 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model DashboardModel
+@{ ViewData["Title"] = L["Dashboard"]; }
+<section class="page-heading"><div><span class="eyebrow">@L["Workspace"]</span><h1>@L["Overview"]</h1><p>@L["OverviewDescription"]</p></div><span class="date-chip">@DateTime.Now.ToString("dddd، dd MMMM yyyy")</span></section>
+<section class="welcome-banner">
+    <div><span class="banner-kicker">NEXT / @L["TradingSystem"]</span><h2>@L["WelcomeHeadline"]</h2><p>@L["WelcomeDescription"]</p><a asp-controller="Users" asp-action="Index" class="btn btn-accent">@L["ManageUsers"] <span aria-hidden="true">↗</span></a></div>
+    <div class="connection-art" aria-hidden="true"><i></i><i></i><i></i><i></i><span>N</span></div>
+</section>
+<div class="stats-grid">
+@foreach (var stat in new[] { ("Users", Model.Users, "users"), ("ActiveUsers", Model.ActiveUsers, "check"), ("Roles", Model.Roles, "shield"), ("Permissions", Model.Permissions, "key") })
+{
+    <article class="stat-card"><div><span>@L[stat.Item1]</span><span class="stat-icon" aria-hidden="true"><partial name="_Icon" model="stat.Item3" /></span></div><strong>@stat.Item2.ToString("N0")</strong><small>@L["CurrentRecords"]</small></article>
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+<div class="dashboard-grid">
+<section class="content-card quick-access"><div class="card-heading"><h2>@L["QuickAccess"]</h2><span>@L["DailyWork"]</span></div>
+@foreach (var item in new[] { ("Users", "Users", "UsersDescription", "users"), ("Roles", "Roles", "RolesDescription", "shield"), ("Permissions", "Permissions", "PermissionsDescription", "key"), ("Assignments", "Assignments", "AssignmentsDescription", "link") })
+{
+    <a class="service-link" asp-controller="@item.Item1" asp-action="Index"><span class="service-icon" aria-hidden="true"><partial name="_Icon" model="item.Item4" /></span><div><strong>@L[item.Item2]</strong><small>@L[item.Item3]</small></div><span class="service-arrow" aria-hidden="true">↗</span></a>
+}
+</section>
+<section class="content-card security-card"><span class="eyebrow">@L["AccessControl"]</span><h2>@L["ConnectedPermissions"]</h2><div class="access-count">@Model.Assignments<span>@L["Assignments"]</span></div><p>@L["AccessDescription"]</p><a asp-controller="Assignments" asp-action="Index" class="btn btn-outline-primary">@L["ReviewAssignments"]</a><div class="security-tip"><partial name="_Icon" model='@("shield")' /><p>@L["SecurityTip"]</p></div></section>
 </div>

@@ -1,0 +1,41 @@
+@model TableModel
+@{ ViewData["Title"] = L[Model.Title]; }
+<section class="page-heading">
+    <div><span class="eyebrow">@L["Administration"]</span><h1>@L[Model.Title]</h1><p>@L[Model.Description]</p></div>
+    @if (Model.Create is not null) { <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><span aria-hidden="true">＋</span> @L[Model.Create.Label]</button> }
+</section>
+@if (ViewData["Sections"] is string[] sections)
+{
+    <nav class="section-tabs" aria-label="@L["RecycleBin"]">
+    @foreach (var category in sections) { <a asp-action="Index" asp-route-section="@category" class="@(ViewData["Section"]?.ToString() == category ? "selected" : "")">@L[category]</a> }
+    </nav>
+}
+<section class="content-card">
+    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div><label class="search-box"><span aria-hidden="true">⌕</span><input type="search" data-table-search placeholder="@L["SearchPage"]" aria-label="@L["SearchPage"]" /></label></div>
+    <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]"><table class="table align-middle"><caption class="visually-hidden">@L[Model.Title]</caption>
+        <thead><tr>@foreach (var column in Model.Columns) { <th scope="col">@L[column]</th> }<th scope="col" class="actions-column">@L["Actions"]</th></tr></thead>
+        <tbody>
+        @foreach (var row in Model.Rows)
+        {
+            <tr data-record>
+            @for (var i = 0; i < row.Cells.Count; i++)
+            {
+                <td>@if (Model.Columns[i] is "Status" or "Type") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }</td>
+            }
+            <td class="actions-column">@foreach (var action in row.Actions) { <button class="btn btn-sm @(action.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@action.Url">@L[action.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button> }</td>
+            </tr>
+        }
+        </tbody>
+    </table></div>
+    <div class="empty-state" data-empty hidden="@(Model.Rows.Count != 0)"><span class="empty-icon" aria-hidden="true">◇</span><h2>@L["NoRecords"]</h2><p>@L["NoRecordsDetail"]</p></div>
+    <div class="table-footer"><span>@L["Records"]: @Model.TotalCount</span>
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pagination-controls" aria-label="@L["Pages"]">
+                @if (Model.Page > 1) { <a class="btn btn-light btn-sm" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-section="@ViewData["Section"]">@L["Previous"]</a> }
+                <span>@Model.Page / @Model.TotalPages</span>
+                @if (Model.Page < Model.TotalPages) { <a class="btn btn-light btn-sm" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-section="@ViewData["Section"]">@L["Next"]</a> }
+            </nav>
+        }
+    </div>
+</section>

@@ -1,50 +1,77 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var rtl = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+    var current = ViewContext.RouteData.Values["controller"]?.ToString();
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var authenticationPage = current == "Account" && ViewContext.RouteData.Values["action"]?.ToString() is "Login" or "Verify";
+    var navigation = new[] { ("Home", "Dashboard", "home"), ("Users", "Users", "users"), ("Roles", "Roles", "shield"), ("Permissions", "Permissions", "key"), ("Assignments", "Assignments", "link"), ("RecycleBin", "RecycleBin", "trash") };
+}
+<!DOCTYPE html>
+<html lang="@(rtl ? "ar" : "en")" dir="@(rtl ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - NEXT.web</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <meta name="theme-color" content="#153d97" />
+    <link rel="icon" type="image/svg+xml" href="~/logo.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="~/pwa/icon-192.png" />
+    <link rel="apple-touch-icon" href="~/pwa/apple-touch-icon.png" />
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <title>@ViewData["Title"] · NEXT</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/@(rtl ? "bootstrap.rtl.min.css" : "bootstrap.min.css")" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/NEXT.web.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">NEXT.web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+<body class="@(authenticationPage ? "authentication-page" : "")">
+<a class="skip-link" href="#main">@L["SkipContent"]</a>
+<div class="app-shell">
+    @if (!authenticationPage)
+    {
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" asp-controller="Home" asp-action="Index"><img class="brand-logo" src="~/logo.svg" alt="" /><span>NEXT<small>@L["TradingSystem"]</small></span></a>
+        <div class="workspace-label">@L["Workspace"]</div>
+        <nav aria-label="@L["Navigation"]">
+        @foreach (var item in navigation)
+        {
+            <a asp-controller="@item.Item1" asp-action="Index" class="nav-item @(current == item.Item1 ? "selected" : "")" aria-current="@(current == item.Item1 ? "page" : null)">
+                <partial name="_Icon" model="item.Item3" /><span>@L[item.Item2]</span>
+            </a>
+        }
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        <div class="sidebar-note"><span class="live-dot"></span>@L["WorkspaceNote"]<small>@L["WorkspaceNoteDetail"]</small></div>
+        <div class="sidebar-bottom"><span class="avatar">N</span><div><strong>@(signedIn ? User.Identity!.Name : L["Welcome"].Value)</strong><small>@L["Administration"]</small></div></div>
+    </aside>
+    }
+    <div class="main-shell">
+        <header class="topbar">
+            @if (!authenticationPage) { <button type="button" class="btn btn-light mobile-menu" data-bs-toggle="offcanvas" data-bs-target="#mobileNavigation" aria-controls="mobileNavigation" aria-label="@L["Navigation"]"><partial name="_Icon" model='@("menu")' /></button> }
+            <div class="breadcrumb-label">NEXT <span>/</span> @L["Administration"] <span>/</span> <strong>@ViewData["Title"]</strong></div>
+            <div class="topbar-actions"><button type="button" class="btn btn-sm btn-outline-primary" id="install-app" hidden><partial name="_Icon" model='@("download")' /> @L["InstallApp"]</button>
+                <form asp-controller="Culture" asp-action="Set" method="post">
+                    <input type="hidden" name="culture" value="@(rtl ? "en" : "ar")" />
+                    <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                    <button class="language-button" lang="@(rtl ? "en" : "ar")" type="submit"><partial name="_Icon" model='@("globe")' /> &nbsp; @(rtl ? "English" : "العربية")</button>
+                </form>
+                @if (signedIn) { <form asp-controller="Account" asp-action="Logout" method="post"><button class="btn btn-sm btn-outline-secondary">@L["Logout"]</button></form> }
+                @if (signedIn) { @await Component.InvokeAsync("HeaderProfile") }
+            </div>
+        </header>
+        <main id="main" tabindex="-1">@RenderBody()</main>
+        <footer><span>© @DateTime.UtcNow.Year NEXT</span><span>@L["Footer"]</span></footer>
     </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - NEXT.web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+</div>
+@if (!authenticationPage)
+{
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileTitle">
+    <div class="offcanvas-header"><h2 id="mobileTitle">NEXT</h2><button class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Close"]"></button></div>
+    <div class="offcanvas-body"><nav>
+    @foreach (var item in navigation) { <a class="nav-item" asp-controller="@item.Item1" asp-action="Index"><partial name="_Icon" model="item.Item3" />@L[item.Item2]</a> }
+    </nav></div>
+</div>
+}
+<partial name="_Modal" />
+<partial name="_Notifications" />
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/notifications.js" asp-append-version="true" defer></script>
+<script src="~/js/pwa.js" asp-append-version="true" defer></script>
+<script src="~/js/site.js" asp-append-version="true" defer></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
