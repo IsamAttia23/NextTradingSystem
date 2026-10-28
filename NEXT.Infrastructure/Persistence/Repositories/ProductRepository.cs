@@ -27,7 +27,7 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
         products = ApplyTaxFilters(products, queryModel);
         products = ApplyStockFilters(products, queryModel);
         products = ApplyStatusFilters(products, queryModel);
-        products = ApplySorting(products, queryModel.SortBy, queryModel.SortDirection);
+        products = ApplySorting(products, queryModel.SortBy, queryModel.SortDirection ?? SortDirection.Ascending);
 
         return products;
     }

@@ -25,6 +25,7 @@ public sealed class RecycleBinService<TEntity, TKey>(
             {
                 EntityType = typeof(TEntity).Name,
                 EntityId = x.Id,
+                DeletionReason = x.DeletionReason,
                 DeletedOn = x.DeletedAt!.Value
             });
         return pagination.GetPaggedList(deleted, query);

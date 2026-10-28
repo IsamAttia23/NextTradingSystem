@@ -16,6 +16,9 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     protected NEXTDbContext Context { get; } = context;
     private readonly DbSet<TEntity> _set = context.Set<TEntity>();
 
+    public Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        => _set.FirstOrDefaultAsync(predicate, cancellationToken);
+
     public IQueryable<TEntity> Query(bool asNoTracking = true) => asNoTracking ? _set.AsNoTracking() : _set;
 
     public async Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default)

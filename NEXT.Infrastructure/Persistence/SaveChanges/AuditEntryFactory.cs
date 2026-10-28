@@ -12,7 +12,7 @@ namespace NEXT.Infrastructure.Persistence.SaveChanges;
 public sealed class AuditEntryFactory(
     ICurrentUserService currentUserService,
     IRequestMetadataService requestMetadataService,
-    AuditValueSerializer valueSerializer)
+    AuditValueSerializer valueSerializer, IDeletionAuditContext? deletionAudit = null)
 {
     internal int AddAuditRows(NEXTDbContext context, IEnumerable<PendingAuditEntry> pendingEntries)
     {
@@ -27,9 +27,7 @@ public sealed class AuditEntryFactory(
                 EntityType = pending.Entry.Metadata.ClrType.Name,
                 EntityId = TryGetEntityId(pending.Entry),
                 OldValuesJson = pending.OldValuesJson,
-                NewValuesJson = pending.Action == AuditAction.Purge
-                    ? null
-                    : valueSerializer.Serialize(pending.Entry, originalValues: false),
+                NewValuesJson = Values(pending),
                 IpAddress = requestMetadataService.IpAddress,
                 UserAgent = requestMetadataService.UserAgent,
                 CreatedAt = DateTimeOffset.UtcNow
@@ -41,6 +39,14 @@ public sealed class AuditEntryFactory(
         return count;
     }
 
+    private string? Values(PendingAuditEntry pending)
+    {
+        var json = pending.Action == AuditAction.Purge ? null : valueSerializer.Serialize(pending.Entry, originalValues: false);
+        if (pending.Action is not (AuditAction.Delete or AuditAction.Purge) || deletionAudit?.Reason is not {} reason) return json;
+        var values = json is null ? new System.Text.Json.Nodes.JsonObject() : System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
+        values["DeletionReason"] = reason;
+        return values.ToJsonString();
+    }
     private static Guid? TryGetEntityId(EntityEntry entry)
     {
         var primaryKey = entry.Metadata.FindPrimaryKey();

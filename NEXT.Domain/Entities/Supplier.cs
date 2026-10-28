@@ -3,9 +3,10 @@ using NEXT.Domain.Enums;
 
 namespace NEXT.Domain.Entities;
 
-public class Supplier : IsDeletableEntity<Guid>
+public class Supplier : IsDeletableEntity<Guid>, IHasProfileImage
 {
     public string? Code { get; set; }
+    public byte[]? AvatarUrl { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? TaxNumber { get; set; }
     public string? Phone { get; set; }

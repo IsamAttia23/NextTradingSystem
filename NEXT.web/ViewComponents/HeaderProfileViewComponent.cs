@@ -2,7 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Features.ApplicationUsers.Queries;
-using NEXT.web.Models;
+using NEXT.Application.DTOs.Presentation;
 
 namespace NEXT.web.ViewComponents;
 

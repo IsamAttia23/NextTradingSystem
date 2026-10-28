@@ -1,13 +1,11 @@
+using NEXT.Application.Common.QueryModels;
 
 using NEXT.Domain.Enums;
 
 namespace NEXT.Application.QueryModels;
 
-public sealed class ProductQueryModel
+public sealed class ProductQueryModel : PaginationQuery
 {
-    // General search
-    public string? SearchTerm { get; set; }
-
     // Product filters
     public string? Barcode { get; set; }
     public string? Name { get; set; }
@@ -45,12 +43,4 @@ public sealed class ProductQueryModel
     public bool? IsActive { get; set; }
     public bool? HasExpiry { get; set; }
 
-    // Sorting
-    public string? SortBy { get; set; }
-    public SortDirection SortDirection { get; set; }
-        = SortDirection.Ascending;
-
-    // Pagination
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
 }

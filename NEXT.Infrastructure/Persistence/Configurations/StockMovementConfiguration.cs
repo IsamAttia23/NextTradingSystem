@@ -9,6 +9,8 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
     public void Configure(EntityTypeBuilder<StockMovement> builder)
     {
         builder.ToTable("StockMovements");
+        builder.HasIndex(x => new { x.ReferenceId, x.Type })
+            .IsUnique().HasFilter("\"ReferenceType\" IN ('Receipt', 'Transfer')");
         builder.HasOne(x => x.Product).WithMany(x => x.StockMovements)
                     .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Warehouse).WithMany(x => x.StockMovements)

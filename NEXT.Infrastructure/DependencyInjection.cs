@@ -30,7 +30,10 @@ public static class DependencyInjection
 
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
+        services.AddScoped<IAccountAccess, AccountAccess>();
+        services.AddScoped<IUserDeletionPolicy, UserDeletionPolicy>();
         services.AddScoped<TemporaryAdministratorBootstrapper>();
+        services.AddScoped<IApplicationInitializer>(sp => sp.GetRequiredService<TemporaryAdministratorBootstrapper>());
         services.AddScoped<IUserCommandService, UserCommandService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.Queries.IBranchLookup, BranchLookup>();
@@ -45,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IRelatedRecordsReader, RelatedRecordsReader>();
         // Register only dedicated repository contracts, without a service locator in UnitOfWork.
         foreach (var implementation in typeof(TRepository<>).Assembly.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract && !type.ContainsGenericParameters))

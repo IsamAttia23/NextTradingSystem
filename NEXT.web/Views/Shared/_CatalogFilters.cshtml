@@ -1,0 +1,30 @@
+@model TableModel
+<details class="filter-disclosure" data-filter-panel>
+    <summary class="btn filter-toggle"><partial name="_Icon" model='@("filter")' /><span>@L["Filters"]</span>@if (Model.ActiveFilters > 0) { <span class="filter-count">@Model.ActiveFilters</span> }<span class="filter-chevron" aria-hidden="true">⌄</span></summary>
+    <div class="filter-panel-body">
+        <div class="filter-panel-heading"><div><strong>@L["RefineResults"]</strong><small>@L["EntityFiltersHint"]</small></div><a href="@Context.Request.Path" class="filter-reset">@L["ResetFilters"]</a></div>
+        <form method="get" action="@Context.Request.Path" class="catalog-filters" role="search">
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
+            @foreach (var field in Model.FilterFields ?? [])
+            {
+                var fieldId = "query-" + field.Name;
+                <div class="filter-field @(field.Type == "search" ? "filter-search" : "")"><label for="@fieldId">@L[field.Label]</label>
+                @if (field.Type == "select")
+                {
+                    <select class="form-select" id="@fieldId" name="@field.Name"><option value="">@L["AllValues"]</option>@foreach (var option in field.Options ?? []) { <option value="@option.Value" selected="@(field.Value == option.Value)">@L[option.Label]</option> }</select>
+                }
+                else
+                {
+                    <input class="form-control" id="@fieldId" name="@field.Name" type="@field.Type" value="@field.Value" step="@(field.Type == "number" ? "any" : null)" maxlength="@field.MaxLength" placeholder="@(field.Type == "search" ? L["SearchAllHint"].Value : null)" />
+                }
+                </div>
+            }
+            @if (Model.SortOptions is {Count: > 0})
+            {
+                <div class="filter-field"><label for="query-SortBy">@L["SortBy"]</label><select class="form-select" id="query-SortBy" name="SortBy">@foreach (var option in Model.SortOptions) { <option value="@option.Value" selected="@((Model.Query?.SortBy ?? "Name") == option.Value)">@L[option.Label]</option> }</select></div>
+                <div class="filter-field"><label for="query-SortDirection">@L["SortDirection"]</label><select class="form-select" id="query-SortDirection" name="SortDirection"><option value="Ascending" selected="@(Model.Query?.SortDirection?.ToString() != "Descending")">@L["Ascending"]</option><option value="Descending" selected="@(Model.Query?.SortDirection?.ToString() == "Descending")">@L["Descending"]</option></select></div>
+            }
+            <div class="filter-actions"><button class="btn btn-primary" type="submit"><partial name="_Icon" model='@("check")' /> @L["ApplyFilters"]</button></div>
+        </form>
+    </div>
+</details>

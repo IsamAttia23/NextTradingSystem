@@ -6,6 +6,7 @@
     @foreach (var field in Model.Fields)
     {
         var id = "field-" + field.Name.Replace(".", "-");
+        if (field.Type == "hidden") { <input type="hidden" name="@field.Name" value="@field.Value" /> continue; }
         <div class="mb-3">
         @if (field.Type == "checkbox")
         {
@@ -18,7 +19,7 @@
             {
                 <select class="form-select" id="@id" name="@field.Name" required="@field.Required">
                     <option value="">@L["Choose"]</option>
-                    @foreach (var option in field.Options ?? []) { <option value="@option.Value" selected="@(field.Value == option.Value)">@option.Label</option> }
+                    @foreach (var option in field.Options ?? []) { <option value="@option.Value" selected="@(field.Value == option.Value)">@L[option.Label]</option> }
                 </select>
             }
             else if (field.Type == "file")
@@ -31,7 +32,7 @@
             }
             else
             {
-                <input class="form-control" id="@id" name="@field.Name" type="@field.Type" value="@field.Value" required="@field.Required" maxlength="@field.MaxLength"
+                <input class="form-control" id="@id" name="@field.Name" type="@field.Type" step="@(field.Type == "number" ? "any" : null)" value="@field.Value" required="@field.Required" maxlength="@field.MaxLength"
                        minlength="@(field.Type == "password" ? 10 : (int?)null)" autocomplete="@(field.Type == "password" ? "new-password" : "off")" />
             }
         }

@@ -19,7 +19,7 @@ public sealed record UpdateEntityCommand<TId, TDto, TCreationDto, TUpdateDto>(TI
     where TCreationDto : class
     where TUpdateDto : class, TIdType<TId>;
 
-public sealed record DeleteEntityCommand<TId, TDto, TCreationDto, TUpdateDto>(TId Id)
+public sealed record DeleteEntityCommand<TId, TDto, TCreationDto, TUpdateDto>(TId Id, string? Reason = null)
     : IRequest
     where TId : struct
     where TDto : class, TIdType<TId>

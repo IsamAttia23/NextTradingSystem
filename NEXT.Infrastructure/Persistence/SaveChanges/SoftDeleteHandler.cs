@@ -51,6 +51,7 @@ public sealed class SoftDeleteHandler(AuditValueSerializer valueSerializer)
             EntityId = entityId,
             EntityDataJson = snapshot,
             DeletedBy = userId,
+            DeleteReason = (entry.Entity as IIsDeletableEntity)?.DeletionReason,
             DeletedAt = now
         });
 

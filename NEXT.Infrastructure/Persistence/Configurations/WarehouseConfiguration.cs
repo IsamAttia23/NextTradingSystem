@@ -14,6 +14,8 @@ public sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(x => x.Name).HasMaxLength(150).IsRequired();
         builder.Property(x => x.Code).HasMaxLength(30).IsRequired();
         builder.HasIndex(x => x.Code).IsUnique();
+        builder.HasIndex(x => x.IsDefault).IsUnique()
+            .HasFilter("\"IsDefault\" = TRUE AND \"DeletedAt\" IS NULL");
         builder.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

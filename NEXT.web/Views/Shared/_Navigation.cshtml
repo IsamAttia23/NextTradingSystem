@@ -1,0 +1,16 @@
+@{ var current = ViewContext.RouteData.Values["controller"]?.ToString(); var action = ViewContext.RouteData.Values["action"]?.ToString(); }
+<nav class="grouped-navigation" aria-label="@L["Navigation"]">
+@foreach (var group in NEXT.web.Services.NavigationCatalog.Groups)
+{
+    <section class="nav-group" aria-label="@L[group.Title]">
+        <h2 class="nav-group-title">@L[group.Title]</h2>
+        @foreach (var item in group.Items)
+        {
+            var selected = current == item.Controller && (item.Controller != "Inventory" || action == item.Action);
+            <a asp-controller="@item.Controller" asp-action="@item.Action" class="nav-item @(selected ? "selected" : "")" aria-current="@(selected ? "page" : null)">
+                <partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Title)" /><span>@L[item.Title]</span>
+            </a>
+        }
+    </section>
+}
+</nav>

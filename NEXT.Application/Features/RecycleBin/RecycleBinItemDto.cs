@@ -6,6 +6,7 @@ namespace NEXT.Application.Features.RecycleBin
     {
         public string EntityType { get; set; } = string.Empty;
         public TKey EntityId { get; set; }
+        public string? DeletionReason { get; set; }
         public DateTimeOffset DeletedOn { get; set; }
     }
 }

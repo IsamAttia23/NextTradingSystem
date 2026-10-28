@@ -32,7 +32,7 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
 
     private static IQueryable<StockMovement> ApplyProductFilter(IQueryable<StockMovement> query, StockMovementQueryModel queryModel)
     {
-        return query.Where(x => x.ProductId == queryModel.ProductId);
+        return queryModel.ProductId.HasValue ? query.Where(x => x.ProductId == queryModel.ProductId.Value) : query;
     }
 
     private static IQueryable<StockMovement> ApplyWarehouseFilter(IQueryable<StockMovement> query, StockMovementQueryModel queryModel)

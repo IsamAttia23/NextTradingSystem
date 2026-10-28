@@ -1,6 +1,6 @@
 <div class="modal fade" id="workspaceModal" tabindex="-1" aria-labelledby="modalTitle"
      data-error="@L["RequestFailed"]" data-expired="@L["SessionExpired"]" data-forbidden="@L["Denied"]"
-     data-validation="@L["ValidationFailed"]" data-conflict="@L["Conflict"]" data-success="@L["Saved"]" data-loading="@L["Loading"]">
+     data-validation="@L["ValidationFailed"]" data-conflict="@L["Conflict"]" data-success="@L["Saved"]" data-login-url="@Url.Action("Login", "Account")" data-refresh-error="@L["RefreshAfterSaveFailed"]" data-loading="@L["Loading"]">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
         <div class="modal-header"><h2 class="modal-title fs-5" id="modalTitle">@L["Loading"]</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button></div>
         <div id="modalBody" class="modal-body"></div>

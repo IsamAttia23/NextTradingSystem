@@ -10,7 +10,7 @@ namespace NEXT.Infrastructure.Identity;
 
 /// <summary>Explicit, Development-only bootstrap. Credentials are supplied outside source control.</summary>
 public sealed class TemporaryAdministratorBootstrapper(NEXTDbContext db, UserManager<ApplicationUser> users,
-    RoleManager<Role> roles, IHostEnvironment environment, IConfiguration configuration)
+    RoleManager<Role> roles, IHostEnvironment environment, IConfiguration configuration) : NEXT.Application.Abstractions.Context.IApplicationInitializer
 {
     public async Task InitializeAsync(CancellationToken ct = default)
     {

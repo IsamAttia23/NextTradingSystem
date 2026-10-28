@@ -20,7 +20,7 @@ public sealed record UserCreationDto
     /// <summary>Optional profile image content. The current model stores image bytes.</summary>
     public byte[]? AvatarUrl { get; init; }
 
-    [Required, MinLength(8)]
+    [Required, MinLength(10), StringLength(128)]
     public string Password { get; init; } = string.Empty;
 
     public bool IsActive { get; init; } = true;

@@ -11,7 +11,7 @@ namespace NEXT.Infrastructure.Persistence
 {
     public class PaginationServices : IPaginationServices
     {
-        public async Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query) where T : class
+        public async Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query, CancellationToken cancellationToken = default) where T : class
         {
             var pageNumber = query?.PageNumber > 0 ? query.PageNumber : 1;
             var pageSize = query?.PageSize > 0 ? query.PageSize : 10;
@@ -22,11 +22,13 @@ namespace NEXT.Infrastructure.Persistence
                 throw new NEXT.Application.Exceptions.AppValidationException(new Dictionary<string, string[]> {
                     [nameof(query.PageNumber)] = ["The requested page is too large."]
                 });
-            var totalCount = await entities.CountAsync();
+            var totalCount = await entities.CountAsync(cancellationToken);
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            pageNumber = Math.Min(pageNumber, Math.Max(1, totalPages));
 
             var pagedList = await entities.Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var result = new TPaginationQueryModel<T>
             {
@@ -34,7 +36,7 @@ namespace NEXT.Infrastructure.Persistence
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount,
-                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                TotalPages = totalPages
             };
 
             return result;

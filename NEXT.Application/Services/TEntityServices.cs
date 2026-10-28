@@ -24,19 +24,21 @@ namespace NEXT.Application.Services
         protected IRepository<TEntity> Repository { get; }
         private readonly IKeyRepository<TEntity, TId> _keyRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly NEXT.Application.Abstractions.Context.IDeletionAuditContext? _deletionAudit;
 
         private readonly IPaginationServices _paginationServices;
         private readonly IMapper _mapper;
 
         public TEntityService(IRepository<TEntity> repository, IMapper mapper,
             IPaginationServices paginationServices,IUnitOfWork unitOfWork
-            ,IKeyRepository<TEntity,TId> keyRepository)
+            ,IKeyRepository<TEntity,TId> keyRepository, NEXT.Application.Abstractions.Context.IDeletionAuditContext? deletionAudit = null)
         {
             Repository = repository;
             _paginationServices = paginationServices;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _keyRepository = keyRepository;
+            _deletionAudit = deletionAudit;
         }
 
         public virtual async Task<TDto> Add(TCreationDto creationDTO)
@@ -53,13 +55,16 @@ namespace NEXT.Application.Services
             return result;
         }
 
-        public virtual async Task Delete(TId id)
+        public virtual async Task Delete(TId id, string? reason = null)
         {
             var entity = await _keyRepository.GetByIdAsync(id)
                 ?? throw new NotFoundException("The requested entity does not exist.");
 
             await HasActiveRelationsAsync(entity);
 
+            var normalized = DeletionReason.Require(reason);
+            using var audit = _deletionAudit?.Begin(normalized);
+            if (entity is IIsDeletableEntity deleted) deleted.DeletionReason = normalized;
             await _keyRepository.DeleteAsync(entity);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -92,6 +97,7 @@ namespace NEXT.Application.Services
                 throw new NotFoundException("The requested entity does not exist.");
 
             var mappedEntity = _mapper.Map(updateDto, entity);
+            mappedEntity.Id = id;
 
             mappedEntity.UpdatedAt = DateTimeOffset.UtcNow;
 

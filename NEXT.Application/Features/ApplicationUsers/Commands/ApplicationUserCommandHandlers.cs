@@ -152,3 +152,23 @@ public sealed class AssignUserRoleHandler(IUserQueryService queries, IUserComman
         return await commands.AddUserToRole(user, request.Role.Trim());
     }
 }
+
+public sealed class DeleteApplicationUserHandler(IUserQueryService users, IUserCommandService commands,
+    NEXT.Application.Abstractions.Context.ICurrentUserService current, IUserDeletionPolicy policy,
+    NEXT.Application.Abstractions.Persistence.IUnitOfWork unitOfWork,
+    NEXT.Application.Abstractions.Context.IDeletionAuditContext? deletionAudit = null) : IRequestHandler<DeleteApplicationUserCommand, UserOperationResult>
+{
+    public async Task<UserOperationResult> Handle(DeleteApplicationUserCommand request, CancellationToken cancellationToken)
+    {
+        if (current.UserId == request.UserId)
+            throw new UnprocessableEntityException("You cannot delete your own account.");
+        return await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            var user = await users.FindUserAsync(request.UserId.ToString()) ?? throw new NotFoundException("User was not found.");
+            await policy.ValidateAsync(request.UserId, ct);
+            user.DeletionReason = NEXT.Application.Services.DeletionReason.Require(request.Reason);
+            using var audit = deletionAudit?.Begin(user.DeletionReason);
+            return await commands.DeleteUserAsync(user);
+        }, cancellationToken);
+    }
+}

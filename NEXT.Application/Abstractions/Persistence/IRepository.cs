@@ -6,6 +6,7 @@ namespace NEXT.Application.Abstractions.Persistence;
 /// <summary>Persistence contract consumed by the application layer.</summary>
 public interface IRepository<TEntity> where TEntity : class
 {
+    Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
     IQueryable<TEntity> Query(bool asNoTracking = true);
     Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default);
     IQueryable<TEntity> GetAllAsync(CancellationToken cancellationToken = default);

@@ -1,0 +1,35 @@
+@model PagerDto
+@{ var totalPages = Math.Max(1, Model.TotalPages); var first = Math.Max(1, Model.Page - 2); var last = Math.Min(totalPages, Model.Page + 2); }
+<nav class="list-navigation" aria-label="@L["Pages"]">
+    <div class="page-overview"><span class="page-overview-label">@L["Records"]</span><strong>@Model.TotalCount.ToString("N0")</strong><span class="page-counter">@L["PageLabel"] <bdi>@Model.Page / @totalPages</bdi></span></div>
+    <div class="pagination-controls">
+        @if (Model.Page > 1) { <a class="page-control" href="@NEXT.web.Services.QueryLinks.Set(Context.Request, Model.PageKey, (Model.Page - 1).ToString(), Model.PageKey == "PageNumber" ? "page" : "")" rel="prev">@L["Previous"]</a> }
+        else { <button class="page-control" disabled>@L["Previous"]</button> }
+        @if (first > 1) { <a class="page-number" href="@NEXT.web.Services.QueryLinks.Set(Context.Request, Model.PageKey, "1")">1</a>@if (first > 2) { <span class="page-ellipsis">…</span> } }
+        @for (var pageIndex = first; pageIndex <= last; pageIndex++)
+        {
+            if (pageIndex == Model.Page) { <span class="page-number current" aria-current="page">@pageIndex</span> }
+            else { <a class="page-number" href="@NEXT.web.Services.QueryLinks.Set(Context.Request, Model.PageKey, pageIndex.ToString())">@pageIndex</a> }
+        }
+        @if (last < totalPages) { @if (last < totalPages - 1) { <span class="page-ellipsis">…</span> }<a class="page-number" href="@NEXT.web.Services.QueryLinks.Set(Context.Request, Model.PageKey, totalPages.ToString())">@totalPages</a> }
+        @if (Model.Page < totalPages) { <a class="page-control" href="@NEXT.web.Services.QueryLinks.Set(Context.Request, Model.PageKey, (Model.Page + 1).ToString(), Model.PageKey == "PageNumber" ? "page" : "")" rel="next">@L["Next"]</a> }
+        else { <button class="page-control" disabled>@L["Next"]</button> }
+    </div>
+    <div class="page-tools">
+        @if (Model.AllowPageSize)
+        {
+            <form class="page-size-form" method="get" action="@Context.Request.Path">
+                @foreach (var parameter in Context.Request.Query.Where(x => !new[]{"page", "PageNumber", "PageSize", Model.PageKey}.Contains(x.Key, StringComparer.OrdinalIgnoreCase))) { <input type="hidden" name="@parameter.Key" value="@parameter.Value" /> }
+                <label><span>@L["PageSize"]</span><select class="form-select" name="PageSize" data-page-size aria-label="@L["PageSize"]">@foreach (var size in new[]{10,20,50}.Append(Model.PageSize).Distinct().Order()) { <option value="@size" selected="@(size == Model.PageSize)">@size</option> }</select></label>
+                <noscript><button class="btn btn-light btn-sm" type="submit">@L["ApplyFilters"]</button></noscript>
+            </form>
+        }
+        @if (totalPages > 5)
+        {
+            <form class="page-jump-form" method="get" action="@Context.Request.Path">
+                @foreach (var parameter in Context.Request.Query.Where(x => !new[]{"page", "PageNumber", Model.PageKey}.Contains(x.Key, StringComparer.OrdinalIgnoreCase))) { <input type="hidden" name="@parameter.Key" value="@parameter.Value" /> }
+                <input class="form-control" type="number" name="@Model.PageKey" min="1" max="@totalPages" value="@Model.Page" aria-label="@L["JumpToPage"]" /><button class="page-control" type="submit">@L["GoToPage"]</button>
+            </form>
+        }
+    </div>
+</nav>

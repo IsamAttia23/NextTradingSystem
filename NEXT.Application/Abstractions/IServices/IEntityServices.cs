@@ -18,7 +18,7 @@ namespace NEXT.Application.Abstractions.IServices
 
         Task<TDto> Add(TCreationDto creationDTO);
 
-        Task Delete(TId id);
+        Task Delete(TId id, string? reason = null);
 
         Task<TDto> Update(TId id, TUpdateDto updateDto);
 

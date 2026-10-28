@@ -19,6 +19,7 @@ public sealed class CreateRoleHandler(
             throw new AppValidationException(new Dictionary<string, string[]> { [nameof(request.Data.Name)] = ["This role name already exists."] });
 
         var role = request.Data.Adapt<Role>();
+        role.IsSystem = false;
         var result = await roles.CreateAsync(role);
         if (!result.Succeeded)
             throw new AppValidationException(result.Errors.GroupBy(x => x.Code).ToDictionary(g => g.Key, g => g.Select(x => x.Description).ToArray()));
@@ -47,7 +48,7 @@ public sealed class UpdateRoleHandler(
     }
 }
 
-public sealed class DeleteRoleHandler(IRoleManagementService roles) : IRequestHandler<DeleteRoleCommand>
+public sealed class DeleteRoleHandler(IRoleManagementService roles, NEXT.Application.Abstractions.Context.IDeletionAuditContext deletionAudit) : IRequestHandler<DeleteRoleCommand>
 {
     public async Task Handle(DeleteRoleCommand request, CancellationToken cancellationToken)
     {
@@ -56,6 +57,7 @@ public sealed class DeleteRoleHandler(IRoleManagementService roles) : IRequestHa
         if (role.IsSystem)
             throw new UnprocessableEntityException("System roles cannot be deleted.");
 
+        using var audit = deletionAudit.Begin(NEXT.Application.Services.DeletionReason.Require(request.Reason));
         var result = await roles.DeleteAsync(role);
         if (!result.Succeeded)
             throw new UnprocessableEntityException(string.Join("; ", result.Errors.Select(x => x.Description)));

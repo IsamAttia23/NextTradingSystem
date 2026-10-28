@@ -3,7 +3,8 @@
     var current = ViewContext.RouteData.Values["controller"]?.ToString();
     var signedIn = User.Identity?.IsAuthenticated == true;
     var authenticationPage = current == "Account" && ViewContext.RouteData.Values["action"]?.ToString() is "Login" or "Verify";
-    var navigation = new[] { ("Home", "Dashboard", "home"), ("Users", "Users", "users"), ("Roles", "Roles", "shield"), ("Permissions", "Permissions", "key"), ("Assignments", "Assignments", "link"), ("RecycleBin", "RecycleBin", "trash") };
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+
 }
 <!DOCTYPE html>
 <html lang="@(rtl ? "ar" : "en")" dir="@(rtl ? "rtl" : "ltr")">
@@ -17,6 +18,7 @@
     <link rel="manifest" href="~/manifest.webmanifest" />
     <title>@ViewData["Title"] · NEXT</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/@(rtl ? "bootstrap.rtl.min.css" : "bootstrap.min.css")" />
+    <link rel="preload" href="~/fonts/tajawal/Tajawal-Regular.ttf" as="font" type="font/ttf" crossorigin />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="@(authenticationPage ? "authentication-page" : "")">
@@ -25,18 +27,12 @@
     @if (!authenticationPage)
     {
     <aside class="sidebar" id="sidebar">
+        <header class="sidebar-header">
         <a class="brand" asp-controller="Home" asp-action="Index"><img class="brand-logo" src="~/logo.svg" alt="" /><span>NEXT<small>@L["TradingSystem"]</small></span></a>
-        <div class="workspace-label">@L["Workspace"]</div>
-        <nav aria-label="@L["Navigation"]">
-        @foreach (var item in navigation)
-        {
-            <a asp-controller="@item.Item1" asp-action="Index" class="nav-item @(current == item.Item1 ? "selected" : "")" aria-current="@(current == item.Item1 ? "page" : null)">
-                <partial name="_Icon" model="item.Item3" /><span>@L[item.Item2]</span>
-            </a>
-        }
-        </nav>
-        <div class="sidebar-note"><span class="live-dot"></span>@L["WorkspaceNote"]<small>@L["WorkspaceNoteDetail"]</small></div>
-        <div class="sidebar-bottom"><span class="avatar">N</span><div><strong>@(signedIn ? User.Identity!.Name : L["Welcome"].Value)</strong><small>@L["Administration"]</small></div></div>
+        @if (signedIn) { <div class="sidebar-profile">@await Component.InvokeAsync("HeaderProfile")<small>@L["Administration"]</small></div> }
+        </header>
+        <div class="sidebar-scroll"><partial name="_Navigation" /></div>
+        <footer class="sidebar-footer"><span class="live-dot" aria-hidden="true"></span><span>@L["Workspace"]</span><small>NEXT</small></footer>
     </aside>
     }
     <div class="main-shell">
@@ -54,16 +50,15 @@
             </div>
         </header>
         <main id="main" tabindex="-1">@RenderBody()</main>
-        <footer><span>© @DateTime.UtcNow.Year NEXT</span><span>@L["Footer"]</span></footer>
+        <footer class="app-footer"><span>© @DateTime.UtcNow.Year NEXT</span><span>@L["Footer"]</span></footer>
     </div>
 </div>
 @if (!authenticationPage)
 {
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileTitle">
-    <div class="offcanvas-header"><h2 id="mobileTitle">NEXT</h2><button class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Close"]"></button></div>
-    <div class="offcanvas-body"><nav>
-    @foreach (var item in navigation) { <a class="nav-item" asp-controller="@item.Item1" asp-action="Index"><partial name="_Icon" model="item.Item3" />@L[item.Item2]</a> }
-    </nav></div>
+    <div class="offcanvas-header"><div><h2 id="mobileTitle">NEXT</h2>@if (signedIn) { <div class="sidebar-profile">@await Component.InvokeAsync("HeaderProfile")</div> }</div><button class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Close"]"></button></div>
+    <div class="offcanvas-body"><partial name="_Navigation" /></div>
+    <div class="sidebar-footer"><span class="live-dot" aria-hidden="true"></span><span>@L["Workspace"]</span><small>NEXT</small></div>
 </div>
 }
 <partial name="_Modal" />
@@ -72,6 +67,7 @@
 <script src="~/js/notifications.js" asp-append-version="true" defer></script>
 <script src="~/js/profile-image-picker.js" asp-append-version="true" defer></script>
 <script src="~/js/pwa.js" asp-append-version="true" defer></script>
+<script src="~/js/navigation.js" asp-append-version="true" defer></script>
 <script src="~/js/site.js" asp-append-version="true" defer></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

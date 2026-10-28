@@ -1,8 +1,8 @@
 @model TableModel
 @{ ViewData["Title"] = L[Model.Title]; }
 <section class="page-heading">
-    <div><span class="eyebrow">@L["Administration"]</span><h1>@L[Model.Title]</h1><p>@L[Model.Description]</p></div>
-    @if (Model.Create is not null) { <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><span aria-hidden="true">＋</span> @L[Model.Create.Label]</button> }
+    <div><span class="eyebrow">@L["Administration"]</span><h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1><p>@L[Model.Description]</p></div>
+    @if (Model.Create is not null) { <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button> }
 </section>
 @if (ViewData["Sections"] is string[] sections)
 {
@@ -10,8 +10,11 @@
     @foreach (var category in sections) { <a asp-action="Index" asp-route-section="@category" class="@(ViewData["Section"]?.ToString() == category ? "selected" : "")">@L[category]</a> }
     </nav>
 }
+@if (Model.Query is not null) { <partial name="_CatalogFilters" model="Model" /> }
 <section class="content-card">
-    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div><label class="search-box"><span aria-hidden="true">⌕</span><input type="search" data-table-search placeholder="@L["SearchPage"]" aria-label="@L["SearchPage"]" /></label></div>
+    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div>@if (Model.Query is null) { <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" data-table-search placeholder="@L["SearchPage"]" aria-label="@L["SearchPage"]" /></label> }</div>
+    <partial name="_Pagination" model='@(new PagerDto(Model.Page, Model.TotalPages, Model.TotalCount, Model.Query is null ? "page" : "PageNumber", Model.PageSize, Model.Query is not null))' />
+    <div class="table-scroll-hint"><partial name="_Icon" model='@("transfer")' /> @L["ScrollTableHint"]</div>
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]"><table class="table align-middle"><caption class="visually-hidden">@L[Model.Title]</caption>
         <thead><tr>@foreach (var column in Model.Columns) { <th scope="col">@L[column]</th> }<th scope="col" class="actions-column">@L["Actions"]</th></tr></thead>
         <tbody>
@@ -20,22 +23,19 @@
             <tr data-record>
             @for (var i = 0; i < row.Cells.Count; i++)
             {
-                <td>@if (Model.Columns[i] is "Status" or "Type") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }</td>
+                <td class="@(Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">@if (Model.Columns[i] == "TagId" && row.Badge is {} badge) { <partial name="_ColorBadge" model="badge" /> }
+                    else if (Model.Columns[i] == "Name" && row.Identity is {} identity) { <partial name="_RecordIdentity" model="identity" /> }
+                    else if (Model.Columns[i] is "Status" or "Type" or "MovementType") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }</td>
             }
-            <td class="actions-column">@foreach (var action in row.Actions) { <button class="btn btn-sm @(action.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@action.Url">@L[action.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button> }</td>
+            <td class="actions-column">@foreach (var item in row.Actions)
+            {
+                if (item.Modal) { <button class="btn btn-sm @(item.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button> }
+                else { <a class="btn btn-sm text-primary" href="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></a> }
+            }</td>
             </tr>
         }
         </tbody>
     </table></div>
     <div class="empty-state" data-empty hidden="@(Model.Rows.Count != 0)"><span class="empty-icon" aria-hidden="true">◇</span><h2>@L["NoRecords"]</h2><p>@L["NoRecordsDetail"]</p></div>
-    <div class="table-footer"><span>@L["Records"]: @Model.TotalCount</span>
-        @if (Model.TotalPages > 1)
-        {
-            <nav class="pagination-controls" aria-label="@L["Pages"]">
-                @if (Model.Page > 1) { <a class="btn btn-light btn-sm" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-section="@ViewData["Section"]">@L["Previous"]</a> }
-                <span>@Model.Page / @Model.TotalPages</span>
-                @if (Model.Page < Model.TotalPages) { <a class="btn btn-light btn-sm" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-section="@ViewData["Section"]">@L["Next"]</a> }
-            </nav>
-        }
-    </div>
+
 </section>

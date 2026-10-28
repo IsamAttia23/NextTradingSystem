@@ -1,0 +1,2 @@
+@model ColorBadgeDto
+<span class="color-badge" style="background-color:@NEXT.web.Services.BadgeColors.Safe(Model.Color);color:@NEXT.web.Services.BadgeColors.Foreground(Model.Color)">@Model.Label</span>

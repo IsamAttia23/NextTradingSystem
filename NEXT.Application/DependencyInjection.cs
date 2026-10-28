@@ -1,4 +1,6 @@
 using NEXT.Application.Features.RecycleBin;
+using NEXT.Application.Services.Catalog;
+using NEXT.Application.Services.Inventory;
 using NEXT.Domain.Entities;
 using Mapster;
 using MediatR;
@@ -27,6 +29,11 @@ public static class EntityServiceRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services);
         TypeAdapterConfig.GlobalSettings.Scan(typeof(ApplicationUserMappingRegister).Assembly);
         services.AddMapster();
+        services.AddScoped<IRecycleBinAccess, RecycleBinAccess>();
+        services.AddScoped<NEXT.Application.Abstractions.Context.IDeletionAuditContext, DeletionAuditContext>();
+        services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddCatalog();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
 

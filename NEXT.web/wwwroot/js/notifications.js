@@ -12,27 +12,48 @@
         notice.setAttribute("aria-live", kind === "error" ? "assertive" : "polite");
         const marker = document.createElement("span");
         marker.className = "notice-marker";
-        marker.textContent = kind === "success" ? "✓" : kind === "error" ? "!" : kind === "warning" ? "!" : "i";
         marker.setAttribute("aria-hidden", "true");
-        const text = document.createElement("div");
-        text.className = "notice-message";
-        text.textContent = message;
-        const close = document.createElement("button");
-        close.type = "button";
-        close.className = "notice-close";
-        close.setAttribute("aria-label", stack.dataset.close);
-        close.textContent = "×";
-        close.addEventListener("click", () => notice.remove());
-        notice.append(marker, text, close);
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("class", "ui-icon");
+        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", stack.dataset.icons + "#" + (kind === "success" ? "check" : kind === "info" ? "info" : "warning"));
+        icon.append(use); marker.append(icon);
+        const content = document.createElement("div"); content.className = "notice-content";
+        const heading = document.createElement("strong"); heading.className = "notice-title";
+        heading.textContent = stack.dataset[kind + "Title"];
+        const text = document.createElement("div"); text.className = "notice-message"; text.textContent = message;
+        content.append(heading, text);
+        const close = document.createElement("button"); close.type = "button"; close.className = "notice-close";
+        close.setAttribute("aria-label", stack.dataset.close); close.textContent = "×";
+        function dismiss() {
+            notice.classList.add("notice-leaving");
+            setTimeout(() => notice.remove(), 180);
+        }
+        close.addEventListener("click", dismiss);
+        notice.append(marker, content, close);
         stack.append(notice);
         while (stack.children.length > 4) stack.firstElementChild.remove();
-        // Errors remain available for reading until explicitly dismissed.
+        // Error messages stay until dismissed; timed notices pause while hovered or focused.
         if (kind !== "error") {
-            let timer = setTimeout(() => notice.remove(), 7000);
-            notice.addEventListener("mouseenter", () => clearTimeout(timer));
-            notice.addEventListener("focusin", () => clearTimeout(timer));
+            const progress = document.createElement("span"); progress.className = "notice-progress";
+            progress.setAttribute("aria-hidden", "true"); notice.append(progress);
+            let remaining = 7000, started = Date.now(), timer = setTimeout(dismiss, remaining);
+            let paused = false;
+            function pause() {
+                if (paused) return; paused = true;
+                clearTimeout(timer); remaining = Math.max(0, remaining - (Date.now() - started));
+                progress.style.animationPlayState = "paused";
+            }
+            function resume() {
+                if (!paused || notice.matches(":hover") || notice.contains(document.activeElement)) return;
+                paused = false; started = Date.now(); timer = setTimeout(dismiss, remaining);
+                progress.style.animationPlayState = "running";
+            }
+            notice.addEventListener("mouseenter", pause); notice.addEventListener("mouseleave", resume);
+            notice.addEventListener("focusin", pause); notice.addEventListener("focusout", () => setTimeout(resume, 0));
         }
     }
+
     function afterReload(message, kind) {
         try { sessionStorage.setItem("next.notice", JSON.stringify({message, kind})); }
         catch { show(message, kind); }

@@ -48,5 +48,5 @@ public sealed class DeleteEntityCommandHandler<TId, TDto, TCreationDto, TUpdateD
     where TUpdateDto : class, TIdType<TId>
 {
     public Task Handle(DeleteEntityCommand<TId, TDto, TCreationDto, TUpdateDto> request, CancellationToken cancellationToken) =>
-        service.Delete(request.Id);
+        service.Delete(request.Id, request.Reason);
 }

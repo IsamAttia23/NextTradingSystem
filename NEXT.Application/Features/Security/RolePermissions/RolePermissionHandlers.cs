@@ -20,10 +20,13 @@ public sealed class AssignPermissionToRoleHandler(
     }
 }
 
-public sealed class RevokePermissionFromRoleHandler(IRolePermissionService service) : IRequestHandler<RevokePermissionFromRoleCommand>
+public sealed class RevokePermissionFromRoleHandler(IRolePermissionService service, NEXT.Application.Abstractions.Context.IDeletionAuditContext deletionAudit) : IRequestHandler<RevokePermissionFromRoleCommand>
 {
-    public Task Handle(RevokePermissionFromRoleCommand request, CancellationToken cancellationToken) =>
-        service.RemoveAsync(request.RoleId, request.PermissionId, cancellationToken);
+    public async Task Handle(RevokePermissionFromRoleCommand request, CancellationToken cancellationToken)
+    {
+        using var audit = deletionAudit.Begin(NEXT.Application.Services.DeletionReason.Require(request.Reason));
+        await service.RemoveAsync(request.RoleId, request.PermissionId, cancellationToken);
+    }
 }
 
 public sealed class GetRolePermissionsHandler(IRolePermissionService service) : IRequestHandler<GetRolePermissionsQuery, IReadOnlyList<RolePermissionDto>>

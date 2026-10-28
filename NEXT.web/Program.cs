@@ -24,7 +24,7 @@ if (builder.Environment.IsDevelopment() && configuration.GetValue<bool>("Develop
 
 var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
-    await scope.ServiceProvider.GetRequiredService<NEXT.Infrastructure.Identity.TemporaryAdministratorBootstrapper>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Context.IApplicationInitializer>().InitializeAsync();
 app.UseStatusCodePagesWithReExecute("/Status/{0}");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRequestLocalization();

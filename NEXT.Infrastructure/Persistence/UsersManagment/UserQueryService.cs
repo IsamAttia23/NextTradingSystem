@@ -9,8 +9,11 @@ namespace NEXT.Infrastructure.Persistence.UsersManagment;
 /// <summary>Implements identity reads through ASP.NET Core Identity.</summary>
 public sealed class UserQueryService(UserManager<ApplicationUser> userManager) : IUserQueryService
 {
-    public Task<ApplicationUser?> FindUserAsync(string userId) =>
-        userManager.FindByIdAsync(userId);
+    public async Task<ApplicationUser?> FindUserAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        return user is { DeletedAt: null } ? user : null;
+    }
 
     public Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         userManager.FindByEmailAsync(email);

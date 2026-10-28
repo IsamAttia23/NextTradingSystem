@@ -3,5 +3,6 @@
     var pageError = errors.Length > 0 ? string.Join("\n", errors) : Context.Response.StatusCode >= 400 ? L["RequestFailed"].Value : "";
 }
 <div id="notifications" class="notification-stack" aria-label="@L["Notifications"]"
-     data-close="@L["Close"]" data-initial-error="@pageError" data-offline="@L["OfflineNotice"]" data-online="@L["OnlineNotice"]"
+     data-icons="@Url.Content("~/icons.svg")" data-success-title="@L["NoticeSuccessTitle"]" data-info-title="@L["NoticeInfoTitle"]"
+     data-warning-title="@L["NoticeWarningTitle"]" data-error-title="@L["NoticeErrorTitle"]" data-close="@L["Close"]" data-initial-error="@pageError" data-offline="@L["OfflineNotice"]" data-online="@L["OnlineNotice"]"
      data-image-size="@L["ImageSizeError"]" data-image-invalid="@L["ImageInvalidError"]" data-validation="@L["ValidationFailed"]"></div>

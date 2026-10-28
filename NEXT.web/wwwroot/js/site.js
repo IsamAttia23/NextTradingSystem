@@ -26,33 +26,28 @@
         trigger = button;
         request?.abort();
         request = new AbortController();
-        title.textContent = modalElement.dataset.loading;
         body.replaceChildren();
-        const loading = document.createElement("p");
-        loading.textContent = modalElement.dataset.loading;
-        loading.setAttribute("role", "status");
-        body.append(loading);
-        modal.show();
         try {
             const url = new URL(button.dataset.modalUrl, location.href);
             if (url.origin !== location.origin) throw new Error("Origin");
             const response = await fetch(url, { signal: request.signal, headers: { "X-Requested-With": "XMLHttpRequest" } });
             if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
-                body.replaceChildren(); showError(messageFor(response.status)); return;
+                body.replaceChildren(); title.textContent = modalElement.dataset.error; showError(messageFor(response.status)); modal.show(); return;
             }
             // Only server-rendered, Razor-encoded same-origin partial views enter this container.
             body.innerHTML = await response.text();
             const form = body.querySelector("[data-modal-form]");
             if (!form) { body.replaceChildren(); showError(modalElement.dataset.error); return; }
             title.textContent = form.dataset.title;
+            modal.show();
             if (modalElement.classList.contains("show")) form.querySelector("input:not([type=hidden]),select,textarea,button[type=submit]")?.focus();
         } catch (error) {
-            if (error.name !== "AbortError") { body.replaceChildren(); showError(modalElement.dataset.error); }
+            if (error.name !== "AbortError") { body.replaceChildren(); title.textContent = modalElement.dataset.error; showError(modalElement.dataset.error); modal.show(); }
         }
     });
     modalElement.addEventListener("shown.bs.modal", () => body.querySelector("input:not([type=hidden]),select,textarea,button[type=submit]")?.focus());
     modalElement.addEventListener("hide.bs.modal", event => { if (saving) event.preventDefault(); });
-    modalElement.addEventListener("hidden.bs.modal", () => { request?.abort(); body.replaceChildren(); trigger?.focus(); });
+    modalElement.addEventListener("hidden.bs.modal", () => { request?.abort(); body.replaceChildren(); if (trigger?.isConnected) trigger.focus(); else document.getElementById("main")?.focus({preventScroll: true}); });
     body.addEventListener("submit", async event => {
         const form = event.target.closest("[data-modal-form]");
         if (!form) return;
@@ -73,12 +68,17 @@
                 return;
             }
             const result = await response.json().catch(() => null);
-            window.NextNotifications?.afterReload(result?.notification?.message ?? modalElement.dataset.success, result?.notification?.kind ?? "info");
-            location.reload();
+            const updated = await window.NextNavigation?.refresh();
+            saving = false;
+            modal.hide();
+            window.NextNotifications?.show(result?.notification?.message ?? modalElement.dataset.success, result?.notification?.kind ?? "info");
+            // A refresh can fail after the mutation succeeds; do not invite a duplicate submission.
+            if (updated === false) window.NextNotifications?.show(modalElement.dataset.refreshError, "warning");
         } catch { showError(modalElement.dataset.error); }
         finally { saving = false; buttons.forEach(button => button.disabled = false); form.removeAttribute("aria-busy"); }
     });
-    document.querySelector("[data-table-search]")?.addEventListener("input", event => {
+    document.addEventListener("input", event => {
+        if (!event.target.matches("[data-table-search]")) return;
         const term = event.target.value.trim().toLocaleLowerCase();
         let visible = 0;
         document.querySelectorAll("[data-record]").forEach(row => {

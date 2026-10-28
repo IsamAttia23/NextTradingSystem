@@ -1,0 +1,34 @@
+@model RecordDetailsDto
+@{ ViewData["Title"] = Model.Name; }
+<section class="page-heading">
+    <div><span class="eyebrow">@L[Model.Section] / @L["Details"]</span><h1>@Model.Name</h1><p>@L["RecordDetailsHint"]</p></div>
+    <div class="details-actions"><a class="btn btn-light" href="@Model.BackUrl">@L["BackToList"]</a><button class="btn btn-primary" data-modal-url="@Model.EditUrl"><partial name="_Icon" model='@("edit")' /> @L["Edit"]</button></div>
+</section>
+<section class="content-card record-card">
+    <div class="record-card-header"><partial name="_RecordIdentity" model="Model.Identity" />@if (Model.Badge is {} badge) { <partial name="_ColorBadge" model="badge" /> }</div>
+    <dl class="detail-grid">
+    @foreach (var field in Model.Fields) { <div><dt>@L[field.Label]</dt><dd><bdi>@(field.TranslateValue ? L[field.Value].Value : field.Value)</bdi></dd></div> }
+    </dl>
+</section>
+<section class="content-card related-card">
+    <div class="card-heading"><h2><partial name="_Icon" model='@("transfer")' /> @L["RelatedRecords"]</h2><span>@Model.Activity.Sections.Sum(x => x.Count) @L["Records"]</span></div>
+    <nav class="section-tabs activity-tabs" aria-label="@L["RelatedRecords"]">
+        @foreach (var activitySection in Model.Activity.Sections)
+        {
+            <a href="@NEXT.web.Services.QueryLinks.Set(Context.Request, "activityKind", activitySection.Key, "activityPage")" class="@(activitySection.Key == Model.Activity.Selected ? "selected" : "")" aria-current="@(activitySection.Key == Model.Activity.Selected ? "page" : null)">@L[activitySection.Title] <span class="activity-count">@(activitySection.Count)</span></a>
+        }
+    </nav>
+    @if (Model.Activity.Records.Count == 0) { <div class="empty-state"><h3>@L["NoRelatedRecords"]</h3><p>@L["NoRelatedRecordsHint"]</p></div> }
+    else
+    {
+        <div class="activity-records">
+        @foreach (var record in Model.Activity.Records)
+        {
+            <article class="activity-record"><span class="eyebrow">@L[Model.Activity.Selected!] · <bdi>@record.Id</bdi></span><dl class="detail-grid">
+                @foreach (var field in record.Fields) { <div><dt>@L[field.Label]</dt><dd><bdi>@(field.TranslateValue ? L[field.Value].Value : field.Value)</bdi></dd></div> }
+            </dl></article>
+        }
+        </div>
+    }
+    <partial name="_Pagination" model='@(new PagerDto(Model.Activity.Page, Model.Activity.TotalPages, Model.Activity.TotalCount, "activityPage"))' />
+</section>

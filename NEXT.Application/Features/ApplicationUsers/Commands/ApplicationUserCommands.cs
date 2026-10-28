@@ -12,4 +12,5 @@ public sealed record SetApplicationUserNameCommand(ApplicationUser User, string 
 public sealed record SetApplicationUserEmailCommand(ApplicationUser User, string Email) : IRequest<UserOperationResult>;
 public sealed record SetApplicationUserPhoneNumberCommand(ApplicationUser User, string PhoneNumber) : IRequest<UserOperationResult>;
 public sealed record AddApplicationUserToRoleCommand(ApplicationUser User, string Role) : IRequest<UserOperationResult>;
+public sealed record DeleteApplicationUserCommand(Guid UserId, string? Reason = null) : IRequest<UserOperationResult>;
 public sealed record AssignUserRoleCommand(Guid UserId, string Role) : IRequest<UserOperationResult>;

@@ -1,4 +1,4 @@
-@model VerifyLoginInput
+@model VerifyLoginDto
 @{ ViewData["Title"] = L["Verification"]; }
 <section class="content-card login-card mx-auto" style="max-width:480px"><h1>@L["Verification"]</h1><p>@L["VerificationHint"]</p><form asp-action="Verify" method="post">
 <div asp-validation-summary="All" class="text-danger" role="alert"></div>

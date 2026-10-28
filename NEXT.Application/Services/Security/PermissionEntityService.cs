@@ -17,9 +17,10 @@ public sealed class PermissionEntityService(
     IUnitOfWork unitOfWork,
     IKeyRepository<Permission, Guid> keyRepository,
     IEntityValidator<PermissionCreationDto> creationValidator,
-    IEntityValidator<PermissionUpdateDto> updateValidator)
+    IEntityValidator<PermissionUpdateDto> updateValidator,
+    NEXT.Application.Abstractions.Context.IDeletionAuditContext deletionAudit)
     : TEntityService<Permission, Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>(
-        repository, mapper, pagination, unitOfWork, keyRepository)
+        repository, mapper, pagination, unitOfWork, keyRepository, deletionAudit)
 {
     public override async Task<PermissionDto> Add(PermissionCreationDto creationDTO)
     {
