@@ -7,6 +7,7 @@ using NEXT.Application.Features.ApplicationUsers.Commands;
 using NEXT.Application.Features.ApplicationUsers.Queries;
 using NEXT.web.Models;
 using NEXT.Application.Features.Security.Roles;
+using NEXT.web.Models.Users;
 
 namespace NEXT.web.Controllers;
 

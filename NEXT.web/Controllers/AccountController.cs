@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using NEXT.Domain.Entities;
 using NEXT.web.Localization;
-using NEXT.web.Models;
+using NEXT.web.Models.Auth;
 
 namespace NEXT.web.Controllers;
 

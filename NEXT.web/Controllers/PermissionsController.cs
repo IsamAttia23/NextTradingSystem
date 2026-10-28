@@ -3,6 +3,7 @@ using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Common.QueryModels;
 using NEXT.Application.DTOs.Security;
 using NEXT.web.Models;
+using NEXT.web.Models.Auth;
 
 namespace NEXT.web.Controllers;
 

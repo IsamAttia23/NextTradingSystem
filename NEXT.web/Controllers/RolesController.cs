@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.DTOs.Security;
 using NEXT.Application.Features.Security.Roles;
 using NEXT.web.Models;
+using NEXT.web.Models.Auth;
 
 namespace NEXT.web.Controllers;
 
