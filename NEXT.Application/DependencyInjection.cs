@@ -27,6 +27,7 @@ public static class EntityServiceRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services);
         TypeAdapterConfig.GlobalSettings.Scan(typeof(ApplicationUserMappingRegister).Assembly);
         services.AddMapster();
+        services.AddScoped<NEXT.Application.Features.Authentication.AuthenticationService>();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
 
