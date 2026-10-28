@@ -1,0 +1,25 @@
+name: .NET build and tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - refactor/web-srp-extract-presenters
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore NextTradingSystem.slnx
+      - name: Build
+        run: dotnet build NextTradingSystem.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test NEXT.Tests/NEXT.Tests.csproj --configuration Release --no-build --verbosity normal
