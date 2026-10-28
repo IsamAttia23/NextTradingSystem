@@ -7,6 +7,9 @@ public interface IRolePermissionService
 {
     Task<IReadOnlyList<RolePermissionDto>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<RolePermissionDto>> GetByRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
+    Task<bool> RoleExistsAsync(Guid roleId, CancellationToken cancellationToken = default);
+    Task<bool> PermissionExistsAsync(Guid permissionId, CancellationToken cancellationToken = default);
+    Task<bool> AssignmentExistsAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default);
     Task AddAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default);
     Task RemoveAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default);
 }
