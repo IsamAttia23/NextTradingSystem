@@ -1,3 +1,4 @@
+using NEXT.web.Services;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Common.QueryModels;
@@ -16,7 +17,7 @@ public sealed class PermissionsController(IEntityServices<Guid, PermissionDto, P
             result.Data.Select(x => new TableRow([x.Code, x.Module, x.Description ?? "—"], [Edit(new { x.Id }), Delete(new { x.Id })])).ToArray(),
             new("CreatePermission", Route("Create")), result.PageNumber, result.TotalPages, result.TotalCount));
     }
-    [HttpGet] public IActionResult Create() => PermissionForm("CreatePermission", Route("Create"));
+    [HttpGet] public IActionResult Create() => Form(SecurityFormBuilder.Permission("CreatePermission", Route("Create")));
     [HttpPost] public async Task<IActionResult> Create(PermissionInput input)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -26,7 +27,7 @@ public sealed class PermissionsController(IEntityServices<Guid, PermissionDto, P
     [HttpGet] public async Task<IActionResult> Edit(Guid id)
     {
         var item = await permissions.Details(id);
-        return item is null ? NotFound() : PermissionForm("EditPermission", Route("Edit", new { id }), item);
+        return item is null ? NotFound() : Form(SecurityFormBuilder.Permission("EditPermission", Route("Edit", new { id }), item));
     }
     [HttpPost] public async Task<IActionResult> Edit(Guid id, PermissionInput input)
     {
@@ -40,8 +41,5 @@ public sealed class PermissionsController(IEntityServices<Guid, PermissionDto, P
         await permissions.Delete(id);
         return Ok();
     }
-    private IActionResult PermissionForm(string title, string action, PermissionDto? item = null) => Form(new(title, action,
-        [new("Code", "Code", item?.Code, Required: true, MaxLength: 120),
-         new("Module", "Module", item?.Module, Required: true, MaxLength: 80),
-         new("Description", "Description", item?.Description, "textarea", MaxLength: 500)]));
+
 }
