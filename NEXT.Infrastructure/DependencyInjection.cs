@@ -30,6 +30,7 @@ public static class DependencyInjection
 
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
+        services.AddScoped<IAuthenticationGateway, IdentityAuthenticationGateway>();
         services.AddScoped<TemporaryAdministratorBootstrapper>();
         services.AddScoped<IUserCommandService, UserCommandService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
