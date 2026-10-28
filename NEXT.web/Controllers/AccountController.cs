@@ -53,12 +53,6 @@ public sealed class AccountController(SignInManager<ApplicationUser> signIn, ISt
         await signIn.SignOutAsync();
         return RedirectToAction(nameof(Login));
     }
-    [Authorize, HttpGet] public async Task<IActionResult> Avatar()
-    {
-        var user = await signIn.UserManager.GetUserAsync(User);
-        Response.Headers["X-Content-Type-Options"] = "nosniff";
-        return user?.AvatarUrl is { Length: > 0 } image ? File(image, "image/png") : Redirect(Url.Content("~/logo.svg"));
-    }
     [AllowAnonymous] public IActionResult Denied()
     {
         Response.StatusCode = StatusCodes.Status403Forbidden;
