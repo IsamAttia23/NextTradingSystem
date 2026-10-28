@@ -1,0 +1,8 @@
+@model VerifyLoginInput
+@{ ViewData["Title"] = L["Verification"]; }
+<section class="content-card login-card mx-auto" style="max-width:480px"><h1>@L["Verification"]</h1><p>@L["VerificationHint"]</p><form asp-action="Verify" method="post">
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<input asp-for="ReturnUrl" type="hidden" /><input asp-for="RememberMe" type="hidden" />
+<div class="mb-3"><label asp-for="Code" class="form-label">@L["VerificationCode"]</label><input asp-for="Code" class="form-control" autocomplete="one-time-code" required /></div>
+<div class="form-check mb-4"><input asp-for="UseRecoveryCode" class="form-check-input" /><label asp-for="UseRecoveryCode" class="form-check-label">@L["UseRecoveryCode"]</label></div>
+<button class="btn btn-primary w-100" type="submit">@L["Verify"]</button></form></section>

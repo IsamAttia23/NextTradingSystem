@@ -1,3 +1,4 @@
+using NEXT.Application.Abstractions.Media;
 using Mapster;
 using MediatR;
 using NEXT.Application.Abstractions.Identity;
@@ -5,12 +6,15 @@ using NEXT.Application.DTOs.ApplicationUsers;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
+using NEXT.Application.Abstractions.Persistence.Repositories;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
 public sealed class CreateApplicationUserHandler(
     IUserCommandService commands,
     IUserQueryService queries,
+    IBranchRepository branches,
+    IProfileImageProcessor images,
     IEntityValidator<UserCreationDto> validator) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(CreateApplicationUserCommand request, CancellationToken cancellationToken)
@@ -22,6 +26,8 @@ public sealed class CreateApplicationUserHandler(
         var errors = new Dictionary<string, string[]>();
         if (dto.BranchId == Guid.Empty)
             errors[nameof(dto.BranchId)] = ["A valid branch is required."];
+        else if (!await branches.AnyAsync(x => x.Id == dto.BranchId && x.IsActive, cancellationToken))
+            errors[nameof(dto.BranchId)] = ["Select an active branch."];
         if (await queries.IsUserNameTakenAsync(dto.UserName))
             errors[nameof(dto.UserName)] = ["This username is already in use."];
         if (await queries.IsEmailTakenAsync(dto.Email))
@@ -29,7 +35,9 @@ public sealed class CreateApplicationUserHandler(
         if (errors.Count != 0)
             throw new AppValidationException(errors);
 
+        var avatar = dto.AvatarUrl is null ? null : images.Normalize(dto.AvatarUrl);
         var user = dto.Adapt<ApplicationUser>();
+        user.AvatarUrl = avatar;
         var result = await commands.CreateUserAsync(user, dto.Password);
         if (!result.Succeeded || string.IsNullOrWhiteSpace(dto.Role))
             return result;
@@ -50,6 +58,8 @@ public sealed class CreateApplicationUserHandler(
 public sealed class UpdateApplicationUserHandler(
     IUserQueryService queries,
     IUserCommandService commands,
+    IBranchRepository branches,
+    IProfileImageProcessor images,
     IEntityValidator<UserUpdateDto> validator) : IRequestHandler<UpdateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(UpdateApplicationUserCommand request, CancellationToken cancellationToken)
@@ -67,12 +77,16 @@ public sealed class UpdateApplicationUserHandler(
             throw new NotFoundException($"User '{request.UserId}' was not found.");
 
         await ValidateUniqueIdentityFieldsAsync(queries, request.User.UserName, request.User.Email, userId);
+        if (!await branches.AnyAsync(x => x.Id == request.User.BranchId && (x.IsActive || x.Id == user.BranchId), cancellationToken))
+            throw new AppValidationException(new Dictionary<string, string[]> { ["BranchId"] = ["Select a valid branch."] });
         if (request.User.BranchId == Guid.Empty)
             throw new AppValidationException(new Dictionary<string, string[]> {
                 [nameof(request.User.BranchId)] = ["A valid branch is required."]
             });
 
+        var avatar = request.User.AvatarUrl is null ? user.AvatarUrl : images.Normalize(request.User.AvatarUrl);
         request.User.Adapt(user);
+        user.AvatarUrl = avatar;
         return await commands.UpdateUserAsync(user);
     }
 
@@ -124,4 +138,17 @@ public sealed class AddApplicationUserToRoleHandler(IUserCommandService users) :
 {
     public Task<UserOperationResult> Handle(AddApplicationUserToRoleCommand request, CancellationToken cancellationToken) =>
         users.AddUserToRole(request.User, request.Role);
+}
+
+public sealed class AssignUserRoleHandler(IUserQueryService queries, IUserCommandService commands)
+    : IRequestHandler<AssignUserRoleCommand, UserOperationResult>
+{
+    public async Task<UserOperationResult> Handle(AssignUserRoleCommand request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Role))
+            throw new AppValidationException(new Dictionary<string, string[]> { ["Role"] = ["Select a role."] });
+        var user = await queries.FindUserAsync(request.UserId.ToString())
+            ?? throw new NotFoundException("User was not found.");
+        return await commands.AddUserToRole(user, request.Role.Trim());
+    }
 }

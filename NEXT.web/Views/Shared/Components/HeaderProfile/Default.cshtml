@@ -1,0 +1,5 @@
+@model HeaderProfile
+<div class="header-profile">
+    <img class="profile-avatar" src="@(Model.HasAvatar ? Url.Action("Avatar", "Account") : Url.Content("~/logo.svg"))" alt="@L["ProfileImage"]" />
+    <span>@L["Hello"] <strong>@Model.FullName</strong></span>
+</div>

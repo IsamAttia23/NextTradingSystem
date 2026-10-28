@@ -1,3 +1,5 @@
+using NEXT.Application.Features.RecycleBin;
+using NEXT.Domain.Entities;
 using Mapster;
 using MediatR;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +31,12 @@ public static class EntityServiceRegistrationExtensions
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
 
         services.AddEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto, PermissionEntityService>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Product>>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Customer>>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Supplier>>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Category>>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Tag>>();
+        services.AddScoped<IRecycleBinSection, RecycleBinSection<Warehouse>>();
         return services;
     }
 

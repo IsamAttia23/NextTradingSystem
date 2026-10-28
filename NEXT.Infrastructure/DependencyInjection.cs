@@ -28,8 +28,12 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
         });
 
+        services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
+        services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
+        services.AddScoped<TemporaryAdministratorBootstrapper>();
         services.AddScoped<IUserCommandService, UserCommandService>();
         services.AddScoped<IUserQueryService, UserQueryService>();
+        services.AddScoped<NEXT.Application.Features.ApplicationUsers.Queries.IBranchLookup, BranchLookup>();
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
 

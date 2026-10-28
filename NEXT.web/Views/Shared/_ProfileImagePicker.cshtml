@@ -1,0 +1,14 @@
+@model FormField
+@{ var id = "field-" + Model.Name.Replace(".", "-"); }
+<div class="profile-picker" data-profile-picker>
+    <div class="profile-picker-control">
+        <input class="profile-picker-input" id="@id" name="@Model.Name" type="file" accept="image/*" data-profile-upload aria-describedby="@(id + "-hint")" />
+        <div class="profile-picker-circle" aria-hidden="true">
+            <img src="@(Model.Value ?? Url.Content("~/images/avatar-placeholder.svg"))" data-profile-preview data-placeholder="@Url.Content("~/images/avatar-placeholder.svg")" alt="" />
+            <span class="profile-picker-badge"><partial name="_Icon" model='@("edit")' /></span>
+        </div>
+    </div>
+    <label class="profile-picker-label" for="@id">@L["ChooseProfileImage"]</label>
+    <small class="text-muted" id="@(id + "-hint")">@L["ImageHint"]</small>
+    <small class="profile-picker-filename" data-profile-filename aria-live="polite"></small>
+</div>
