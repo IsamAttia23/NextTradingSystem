@@ -1104,3 +1104,15 @@ footer {
 .notice-error { color: #a32034; background: #fff0f2; border-color: #efadb8; }
 @keyframes notice-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @media(max-width:580px) { .header-profile span { display: none; } .profile-avatar { width: 34px; height: 34px; } .notification-stack { top: 12px; inset-inline-end: 16px; } .authentication-page .login-grid { margin: 12px auto; } }
+
+/* Shared circular profile image picker. The native input remains keyboard accessible. */
+.profile-picker{display:flex;flex-direction:column;align-items:center;gap:.6rem;padding:.75rem;text-align:center}
+.profile-picker-control{position:relative;width:128px;height:128px}
+.profile-picker-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;border-radius:50%}
+.profile-picker-circle{width:100%;height:100%;position:relative;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #dce4ef;transition:box-shadow .15s}
+.profile-picker-circle>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-picker-input:focus-visible+.profile-picker-circle{outline:3px solid #1b4194;outline-offset:5px}
+.profile-picker-control:hover .profile-picker-circle{box-shadow:0 0 0 3px #1b4194}
+.profile-picker-badge{position:absolute;inset-inline-end:0;bottom:0;display:grid;place-items:center;width:34px;height:34px;border:3px solid #fff;border-radius:50%;background:#1b4194;color:#fff}
+.profile-picker-label{color:#1b4194;font-weight:700;cursor:pointer}
+.profile-picker-filename{max-width:100%;overflow-wrap:anywhere}

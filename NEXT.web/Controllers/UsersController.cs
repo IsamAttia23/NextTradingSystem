@@ -73,7 +73,7 @@ public sealed class UsersController(ISender sender, IBranchLookup branches) : Wo
         var options = (await branches.GetAsync(ct)).Where(x => x.IsActive || x.Id == user?.BranchId)
             .Select(x => new FieldOption(x.Id.ToString(), x.Name)).ToArray();
         List<FormField> fields = [
-            new(prefix + "Avatar", "ProfileImage", Type: "file"),
+            new(prefix + "Avatar", "ProfileImage", user?.AvatarUrl is { Length: > 0 } avatar ? "data:image/png;base64," + Convert.ToBase64String(avatar) : null, Type: "file"),
             new(prefix + "FullName", "FullName", user?.FullName, Required: true, MaxLength: 200),
             new(prefix + "UserName", "UserName", user?.UserName, Required: true, MaxLength: 256),
             new(prefix + "Email", "Email", user?.Email, "email", true, 256),

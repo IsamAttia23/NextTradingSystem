@@ -129,4 +129,5 @@
 <data name="OfflineNotice" xml:space="preserve"><value>أنت غير متصل. أعد الاتصال قبل حفظ التغييرات.</value></data>
 <data name="OnlineNotice" xml:space="preserve"><value>تمت استعادة الاتصال.</value></data>
 <data name="InstallApp" xml:space="preserve"><value>تثبيت التطبيق</value></data>
+  <data name="ChooseProfileImage" xml:space="preserve"><value>اختيار أو تغيير الصورة</value></data>
 </root>

@@ -129,4 +129,5 @@
 <data name="OfflineNotice" xml:space="preserve"><value>You are offline. Reconnect before saving changes.</value></data>
 <data name="OnlineNotice" xml:space="preserve"><value>Connection restored.</value></data>
 <data name="InstallApp" xml:space="preserve"><value>Install app</value></data>
+  <data name="ChooseProfileImage" xml:space="preserve"><value>Choose or change photo</value></data>
 </root>

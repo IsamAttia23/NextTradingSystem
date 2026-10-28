@@ -23,8 +23,7 @@
             }
             else if (field.Type == "file")
             {
-                <input class="form-control" id="@id" name="@field.Name" type="file" accept="image/*" data-profile-upload aria-describedby="@(id + "-hint")" />
-                <small id="@(id + "-hint")" class="text-muted">@L["ImageHint"]</small>
+                <partial name="_ProfileImagePicker" model="field" />
             }
             else if (field.Type == "textarea")
             {
