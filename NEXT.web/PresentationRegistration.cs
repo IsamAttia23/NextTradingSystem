@@ -13,6 +13,7 @@ public static class PresentationRegistration
         services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => options.MultipartBodyLengthLimit = 8 * 1024 * 1024);
         services.AddScoped<Filters.OperationNotificationFilter>();
         services.AddScoped<Services.UserFormBuilder>();
+        services.AddScoped<Services.PermissionOptionsProvider>();
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddControllersWithViews(options => { options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()); options.Filters.AddService<Filters.OperationNotificationFilter>(); })
             .AddDataAnnotationsLocalization(options => options.DataAnnotationLocalizerProvider =
