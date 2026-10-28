@@ -1,3 +1,4 @@
+using NEXT.web.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.DTOs.Security;
@@ -17,7 +18,7 @@ public sealed class RolesController(ISender sender) : WorkspaceController
                 x.IsSystem ? [Edit(new { x.Id })] : [Edit(new { x.Id }), Delete(new { x.Id })])).ToArray(),
             new("CreateRole", Route("Create")), TotalCount: roles.Count));
     }
-    [HttpGet] public IActionResult Create() => RoleForm("CreateRole", Route("Create"));
+    [HttpGet] public IActionResult Create() => Form(SecurityFormBuilder.Role("CreateRole", Route("Create")));
     [HttpPost] public async Task<IActionResult> Create(RoleInput input, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -27,7 +28,7 @@ public sealed class RolesController(ISender sender) : WorkspaceController
     [HttpGet] public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
         var role = await sender.Send(new GetRoleByIdQuery(id), ct);
-        return role is null ? NotFound() : RoleForm("EditRole", Route("Edit", new { id }), role);
+        return role is null ? NotFound() : Form(SecurityFormBuilder.Role("EditRole", Route("Edit", new { id }), role));
     }
     [HttpPost] public async Task<IActionResult> Edit(Guid id, RoleInput input, CancellationToken ct)
     {
@@ -41,7 +42,5 @@ public sealed class RolesController(ISender sender) : WorkspaceController
         await sender.Send(new DeleteRoleCommand(id), ct);
         return Ok();
     }
-    private IActionResult RoleForm(string title, string action, RoleDto? role = null) => Form(new(title, action,
-        [new("Name", "Name", role?.Name, Required: true, MaxLength: 50),
-         new("Description", "Description", role?.Description, "textarea", MaxLength: 500)]));
+
 }
