@@ -384,9 +384,9 @@ public sealed class WorkspaceUiTests
                 new Product{Name="Excluded product",Barcode="XYZ",CostPrice=1,RetailPrice=2,MinStock=1});
             await db.SaveChangesAsync();
         }
-        var html=await client.GetStringAsync("/Customers?Type=Company&Category=Wholesale&TaxNumber=tax&CommercialRegister=REG&MinCreditLimit=90&MaxCreditLimit=110&MinCurrentBalance=20&MaxCurrentBalance=40&MinPaymentTermsDays=10&MaxPaymentTermsDays=20&PageSize=1");
+        var html=await client.GetStringAsync("/Customers?Type=Company&Category=Wholesale&TaxNumber=TAX&CommercialRegister=REG&MinCreditLimit=90&MaxCreditLimit=110&MinCurrentBalance=20&MaxCurrentBalance=40&MinPaymentTermsDays=10&MaxPaymentTermsDays=20&PageSize=1");
         Assert.Contains("Matched company",html);Assert.DoesNotContain("Excluded individual",html);
-        html=await client.GetStringAsync("/Products?Barcode=abc&MinCostPrice=9&MaxCostPrice=11&MinRetailPrice=24&MaxRetailPrice=26&MinStock=3&MaxStock=60&HasExpiry=true");
+        html=await client.GetStringAsync("/Products?Barcode=ABC&MinCostPrice=9&MaxCostPrice=11&MinRetailPrice=24&MaxRetailPrice=26&MinStock=3&MaxStock=60&HasExpiry=true");
         Assert.Contains("Matched product",html);Assert.DoesNotContain("Excluded product",html);
         foreach(var route in new[]{"/Customers?MinCreditLimit=20&MaxCreditLimit=10","/Customers?Type=999","/Products?MinRetailPrice=30&MaxRetailPrice=2","/Products?HasExpiry=invalid"})
             Assert.Equal(HttpStatusCode.BadRequest,(await client.GetAsync(route)).StatusCode);

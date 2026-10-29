@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for Product; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
+    public override IQueryable<Product> Search(PaginationQuery query) =>
+        Search(query as ProductQueryModel ?? new ProductQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
     public IQueryable<Product> Search(ProductQueryModel queryModel)
     {

@@ -1,3 +1,5 @@
+using NEXT.Application.Common.QueryModels;
+using NEXT.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using NEXT.Domain.Common.Entities;
@@ -15,6 +17,42 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
 {
     protected NEXTDbContext Context { get; } = context;
     private readonly DbSet<TEntity> _set = context.Set<TEntity>();
+
+    /// <summary>Common search for entities without a specialized query model.</summary>
+    public virtual IQueryable<TEntity> Search(PaginationQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var source = Query();
+        var parameter = Expression.Parameter(typeof(TEntity), "entity");
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            Expression? predicate = null;
+            foreach (var property in Context.Model.FindEntityType(typeof(TEntity))!.GetProperties().Where(p => p.ClrType == typeof(string) &&
+                new[] { "Name", "Code", "Phone", "Email", "Description", "Symbol", "BatchNumber", "Module" }.Contains(p.Name)))
+            {
+                var member = Expression.Call(typeof(EF), nameof(EF.Property), [typeof(string)], parameter, Expression.Constant(property.Name));
+                var contains = Expression.AndAlso(Expression.NotEqual(member, Expression.Constant(null, typeof(string))),
+                    Expression.Call(member, nameof(string.Contains), Type.EmptyTypes, Expression.Constant(query.SearchTerm.Trim())));
+                predicate = predicate is null ? contains : Expression.OrElse(predicate, contains);
+            }
+            if (predicate is not null) source = source.Where(Expression.Lambda<Func<TEntity, bool>>(predicate, parameter));
+        }
+        var properties = Context.Model.FindEntityType(typeof(TEntity))!.GetProperties().Where(p => p.ClrType != typeof(byte[])).ToArray();
+        var sort = properties.FirstOrDefault(p => string.Equals(p.Name, query.SortBy?.Trim(), StringComparison.OrdinalIgnoreCase))
+            ?? properties.FirstOrDefault(p => p.Name == "Name") ?? properties.First(p => p.IsPrimaryKey());
+        var key = Expression.Call(typeof(EF), nameof(EF.Property), [sort.ClrType], parameter, Expression.Constant(sort.Name));
+        var ordered = source.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable),
+            query.SortDirection == SortDirection.Descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
+            [typeof(TEntity), sort.ClrType], source.Expression, Expression.Quote(Expression.Lambda(key, parameter))));
+        // A unique tie-breaker keeps paging stable for duplicate names.
+        foreach (var primary in properties.Where(p => p.IsPrimaryKey() && p.Name != sort.Name))
+        {
+            var member = Expression.Call(typeof(EF), nameof(EF.Property), [primary.ClrType], parameter, Expression.Constant(primary.Name));
+            ordered = ordered.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable), nameof(Queryable.ThenBy),
+                [typeof(TEntity), primary.ClrType], ordered.Expression, Expression.Quote(Expression.Lambda(member, parameter))));
+        }
+        return ordered;
+    }
 
     public Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         => _set.FirstOrDefaultAsync(predicate, cancellationToken);

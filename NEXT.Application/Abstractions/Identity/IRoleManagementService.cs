@@ -12,10 +12,3 @@ public interface IRoleManagementService
     Task<IdentityOperationResult> DeleteAsync(Role role);
     Task<bool> NameExistsAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default);
 }
-
-public sealed record IdentityOperationError(string Code, string Description);
-public sealed record IdentityOperationResult(bool Succeeded, IReadOnlyList<IdentityOperationError> Errors)
-{
-    public static IdentityOperationResult Success { get; } = new(true, Array.Empty<IdentityOperationError>());
-    public static IdentityOperationResult Failure(IEnumerable<IdentityOperationError> errors) => new(false, errors.ToArray());
-}

@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -7,6 +8,15 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for Stock; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class StockRepository(NEXTDbContext context) : KeyRepository<Stock, Guid>(context), IStockRepository
 {
+    public override IQueryable<Stock> Search(PaginationQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var result = base.Search(new PaginationQuery { SortBy = query.SortBy, SortDirection = query.SortDirection });
+        if (string.IsNullOrWhiteSpace(query.SearchTerm)) return result;
+        var term = query.SearchTerm.Trim();
+        return result.Where(x => x.Product.Name.Contains(term) || x.Warehouse.Name.Contains(term));
+    }
+
     public Task<Stock?> GetForProductAsync(Guid productId, Guid warehouseId, CancellationToken cancellationToken = default)
         => Context.Stocks.AsNoTracking()
         .Include(x => x.Product)

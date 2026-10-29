@@ -6,6 +6,7 @@ using NEXT.Application.Abstractions.Services;
 using NEXT.Application.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Common.QueryModels;
+using NEXT.Application.Exceptions;
 
 namespace NEXT.Infrastructure.Persistence
 {
@@ -19,7 +20,7 @@ namespace NEXT.Infrastructure.Persistence
 
             ArgumentNullException.ThrowIfNull(entities);
             if ((long)(pageNumber - 1) * pageSize > int.MaxValue)
-                throw new NEXT.Application.Exceptions.AppValidationException(new Dictionary<string, string[]> {
+                throw new AppValidationException(new Dictionary<string, string[]> {
                     [nameof(query.PageNumber)] = ["The requested page is too large."]
                 });
             var totalCount = await entities.CountAsync(cancellationToken);

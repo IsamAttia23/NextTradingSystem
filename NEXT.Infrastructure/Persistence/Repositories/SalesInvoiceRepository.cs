@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for SalesInvoice; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
 {
+    public override IQueryable<SalesInvoice> Search(PaginationQuery query) =>
+        Search(query as SalesInvoiceQueryModel ?? new SalesInvoiceQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => Context.SalesInvoices.AsNoTracking()
         .Include(x => x.Customer)

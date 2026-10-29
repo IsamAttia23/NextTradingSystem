@@ -1,20 +1,8 @@
 using MediatR;
-using NEXT.Domain.Common.Entities;
 using NEXT.Application.Common.QueryModels;
-
+using NEXT.Application.DTOs.Presentation;
 namespace NEXT.Application.Features.Common.CQRS;
 
-/// <summary>Reusable CQRS read requests for entities handled by TEntityService.</summary>
-public sealed record GetEntityByIdQuery<TId, TDto, TCreationDto, TUpdateDto>(TId Id)
-    : IRequest<TDto?>
-    where TId : struct
-    where TDto : class, TIdType<TId>
-    where TCreationDto : class
-    where TUpdateDto : class, TIdType<TId>;
-
-public sealed record GetEntitiesQuery<TId, TDto, TCreationDto, TUpdateDto>(PaginationQuery Pagination)
-    : IRequest<TPaginationQueryModel<TDto>>
-    where TId : struct
-    where TDto : class, TIdType<TId>
-    where TCreationDto : class
-    where TUpdateDto : class, TIdType<TId>;
+public sealed record GetEntityByIdQuery<TDto>(Guid Id) : IRequest<TDto?> where TDto : class;
+public sealed record GetEntitiesQuery<TDto>(PaginationQuery Pagination) : IRequest<TPaginationQueryModel<TDto>> where TDto : class;
+public sealed record GetEntityActivityQuery<TDto>(Guid Id, string? Kind, int Page) : IRequest<ActivityPageDto> where TDto : class;

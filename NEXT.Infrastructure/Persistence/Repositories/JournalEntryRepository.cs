@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -9,6 +10,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for JournalEntry; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class JournalEntryRepository(NEXTDbContext context) : KeyRepository<JournalEntry, Guid>(context), IJournalEntryRepository
 {
+    public override IQueryable<JournalEntry> Search(PaginationQuery query) =>
+        Search(query as JournalEntryQueryModel ?? new JournalEntryQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<JournalEntry?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => Context.JournalEntries.AsNoTracking()
         .Include(x => x.Lines)

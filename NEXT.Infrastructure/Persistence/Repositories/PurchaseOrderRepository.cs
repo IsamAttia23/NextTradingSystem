@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for PurchaseOrder; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class PurchaseOrderRepository(NEXTDbContext context) : KeyRepository<PurchaseOrder, Guid>(context), IPurchaseOrderRepository
 {
+    public override IQueryable<PurchaseOrder> Search(PaginationQuery query) =>
+        Search(query as PurchaseOrderQueryModel ?? new PurchaseOrderQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<PurchaseOrder?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => Context.PurchaseOrders.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     public IQueryable<PurchaseOrder> Search(PurchaseOrderQueryModel queryModel)

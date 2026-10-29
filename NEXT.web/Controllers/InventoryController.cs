@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using NEXT.Application.QueryModels;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Abstractions.IServices;
@@ -6,7 +7,7 @@ using NEXT.web.Services;
 namespace NEXT.web.Controllers;
 public sealed class InventoryController(IInventoryService inventory, InventoryPresenter presenter) : WorkspaceController
 {
-    [HttpGet] public async Task<IActionResult> Index([FromQuery] StockQueryModel query, CancellationToken ct = default)
+    [HttpGet] public async Task<IActionResult> Index([FromQuery] PaginationQuery query, CancellationToken ct = default)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         return Table(await presenter.StocksAsync(query, ct));
@@ -16,7 +17,7 @@ public sealed class InventoryController(IInventoryService inventory, InventoryPr
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         return Table(await presenter.MovementsAsync(query, ct));
     }
-    [HttpGet] public async Task<IActionResult> Batches([FromQuery] ProductBatchQueryModel query, CancellationToken ct = default)
+    [HttpGet] public async Task<IActionResult> Batches([FromQuery] PaginationQuery query, CancellationToken ct = default)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         return Table(await presenter.BatchesAsync(query, ct));

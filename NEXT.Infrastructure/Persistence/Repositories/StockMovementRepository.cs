@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for StockMovement; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class StockMovementRepository(NEXTDbContext context) : KeyRepository<StockMovement, Guid>(context), IStockMovementRepository
 {
+    public override IQueryable<StockMovement> Search(PaginationQuery query) =>
+        GetForProduct(query as StockMovementQueryModel ?? new StockMovementQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public IQueryable<StockMovement> GetForProduct(StockMovementQueryModel queryModel, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(queryModel);
@@ -20,6 +25,12 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
             .Include(x => x.Warehouse)
             .AsQueryable();
 
+        if (!string.IsNullOrWhiteSpace(queryModel.SearchTerm))
+        {
+            var term = queryModel.SearchTerm.Trim();
+            query = query.Where(x => x.Product.Name.Contains(term) || x.Warehouse.Name.Contains(term) || (x.Notes != null && x.Notes.Contains(term)));
+        }
+        if (queryModel.Type.HasValue) query = query.Where(x => x.Type == queryModel.Type.Value);
         query = ApplyProductFilter(query, queryModel);
         query = ApplyWarehouseFilter(query, queryModel);
         query = ApplyDateFilters(query, queryModel);

@@ -55,7 +55,12 @@ public static class DependencyInjection
         {
             foreach (var contract in implementation.GetInterfaces().Where(contract =>
                 contract.Namespace == "NEXT.Application.Abstractions.Persistence.Repositories"))
+            {
                 services.AddScoped(contract, implementation);
+                foreach (var generic in contract.GetInterfaces().Where(x => x.IsGenericType &&
+                    (x.GetGenericTypeDefinition() == typeof(IRepository<>) || x.GetGenericTypeDefinition() == typeof(IKeyRepository<,>))))
+                    services.AddScoped(generic, sp => sp.GetRequiredService(contract));
+            }
         }
 
         services.AddScoped<AuditEntryFactory>();

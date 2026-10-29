@@ -12,7 +12,7 @@ public static class PresentationRegistration
     {
         services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => options.MultipartBodyLengthLimit = 8 * 1024 * 1024);
         services.AddScoped<Filters.OperationNotificationFilter>();
-        services.AddScoped(typeof(Services.CatalogPresenter<,>));
+        services.AddScoped(typeof(Services.EntityPresenter<,>));
         services.AddScoped<Services.InventoryPresenter>();
         services.AddScoped<Services.QueryFilterPresenter>();
         services.AddScoped<Services.RecycleBinPresenter>();

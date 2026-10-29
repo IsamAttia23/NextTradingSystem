@@ -1,3 +1,10 @@
+using NEXT.Application.Features.Common.CQRS;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Infrastructure.Persistence.Repositories.Entities;
+using NEXT.Application.Features.Customers;
+using NEXT.Application.Features.Categories;
+using NEXT.Application.DTOs.Customers;
+using NEXT.Application.DTOs.Categories;
 using Microsoft.Extensions.DependencyInjection;
 using Mapster;
 using MapsterMapper;
@@ -5,10 +12,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using NEXT.Application.Abstractions.Context;
-using NEXT.Application.DTOs.Catalog;
+
 using NEXT.Application.DTOs.Inventory;
 using NEXT.Application.Exceptions;
-using NEXT.Application.Services.Catalog;
+using NEXT.Application.Features;
 using NEXT.Application.Services.Inventory;
 using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
@@ -166,26 +173,32 @@ public sealed class PostgresInventoryTests
     }
 
     [PostgresFact]
-    public async Task CatalogPersistsDtosValidatesReferencesAndProtectsBalancesAndHierarchy()
+    public async Task SharedCqrsPersistsDtosValidatesReferencesAndProtectsBalancesAndHierarchy()
     {
         await using var f = await Database.Create();
         var tag = new Tag { Name = "Retail", Color = "#ff0000" }; f.Db.Tags.Add(tag); await f.Db.SaveChangesAsync();
         var mapper = new Mapper(new TypeAdapterConfig());
-        var service = new CatalogService<Customer, CustomerDto, CustomerInputDto>(new KeyRepository<Customer, Guid>(f.Db), mapper,
-            new PaginationServices(), new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), [new CustomerRules(new TRepository<Tag>(f.Db))]);
-        await Assert.ThrowsAsync<AppValidationException>(() => service.CreateAsync(new CustomerInputDto { Name = "No tag" }));
-        var customer = await service.CreateAsync(new CustomerInputDto { Name = "Customer", TagId = tag.Id });
+        var repository = new CustomerRepository(f.Db);
+        var create = new CreateEntityCommandHandler<Customer, CustomerDto, CustomerInputDto>(repository, mapper,
+            new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), [new CustomerRules(new TRepository<Tag>(f.Db))]);
+        var update = new UpdateEntityCommandHandler<Customer, CustomerDto, CustomerInputDto>(repository, mapper,
+            new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), [new CustomerRules(new TRepository<Tag>(f.Db))]);
+        var get = new GetEntityByIdQueryHandler<Customer, CustomerDto>(repository, new PaginationServices());
+        var list = new GetEntitiesQueryHandler<Customer, CustomerDto>(repository, new PaginationServices());
+        var delete = new DeleteEntityCommandHandler<Customer, CustomerDto>(repository, new UnitOfWork(f.Db));
+        await Assert.ThrowsAsync<AppValidationException>(() => create.Handle(new(new CustomerInputDto { Name = "No tag" }), default));
+        var customer = await create.Handle(new(new CustomerInputDto { Name = "Customer", TagId = tag.Id }), default);
         var entity = await f.Db.Customers.SingleAsync(); entity.CurrentBalance = 99;
         await f.Db.SaveChangesAsync();
-        await service.UpdateAsync(customer.Id, new CustomerInputDto { Name = "Updated", TagId = tag.Id });
-        Assert.Equal(99, (await service.GetAsync(customer.Id)).CurrentBalance);
-        Assert.Equal(1, (await service.ListAsync(new())).TotalCount);
+        await update.Handle(new(customer.Id, new CustomerInputDto { Name = "Updated", TagId = tag.Id }), default);
+        Assert.Equal(99, (await get.Handle(new(customer.Id), default))!.CurrentBalance);
+        Assert.Equal(1, (await list.Handle(new(new()), default)).TotalCount);
         var parent = new Category { Name = "Parent" }; f.Db.Categories.Add(parent); await f.Db.SaveChangesAsync();
         var child = new Category { Name = "Child", ParentId = parent.Id }; f.Db.Categories.Add(child); await f.Db.SaveChangesAsync();
         var rules = new CategoryRules(new KeyRepository<Category, Guid>(f.Db));
         await Assert.ThrowsAsync<AppValidationException>(() => rules.ValidateAsync(parent.Id, new CategoryInputDto { Name = "Cycle", ParentId = child.Id }, default));
-        await service.DeleteAsync(customer.Id, reason: "Test deletion reason");
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetAsync(customer.Id));
+        await delete.Handle(new(customer.Id, "Test deletion reason"), default);
+        await Assert.ThrowsAsync<NotFoundException>(() => get.Handle(new(customer.Id), default));
     }
 
     [PostgresFact]
@@ -199,7 +212,7 @@ public sealed class PostgresInventoryTests
         services.AddSingleton<IConfiguration>(config);
         services.AddSingleton<Microsoft.Extensions.Hosting.IHostEnvironment>(new TestEnvironment());
         services.AddSingleton<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>(new TestEnvironment());
-        NEXT.Application.EntityServiceRegistrationExtensions.AddApplicationServices(services, config);
+        NEXT.Application.ApplicationRegistrationExtensions.AddApplicationServices(services, config);
         NEXT.Infrastructure.DependencyInjection.AddInfrastructureServices(services, config);
         services.AddSingleton<ICurrentUserService>(new CurrentUser(null));
         await using var provider = services.BuildServiceProvider();
@@ -290,8 +303,8 @@ public sealed class PostgresInventoryTests
         Assert.Single(supplierActivity.Records);
         Assert.Equal(1, supplierActivity.Sections.Single(x => x.Key == "PurchaseOrder").Count);
         // Server-side filters/sorting execute on PostgreSQL, not on the current page in memory.
-        var filtered = NEXT.Application.Services.Catalog.CatalogQueryPipeline.Apply(f.Db.Customers.AsNoTracking(),
-            new NEXT.Application.QueryModels.CustomerQueryModel { SearchTerm = "CUSTOMER", TagId = tag.Id, IsActive = true });
+        var filtered = new CustomerRepository(f.Db).Search(
+            new NEXT.Application.QueryModels.CustomerQueryModel { SearchTerm = "Customer", TagId = tag.Id, IsActive = true });
         Assert.Equal(customer.Id, (await filtered.SingleAsync()).Id);
     }
     [PostgresFact]
@@ -299,14 +312,13 @@ public sealed class PostgresInventoryTests
     {
         await using var f = await Database.Create();
         await f.Db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Customers\" DROP COLUMN \"AvatarUrl\"; ALTER TABLE \"Suppliers\" DROP COLUMN \"AvatarUrl\";");
-        var service = new CatalogService<Customer, CustomerDto, CustomerInputDto>(new KeyRepository<Customer, Guid>(f.Db), new Mapper(new TypeAdapterConfig()),
-            new PaginationServices(), new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), []);
-        var error = await Assert.ThrowsAsync<PostgresException>(() => service.ListAsync(new()));
+        var query = new GetEntitiesQueryHandler<Customer, CustomerDto>(new CustomerRepository(f.Db), new PaginationServices());
+        var error = await Assert.ThrowsAsync<PostgresException>(() => query.Handle(new(new()), default));
         Assert.Equal("42703", error.SqlState);
         var sql = await File.ReadAllTextAsync(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../docs/sql/20261028_partner_profiles.sql")));
         await f.Db.Database.ExecuteSqlRawAsync(sql);
         await f.Db.Database.ExecuteSqlRawAsync(sql); // The upgrade is safe to repeat.
-        Assert.Equal(0, (await service.ListAsync(new())).TotalCount);
+        Assert.Equal(0, (await query.Handle(new(new()), default)).TotalCount);
         Assert.Equal(0, await f.Db.Suppliers.CountAsync());
     }
     [PostgresFact]
@@ -336,16 +348,16 @@ public sealed class PostgresInventoryTests
         }
     }
     [PostgresFact]
-    public async Task QueryModelRangesAndAvailableStockArithmeticTranslateToPostgres()
+    public async Task RepositorySearchUsesProductRangesAndGeneralStockSortingOnPostgres()
     {
         await using var f=await Database.Create();
         var product=await f.Db.Products.SingleAsync(); product.CostPrice=10;product.RetailPrice=25;product.MinStock=5;product.MaxStock=100;product.HasExpiry=true;
         f.Db.Stocks.Add(new Stock{ProductId=f.Product,WarehouseId=f.Source,Quantity=20,ReservedQuantity=6,AverageCost=10});await f.Db.SaveChangesAsync();
-        var products=NEXT.Application.Services.Catalog.CatalogQueryPipeline.Apply(f.Db.Products.AsNoTracking(),new NEXT.Application.QueryModels.ProductQueryModel{MinCostPrice=9,MaxRetailPrice=30,MinStock=4,MaxStock=101,HasExpiry=true});
+        var products=new ProductRepository(f.Db).Search(new NEXT.Application.QueryModels.ProductQueryModel{MinCostPrice=9,MaxRetailPrice=30,MinStock=4,MaxStock=101,HasExpiry=true});
         Assert.Single(await products.ToListAsync());
-        var available=NEXT.Application.Services.Catalog.CatalogQueryPipeline.Apply(f.Db.Stocks.AsNoTracking(),new NEXT.Application.QueryModels.StockQueryModel{MinAvailableQuantity=14,MaxAvailableQuantity=14,SearchTerm="TEST PRODUCT"});
-        Assert.Single(await available.ToListAsync());
-        var excluded=NEXT.Application.Services.Catalog.CatalogQueryPipeline.Apply(f.Db.Stocks.AsNoTracking(),new NEXT.Application.QueryModels.StockQueryModel{MinAvailableQuantity=15});
+        var stocks = new StockRepository(f.Db).Search(new PaginationQuery { SortBy = "Quantity", SortDirection = SortDirection.Descending });
+        Assert.Equal(14, (await stocks.SingleAsync()).Quantity - (await stocks.SingleAsync()).ReservedQuantity);
+        var excluded = new ProductRepository(f.Db).Search(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 11 });
         Assert.Empty(await excluded.ToListAsync());
     }
     private sealed record CurrentUser(Guid? UserId) : ICurrentUserService;

@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -14,6 +15,10 @@ public sealed class CustomerRepository(
     NEXTDbContext context)
     : KeyRepository<Customer, Guid>(context), ICustomerRepository
 {
+    public override IQueryable<Customer> Search(PaginationQuery query) =>
+        Search(query as CustomerQueryModel ?? new CustomerQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public IQueryable<Customer> Search(
         CustomerQueryModel customerQuery)
     {

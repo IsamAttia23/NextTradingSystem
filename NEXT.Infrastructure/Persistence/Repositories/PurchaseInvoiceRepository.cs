@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for PurchaseInvoice; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyRepository<PurchaseInvoice, Guid>(context), IPurchaseInvoiceRepository
 {
+    public override IQueryable<PurchaseInvoice> Search(PaginationQuery query) =>
+        Search(query as PurchaseInvoiceQueryModel ?? new PurchaseInvoiceQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<PurchaseInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => Context.PurchaseInvoices.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     public IQueryable<PurchaseInvoice> Search(PurchaseInvoiceQueryModel queryModel)

@@ -5,7 +5,7 @@ using NEXT.Application.DTOs.Presentation;
 namespace NEXT.web.Services;
 public sealed class InventoryPresenter(IInventoryQueryService queries, IReferenceDataService references, QueryFilterPresenter filters)
 {
-    public async Task<TableModel> StocksAsync(StockQueryModel query, CancellationToken ct)
+    public async Task<TableModel> StocksAsync(PaginationQuery query, CancellationToken ct)
     {
         var result = await queries.StocksAsync(query, ct);
         query.PageNumber = result.PageNumber; query.PageSize = result.PageSize;
@@ -20,9 +20,9 @@ public sealed class InventoryPresenter(IInventoryQueryService queries, IReferenc
         query.PageNumber = result.PageNumber; query.PageSize = result.PageSize;
         return new("StockMovements", "StockMovementsDescription", ["Product", "Warehouse", "MovementType", "Quantity", "UnitCost", "OperationId", "CreatedAt"],
             result.Data.Select(x => new TableRow([x.ProductName, x.WarehouseName, x.Type, x.Quantity.ToString("N3"), x.UnitCost.ToString("N2"), x.ReferenceId?.ToString() ?? "—", x.CreatedAt.ToLocalTime().ToString("g")], [])).ToArray(),
-            Page: result.PageNumber, TotalPages: result.TotalPages, TotalCount: result.TotalCount, Query: query, SortOptions: [new("CreatedAt", "CreatedAt"), new("Quantity", "Quantity"), new("UnitCost", "UnitCost")], FilterFields: await filters.FieldsAsync(query, ct), ActiveFilters: QueryFilterPresenter.ActiveCount(query), PageSize: result.PageSize);
+            Page: result.PageNumber, TotalPages: result.TotalPages, TotalCount: result.TotalCount, Query: query, SortOptions: [new("CreatedAt", "CreatedAt")], FilterFields: await filters.FieldsAsync(query, ct), ActiveFilters: QueryFilterPresenter.ActiveCount(query), PageSize: result.PageSize);
     }
-    public async Task<TableModel> BatchesAsync(ProductBatchQueryModel query, CancellationToken ct)
+    public async Task<TableModel> BatchesAsync(PaginationQuery query, CancellationToken ct)
     {
         var result = await queries.BatchesAsync(query, ct);
         query.PageNumber = result.PageNumber; query.PageSize = result.PageSize;

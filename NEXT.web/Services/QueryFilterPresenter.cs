@@ -36,7 +36,7 @@ public sealed class QueryFilterPresenter(IReferenceDataService references)
             var label = (query, property.Name) switch
             {
                 (CustomerQueryModel, "Type") => "CustomerTypeFilter", (CustomerQueryModel, "Category") => "CustomerCategoryFilter",
-                (StockMovementQueryModel, "Type") => "MovementType", (ProductBatchQueryModel, "From") => "ExpiryFrom", (ProductBatchQueryModel, "To") => "ExpiryThrough",
+                (StockMovementQueryModel, "Type") => "MovementType",
                 _ => property.Name
             };
             fields.Add(new(property.Name, label, Format(value), kind, MaxLength: type == typeof(string) ? 200 : null, Options: options));

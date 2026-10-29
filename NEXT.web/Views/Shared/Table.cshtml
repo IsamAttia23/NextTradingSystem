@@ -10,7 +10,7 @@
     @foreach (var category in sections) { <a asp-action="Index" asp-route-section="@category" class="@(ViewData["Section"]?.ToString() == category ? "selected" : "")">@L[category]</a> }
     </nav>
 }
-@if (Model.Query is not null) { <partial name="_CatalogFilters" model="Model" /> }
+@if (Model.Query is not null) { <partial name="_QueryFilters" model="Model" /> }
 <section class="content-card">
     <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div>@if (Model.Query is null) { <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" data-table-search placeholder="@L["SearchPage"]" aria-label="@L["SearchPage"]" /></label> }</div>
     <partial name="_Pagination" model='@(new PagerDto(Model.Page, Model.TotalPages, Model.TotalCount, Model.Query is null ? "page" : "PageNumber", Model.PageSize, Model.Query is not null))' />

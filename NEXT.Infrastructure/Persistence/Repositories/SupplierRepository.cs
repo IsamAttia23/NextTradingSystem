@@ -1,3 +1,4 @@
+using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Domain.Entities;
@@ -10,6 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for Supplier; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Supplier, Guid>(context), ISupplierRepository
 {
+    public override IQueryable<Supplier> Search(PaginationQuery query) =>
+        Search(query as SupplierQueryModel ?? new SupplierQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
+            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
+
     public Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
         => Context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
 

@@ -30,16 +30,14 @@ public class ArchitectureAndRegressionTests
     {
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
-        Type[] definitions = [
-            typeof(NEXT.Application.Features.Common.CQRS.CreateEntityCommand<,,,>),
-            typeof(NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<,,,>),
-            typeof(NEXT.Application.Features.Common.CQRS.DeleteEntityCommand<,,,>),
-            typeof(NEXT.Application.Features.Common.CQRS.GetEntityByIdQuery<,,,>),
-            typeof(NEXT.Application.Features.Common.CQRS.GetEntitiesQuery<,,,>)];
-        foreach (var definition in definitions)
+        Type[] requests = [
+            typeof(NEXT.Application.Features.Common.CQRS.CreateEntityCommand<PermissionDto, PermissionCreationDto>),
+            typeof(NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<PermissionDto, PermissionUpdateDto>),
+            typeof(NEXT.Application.Features.Common.CQRS.DeleteEntityCommand<PermissionDto>),
+            typeof(NEXT.Application.Features.Common.CQRS.GetEntityByIdQuery<PermissionDto>),
+            typeof(NEXT.Application.Features.Common.CQRS.GetEntitiesQuery<PermissionDto>)];
+        foreach (var request in requests)
         {
-            var request = definition.MakeGenericType(typeof(Guid), typeof(PermissionDto),
-                typeof(PermissionCreationDto), typeof(PermissionUpdateDto));
             var responseContract = request.GetInterfaces().SingleOrDefault(type =>
                 type.IsGenericType && type.GetGenericTypeDefinition() == typeof(MediatR.IRequest<>));
             var handler = responseContract is null
@@ -55,7 +53,7 @@ public class ArchitectureAndRegressionTests
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<MediatR.IMediator>();
-        var request = new NEXT.Application.Features.Common.CQRS.CreateEntityCommand<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>(new());
+        var request = new NEXT.Application.Features.Common.CQRS.CreateEntityCommand<PermissionDto, PermissionCreationDto>(new());
         await Assert.ThrowsAsync<AppValidationException>(() => mediator.Send(request));
     }
 
@@ -83,7 +81,7 @@ public class ArchitectureAndRegressionTests
     [Fact]
     public void ApplicationDoesNotReferenceEfOrInfrastructureOrHttp()
     {
-        var dependencies = typeof(EntityServiceRegistrationExtensions).Assembly.GetReferencedAssemblies();
+        var dependencies = typeof(ApplicationRegistrationExtensions).Assembly.GetReferencedAssemblies();
         Assert.DoesNotContain(dependencies, x => x.Name!.StartsWith("Microsoft.EntityFrameworkCore") ||
             x.Name.StartsWith("NEXT.Infrastructure") || x.Name.StartsWith("Microsoft.AspNetCore"));
     }
@@ -136,12 +134,12 @@ public class ArchitectureAndRegressionTests
     }
 
     [Fact]
-    public async Task PermissionServiceValidatesBeforeCallingDatabase()
+    public async Task PermissionUpdateHandlerValidatesBeforeCallingDatabase()
     {
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
-        var service = scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.IServices.IEntityServices<Guid, PermissionDto, PermissionCreationDto, PermissionUpdateDto>>();
-        await Assert.ThrowsAsync<AppValidationException>(() => service.Add(new PermissionCreationDto { Code = null! }));
+        var sender = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
+        await Assert.ThrowsAsync<AppValidationException>(() => sender.Send(new NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<PermissionDto, PermissionUpdateDto>(Guid.NewGuid(), new PermissionUpdateDto { Code = null! })));
     }
 
     [Fact]
