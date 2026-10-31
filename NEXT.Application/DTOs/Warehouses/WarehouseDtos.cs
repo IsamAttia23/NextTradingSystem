@@ -10,8 +10,3 @@ public class WarehouseInputDto
      public bool IsDefault { get; set; }
      public bool IsActive { get; set; } = true;
 }
-public sealed class WarehouseDto : WarehouseInputDto
-{
-    public Guid Id { get; set; }
-
-}

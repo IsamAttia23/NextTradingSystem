@@ -8,8 +8,3 @@ public class BranchInputDto
     [Phone, StringLength(32)] public string? Phone { get; set; }
      public bool IsActive { get; set; } = true;
 }
-public sealed class BranchDto : BranchInputDto
-{
-    public Guid Id { get; set; }
-
-}

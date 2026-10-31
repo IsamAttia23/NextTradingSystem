@@ -9,8 +9,3 @@ public class CustomerContactInputDto
     [Phone, StringLength(32)] public string? Phone { get; set; }
     [EmailAddress, StringLength(256)] public string? Email { get; set; }
 }
-public sealed class CustomerContactDto : CustomerContactInputDto
-{
-    public Guid Id { get; set; }
-
-}

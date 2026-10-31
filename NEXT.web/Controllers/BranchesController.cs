@@ -6,5 +6,5 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
-public sealed class BranchesController(ISender sender, EntityPresenter<BranchDto, BranchInputDto> presenter)
-    : EntityController<BranchDto, BranchInputDto, PaginationQuery>(sender, presenter);
+public sealed class BranchesController(ISender sender, EntityPresenter<BranchInputDto, BranchInputDto> presenter)
+    : EntityController<BranchInputDto, BranchInputDto, PaginationQuery>(sender, presenter);

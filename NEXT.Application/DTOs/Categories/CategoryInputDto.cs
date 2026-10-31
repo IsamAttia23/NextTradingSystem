@@ -9,8 +9,3 @@ public class CategoryInputDto
     [Url, StringLength(2048)] public string? ImageUrl { get; set; }
      public bool IsActive { get; set; } = true;
 }
-public sealed class CategoryDto : CategoryInputDto
-{
-    public Guid Id { get; set; }
-
-}

@@ -8,8 +8,3 @@ public class UnitOfMeasureInputDto
      public Guid? BaseUnitId { get; set; }
     [Range(typeof(decimal), "0.000001", "999999999.999999", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)] public decimal ConversionFactor { get; set; } = 1m;
 }
-public sealed class UnitOfMeasureDto : UnitOfMeasureInputDto
-{
-    public Guid Id { get; set; }
-
-}
