@@ -303,8 +303,9 @@ public sealed class PostgresInventoryTests
         Assert.Single(supplierActivity.Records);
         Assert.Equal(1, supplierActivity.Sections.Single(x => x.Key == "PurchaseOrder").Count);
         // Server-side filters/sorting execute on PostgreSQL, not on the current page in memory.
-        var filtered = new CustomerRepository(f.Db).Search(
-            new NEXT.Application.QueryModels.CustomerQueryModel { SearchTerm = "Customer", TagId = tag.Id, IsActive = true });
+        var customers = new CustomerRepository(f.Db);
+        var filtered = customers.FindAsync(customers.BuildFilterExpression(
+            new NEXT.Application.QueryModels.CustomerQueryModel { SearchTerm = "Customer", TagId = tag.Id, IsActive = true }));
         Assert.Equal(customer.Id, (await filtered.SingleAsync()).Id);
     }
     [PostgresFact]
@@ -348,16 +349,18 @@ public sealed class PostgresInventoryTests
         }
     }
     [PostgresFact]
-    public async Task RepositorySearchUsesProductRangesAndGeneralStockSortingOnPostgres()
+    public async Task RepositoryExpressionsUseProductRangesAndGeneralStockSortingOnPostgres()
     {
         await using var f=await Database.Create();
         var product=await f.Db.Products.SingleAsync(); product.CostPrice=10;product.RetailPrice=25;product.MinStock=5;product.MaxStock=100;product.HasExpiry=true;
         f.Db.Stocks.Add(new Stock{ProductId=f.Product,WarehouseId=f.Source,Quantity=20,ReservedQuantity=6,AverageCost=10});await f.Db.SaveChangesAsync();
-        var products=new ProductRepository(f.Db).Search(new NEXT.Application.QueryModels.ProductQueryModel{MinCostPrice=9,MaxRetailPrice=30,MinStock=4,MaxStock=101,HasExpiry=true});
+        var productRepository = new ProductRepository(f.Db);
+        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice=9, MaxRetailPrice=30, MinStock=4, MaxStock=101, HasExpiry=true }));
         Assert.Single(await products.ToListAsync());
-        var stocks = new StockRepository(f.Db).Search(new PaginationQuery { SortBy = "Quantity", SortDirection = SortDirection.Descending });
+        var stockRepository = new StockRepository(f.Db);
+        var stocks = stockRepository.ApplySorting(stockRepository.FindAsync(stockRepository.BuildFilterExpression(new PaginationQuery())), "Quantity", SortDirection.Descending);
         Assert.Equal(14, (await stocks.SingleAsync()).Quantity - (await stocks.SingleAsync()).ReservedQuantity);
-        var excluded = new ProductRepository(f.Db).Search(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 11 });
+        var excluded = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 11 }));
         Assert.Empty(await excluded.ToListAsync());
     }
     private sealed record CurrentUser(Guid? UserId) : ICurrentUserService;

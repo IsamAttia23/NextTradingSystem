@@ -16,9 +16,9 @@ public sealed class GetEntityByIdQueryHandler<TEntity, TDto>(
 {
     public async Task<TDto?> Handle(GetEntityByIdQuery<TDto> request, CancellationToken ct)
     {
-        var result = await pagination.GetPaggedList(repository.Query().Where(x => x.Id == request.Id).ProjectToType<TDto>(),
+        var pagedList = await pagination.GetPaggedList(repository.FindAsync(x => x.Id == request.Id, ct), entities => entities.ProjectToType<TDto>(),
             new PaginationQuery { PageSize = 1 }, ct);
-        return result.Data.SingleOrDefault() ?? throw new NotFoundException("Record was not found.");
+        return pagedList.Data.SingleOrDefault() ?? throw new NotFoundException("Record was not found.");
     }
 }
 
@@ -27,8 +27,16 @@ public sealed class GetEntitiesQueryHandler<TEntity, TDto>(
     : IRequestHandler<GetEntitiesQuery<TDto>, TPaginationQueryModel<TDto>>
     where TEntity : AuditableEntity<Guid> where TDto : class
 {
-    public Task<TPaginationQueryModel<TDto>> Handle(GetEntitiesQuery<TDto> request, CancellationToken ct) =>
-        pagination.GetPaggedList(repository.Search(request.Pagination).ProjectToType<TDto>(), request.Pagination, ct);
+    public async Task<TPaginationQueryModel<TDto>> Handle(GetEntitiesQuery<TDto> request, CancellationToken ct)
+    {
+        var query = request.Pagination;
+        var expression = repository.BuildFilterExpression(query);
+        var entities = repository.FindAsync(expression, ct);
+        var orderedEntities = repository.ApplySorting(entities, query.SortBy, query.SortDirection);
+        var pagedList = await pagination.GetPaggedList(orderedEntities,
+            source => source.ProjectToType<TDto>(), query, ct);
+        return pagedList;
+    }
 }
 
 public sealed class GetEntityActivityQueryHandler<TEntity, TDto>(IKeyRepository<TEntity, Guid> repository, IRelatedRecordsReader related)

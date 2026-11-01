@@ -36,7 +36,7 @@ public static class EntityFeatureRegistration
         services.AddScoped<IEntityRules<Supplier, SupplierInputDto>, SupplierRules>();
         services.AddEntityCqrs<Category, CategoryDto, CategoryInputDto, CategoryInputDto>();
         services.AddScoped<IEntityRules<Category, CategoryInputDto>, CategoryRules>();
-        services.AddEntityCqrs<Branch, BranchInputDto, BranchInputDto, BranchInputDto>();
+        services.AddEntityCqrs<Branch, BranchDto, BranchInputDto, BranchInputDto>();
         services.AddEntityCqrs<Warehouse, WarehouseDto, WarehouseInputDto, WarehouseInputDto>();
         services.AddScoped<IEntityRules<Warehouse, WarehouseInputDto>, WarehouseRules>();
         services.AddEntityCqrs<Product, ProductDto, ProductInputDto, ProductInputDto>();

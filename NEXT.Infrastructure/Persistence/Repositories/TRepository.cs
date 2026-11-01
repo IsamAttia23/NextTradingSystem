@@ -18,31 +18,67 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     protected NEXTDbContext Context { get; } = context;
     private readonly DbSet<TEntity> _set = context.Set<TEntity>();
 
-    /// <summary>Common search for entities without a specialized query model.</summary>
-    public virtual IQueryable<TEntity> Search(PaginationQuery query)
+    /// <summary>Builds common search conditions without executing or paging the query.</summary>
+    public virtual Expression<Func<TEntity, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var source = Query();
         var parameter = Expression.Parameter(typeof(TEntity), "entity");
-        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        return Expression.Lambda<Func<TEntity, bool>>(
+            BuildSearchExpression(query.SearchTerm, parameter), parameter);
+    }
+
+    protected Expression BuildSearchExpression(string? searchTerm, ParameterExpression parameter, params string[] propertyPaths)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return Expression.Constant(true);
+
+        if (propertyPaths.Length == 0)
+            propertyPaths = Context.Model.FindEntityType(typeof(TEntity))!.GetProperties()
+                .Where(p => p.ClrType == typeof(string) &&
+                    new[] { "Name", "Code", "Phone", "Email", "Description", "Symbol", "BatchNumber", "Module" }.Contains(p.Name))
+                .Select(p => p.Name).ToArray();
+
+        Expression? search = null;
+        foreach (var propertyPath in propertyPaths)
         {
-            Expression? predicate = null;
-            foreach (var property in Context.Model.FindEntityType(typeof(TEntity))!.GetProperties().Where(p => p.ClrType == typeof(string) &&
-                new[] { "Name", "Code", "Phone", "Email", "Description", "Symbol", "BatchNumber", "Module" }.Contains(p.Name)))
+            Expression member = parameter;
+            Expression? guard = null;
+            foreach (var name in propertyPath.Split('.'))
             {
-                var member = Expression.Call(typeof(EF), nameof(EF.Property), [typeof(string)], parameter, Expression.Constant(property.Name));
-                var contains = Expression.AndAlso(Expression.NotEqual(member, Expression.Constant(null, typeof(string))),
-                    Expression.Call(member, nameof(string.Contains), Type.EmptyTypes, Expression.Constant(query.SearchTerm.Trim())));
-                predicate = predicate is null ? contains : Expression.OrElse(predicate, contains);
+                member = Expression.Property(member, name);
+                if (!member.Type.IsValueType)
+                {
+                    var notNull = Expression.NotEqual(member, Expression.Constant(null, member.Type));
+                    guard = guard is null ? notNull : Expression.AndAlso(guard, notNull);
+                }
             }
-            if (predicate is not null) source = source.Where(Expression.Lambda<Func<TEntity, bool>>(predicate, parameter));
+            Expression contains = Expression.Call(member, nameof(string.Contains), Type.EmptyTypes,
+                Expression.Constant(searchTerm.Trim()));
+            if (guard is not null) contains = Expression.AndAlso(guard, contains);
+            search = search is null ? contains : Expression.OrElse(search, contains);
         }
+        return search ?? Expression.Constant(true);
+    }
+
+    protected Expression<Func<TEntity, bool>> CombineSearchExpression(
+        Expression<Func<TEntity, bool>> filters, string? searchTerm, params string[] propertyPaths)
+    {
+        var parameter = filters.Parameters[0];
+        var search = BuildSearchExpression(searchTerm, parameter, propertyPaths);
+        return Expression.Lambda<Func<TEntity, bool>>(
+            Expression.AndAlso(filters.Body, search), parameter);
+    }
+
+    public virtual IQueryable<TEntity> ApplySorting(IQueryable<TEntity> source, string? sortBy, SortDirection? sortDirection)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        var parameter = Expression.Parameter(typeof(TEntity), "entity");
         var properties = Context.Model.FindEntityType(typeof(TEntity))!.GetProperties().Where(p => p.ClrType != typeof(byte[])).ToArray();
-        var sort = properties.FirstOrDefault(p => string.Equals(p.Name, query.SortBy?.Trim(), StringComparison.OrdinalIgnoreCase))
+        var sort = properties.FirstOrDefault(p => string.Equals(p.Name, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? properties.FirstOrDefault(p => p.Name == "Name") ?? properties.First(p => p.IsPrimaryKey());
         var key = Expression.Call(typeof(EF), nameof(EF.Property), [sort.ClrType], parameter, Expression.Constant(sort.Name));
         var ordered = source.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable),
-            query.SortDirection == SortDirection.Descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
+            sortDirection == SortDirection.Descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
             [typeof(TEntity), sort.ClrType], source.Expression, Expression.Quote(Expression.Lambda(key, parameter))));
         // A unique tie-breaker keeps paging stable for duplicate names.
         foreach (var primary in properties.Where(p => p.IsPrimaryKey() && p.Name != sort.Name))

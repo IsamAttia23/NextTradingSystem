@@ -1,42 +1,34 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Application.QueryModels;
-using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
-/// <summary>EF Core repository for Payment; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Payment, Guid>(context), IPaymentRepository
 {
-    public IQueryable<Payment> SearchAsync(PaymentQueryModel queryModel, CancellationToken cancellationToken = default)
+    public override Expression<Func<Payment, bool>> BuildFilterExpression(PaginationQuery query)
     {
-        ArgumentNullException.ThrowIfNull(queryModel);
-        var payments = Context.Payments.AsNoTracking()
-            .Include(x => x.Customer)
-            .Include(x => x.Supplier)
-            .AsQueryable();
-        if (queryModel.From.HasValue) payments = payments.Where(x => x.PaymentDate >= queryModel.From);
-        if (queryModel.To.HasValue) payments = payments.Where(x => x.PaymentDate <= queryModel.To);
-        if (!string.IsNullOrEmpty(queryModel.CustomerName)) payments = payments.Where(x => x.Customer != null && x.Customer.Name == queryModel.CustomerName);
-        if (!string.IsNullOrEmpty(queryModel.SupplierName)) payments = payments.Where(x => x.Supplier != null && x.Supplier.Name == queryModel.SupplierName);
-
-        payments = queryModel.SortDirection switch
-        {
-            SortDirection.Ascending => payments
-                .OrderBy(x => x.PaymentDate)
-                .ThenBy(x => x.Id),
-
-            SortDirection.Descending => payments
-                .OrderByDescending(x => x.PaymentDate)
-                .ThenByDescending(x => x.Id),
-
-            _ => payments
-                .OrderByDescending(x => x.PaymentDate)
-                .ThenByDescending(x => x.Id)
-        };
-
-        return payments;
+        ArgumentNullException.ThrowIfNull(query);
+        return BuildFilterExpression(query as PaymentQueryModel ?? new PaymentQueryModel { SearchTerm = query.SearchTerm });
     }
+
+    public Expression<Func<Payment, bool>> BuildFilterExpression(PaymentQueryModel query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        Expression<Func<Payment, bool>> filters = entity =>
+            (!query.From.HasValue || entity.PaymentDate >= query.From.Value) &&
+            (!query.To.HasValue || entity.PaymentDate <= query.To.Value) &&
+            (string.IsNullOrEmpty(query.CustomerName) || (entity.Customer != null && entity.Customer.Name == query.CustomerName)) &&
+            (string.IsNullOrEmpty(query.SupplierName) || (entity.Supplier != null && entity.Supplier.Name == query.SupplierName));
+
+        return CombineSearchExpression(filters, query.SearchTerm, "PaymentNumber", "Notes");
+    }
+
+    public override IQueryable<Payment> ApplySorting(IQueryable<Payment> entities, string? sortBy, SortDirection? sortDirection)
+        => base.ApplySorting(entities, string.IsNullOrWhiteSpace(sortBy) ? nameof(Payment.PaymentDate) : sortBy,
+            sortDirection ?? SortDirection.Descending);
 }

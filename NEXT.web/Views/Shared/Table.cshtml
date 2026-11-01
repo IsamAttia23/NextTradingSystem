@@ -12,7 +12,7 @@
 }
 @if (Model.Query is not null) { <partial name="_QueryFilters" model="Model" /> }
 <section class="content-card">
-    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div>@if (Model.Query is null) { <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" data-table-search placeholder="@L["SearchPage"]" aria-label="@L["SearchPage"]" /></label> }</div>
+    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div></div>
     <partial name="_Pagination" model='@(new PagerDto(Model.Page, Model.TotalPages, Model.TotalCount, Model.Query is null ? "page" : "PageNumber", Model.PageSize, Model.Query is not null))' />
     <div class="table-scroll-hint"><partial name="_Icon" model='@("transfer")' /> @L["ScrollTableHint"]</div>
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]"><table class="table align-middle"><caption class="visually-hidden">@L[Model.Title]</caption>

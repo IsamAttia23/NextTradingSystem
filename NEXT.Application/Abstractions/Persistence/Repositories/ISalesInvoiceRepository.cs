@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Application.QueryModels;
@@ -9,5 +10,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 public interface ISalesInvoiceRepository : IKeyRepository<SalesInvoice, Guid>
 {
     Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default);
-    IQueryable<SalesInvoice> Search(SalesInvoiceQueryModel queryModel);
+    Expression<Func<SalesInvoice, bool>> BuildFilterExpression(SalesInvoiceQueryModel query);
 }

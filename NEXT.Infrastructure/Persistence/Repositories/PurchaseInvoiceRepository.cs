@@ -1,186 +1,58 @@
-using NEXT.Application.Common.QueryModels;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Application.QueryModels;
-using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
-/// <summary>EF Core repository for PurchaseInvoice; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyRepository<PurchaseInvoice, Guid>(context), IPurchaseInvoiceRepository
 {
-    public override IQueryable<PurchaseInvoice> Search(PaginationQuery query) =>
-        Search(query as PurchaseInvoiceQueryModel ?? new PurchaseInvoiceQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
-            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
-
     public Task<PurchaseInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => Context.PurchaseInvoices.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-    public IQueryable<PurchaseInvoice> Search(PurchaseInvoiceQueryModel queryModel)
+
+    public override Expression<Func<PurchaseInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
-        ArgumentNullException.ThrowIfNull(queryModel);
-
-        var invoices = Context.PurchaseInvoices
-            .AsNoTracking()
-            .Include(x => x.Supplier)
-            .Include(x => x.Warehouse)
-            .Include(x => x.PurchaseOrder)
-            .AsQueryable();
-
-        invoices = ApplySearchTerm(invoices, queryModel);
-        invoices = ApplyRelationshipFilters(invoices, queryModel);
-        invoices = ApplyDateFilters(invoices, queryModel);
-        invoices = ApplyAmountFilters(invoices, queryModel);
-        invoices = ApplyStatusFilters(invoices, queryModel);
-
-        return ApplySorting(
-            invoices,
-            queryModel.SortBy,
-            queryModel.SortDirection);
+        ArgumentNullException.ThrowIfNull(query);
+        return BuildFilterExpression(query as PurchaseInvoiceQueryModel ?? new PurchaseInvoiceQueryModel { SearchTerm = query.SearchTerm });
     }
 
-    // Search by invoice number or notes
-    private static IQueryable<PurchaseInvoice> ApplySearchTerm(IQueryable<PurchaseInvoice> invoices, PurchaseInvoiceQueryModel queryModel)
+    public Expression<Func<PurchaseInvoice, bool>> BuildFilterExpression(PurchaseInvoiceQueryModel query)
     {
-        if (string.IsNullOrWhiteSpace(queryModel.SearchTerm))
-            return invoices;
+        ArgumentNullException.ThrowIfNull(query);
+        var invoiceNumber = query.InvoiceNumber?.Trim();
+        Expression<Func<PurchaseInvoice, bool>> filters = entity =>
+            (string.IsNullOrEmpty(invoiceNumber) || entity.InvoiceNumber.Contains(invoiceNumber)) &&
+            (!query.SupplierId.HasValue || entity.SupplierId == query.SupplierId.Value) &&
+            (!query.WarehouseId.HasValue || entity.WarehouseId == query.WarehouseId.Value) &&
+            (!query.PurchaseOrderId.HasValue || entity.PurchaseOrderId == query.PurchaseOrderId.Value) &&
+            (!query.PaymentStatus.HasValue || entity.PaymentStatus == query.PaymentStatus.Value) &&
+            (!query.Status.HasValue || entity.Status == query.Status.Value) &&
+            (!query.From.HasValue || entity.InvoiceDate >= query.From.Value) &&
+            (!query.To.HasValue || entity.InvoiceDate <= query.To.Value) &&
+            (!query.MinSubTotal.HasValue || entity.SubTotal >= query.MinSubTotal.Value) &&
+            (!query.MaxSubTotal.HasValue || entity.SubTotal <= query.MaxSubTotal.Value) &&
+            (!query.MinDiscountAmount.HasValue || entity.DiscountAmount >= query.MinDiscountAmount.Value) &&
+            (!query.MaxDiscountAmount.HasValue || entity.DiscountAmount <= query.MaxDiscountAmount.Value) &&
+            (!query.MinTaxAmount.HasValue || entity.TaxAmount >= query.MinTaxAmount.Value) &&
+            (!query.MaxTaxAmount.HasValue || entity.TaxAmount <= query.MaxTaxAmount.Value) &&
+            (!query.MinTotalAmount.HasValue || entity.TotalAmount >= query.MinTotalAmount.Value) &&
+            (!query.MaxTotalAmount.HasValue || entity.TotalAmount <= query.MaxTotalAmount.Value) &&
+            (!query.MinPaidAmount.HasValue || entity.PaidAmount >= query.MinPaidAmount.Value) &&
+            (!query.MaxPaidAmount.HasValue || entity.PaidAmount <= query.MaxPaidAmount.Value) &&
+            (!query.MinRemainingAmount.HasValue || entity.RemainingAmount >= query.MinRemainingAmount.Value) &&
+            (!query.MaxRemainingAmount.HasValue || entity.RemainingAmount <= query.MaxRemainingAmount.Value);
 
-        var term = queryModel.SearchTerm.Trim();
-
-        return invoices.Where(x =>
-            x.InvoiceNumber.Contains(term) ||
-            (x.Notes != null && x.Notes.Contains(term)));
+        return CombineSearchExpression(filters, query.SearchTerm, "InvoiceNumber", "Notes");
     }
 
-    // Filter by supplier, warehouse and purchase order
-    private static IQueryable<PurchaseInvoice> ApplyRelationshipFilters(IQueryable<PurchaseInvoice> invoices, PurchaseInvoiceQueryModel queryModel)
+    public override IQueryable<PurchaseInvoice> ApplySorting(IQueryable<PurchaseInvoice> invoices, string? sortBy, SortDirection? sortDirection)
     {
-        if (queryModel.SupplierId.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.SupplierId == queryModel.SupplierId.Value);
-        }
+        var descending = sortDirection == SortDirection.Descending;
 
-        if (queryModel.WarehouseId.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.WarehouseId == queryModel.WarehouseId.Value);
-        }
-
-        if (queryModel.PurchaseOrderId.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.PurchaseOrderId == queryModel.PurchaseOrderId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(queryModel.InvoiceNumber))
-        {
-            var invoiceNumber = queryModel.InvoiceNumber.Trim();
-
-            invoices = invoices.Where(x =>
-                x.InvoiceNumber.Contains(invoiceNumber));
-        }
-
-        return invoices;
-    }
-
-    // Filter by invoice date
-    private static IQueryable<PurchaseInvoice> ApplyDateFilters(IQueryable<PurchaseInvoice> invoices, PurchaseInvoiceQueryModel queryModel)
-    {
-        if (queryModel.From.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.InvoiceDate >= queryModel.From.Value);
-        }
-
-        if (queryModel.To.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.InvoiceDate <= queryModel.To.Value);
-        }
-
-        return invoices;
-    }
-
-    // Filter by invoice amounts
-    private static IQueryable<PurchaseInvoice> ApplyAmountFilters(IQueryable<PurchaseInvoice> invoices, PurchaseInvoiceQueryModel queryModel)
-    {
-        if (queryModel.MinSubTotal.HasValue)
-            invoices = invoices.Where(x =>
-                x.SubTotal >= queryModel.MinSubTotal.Value);
-
-        if (queryModel.MaxSubTotal.HasValue)
-            invoices = invoices.Where(x =>
-                x.SubTotal <= queryModel.MaxSubTotal.Value);
-
-        if (queryModel.MinDiscountAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.DiscountAmount >= queryModel.MinDiscountAmount.Value);
-
-        if (queryModel.MaxDiscountAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.DiscountAmount <= queryModel.MaxDiscountAmount.Value);
-
-        if (queryModel.MinTaxAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.TaxAmount >= queryModel.MinTaxAmount.Value);
-
-        if (queryModel.MaxTaxAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.TaxAmount <= queryModel.MaxTaxAmount.Value);
-
-        if (queryModel.MinTotalAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.TotalAmount >= queryModel.MinTotalAmount.Value);
-
-        if (queryModel.MaxTotalAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.TotalAmount <= queryModel.MaxTotalAmount.Value);
-
-        if (queryModel.MinPaidAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.PaidAmount >= queryModel.MinPaidAmount.Value);
-
-        if (queryModel.MaxPaidAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.PaidAmount <= queryModel.MaxPaidAmount.Value);
-
-        if (queryModel.MinRemainingAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.RemainingAmount >= queryModel.MinRemainingAmount.Value);
-
-        if (queryModel.MaxRemainingAmount.HasValue)
-            invoices = invoices.Where(x =>
-                x.RemainingAmount <= queryModel.MaxRemainingAmount.Value);
-
-        return invoices;
-    }
-
-    // Filter by payment and invoice status
-    private static IQueryable<PurchaseInvoice> ApplyStatusFilters(IQueryable<PurchaseInvoice> invoices, PurchaseInvoiceQueryModel queryModel)
-    {
-        if (queryModel.PaymentStatus.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.PaymentStatus == queryModel.PaymentStatus.Value);
-        }
-
-        if (queryModel.Status.HasValue)
-        {
-            invoices = invoices.Where(x =>
-                x.Status == queryModel.Status.Value);
-        }
-
-        return invoices;
-    }
-
-    // Sorting
-    private static IQueryable<PurchaseInvoice> ApplySorting(IQueryable<PurchaseInvoice> invoices, string? sortBy, SortDirection? direction)
-    {
-        var descending = direction == SortDirection.Descending;
-
-        return sortBy?.Trim().ToLowerInvariant() switch
+        var ordered = sortBy?.Trim().ToLowerInvariant() switch
         {
             "invoicenumber" => descending
                 ? invoices.OrderByDescending(x => x.InvoiceNumber)
@@ -236,5 +108,6 @@ public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyReposi
                 : invoices.OrderBy(x => x.InvoiceDate)
                     .ThenBy(x => x.InvoiceNumber)
         };
+        return ordered.ThenBy(entity => entity.Id);
     }
 }

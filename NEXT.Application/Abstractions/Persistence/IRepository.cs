@@ -1,3 +1,4 @@
+using NEXT.Domain.Enums;
 using NEXT.Application.Common.QueryModels;
 using System.Linq.Expressions;
 using NEXT.Domain.Common.Entities;
@@ -7,7 +8,8 @@ namespace NEXT.Application.Abstractions.Persistence;
 /// <summary>Persistence contract consumed by the application layer.</summary>
 public interface IRepository<TEntity> where TEntity : class
 {
-    IQueryable<TEntity> Search(PaginationQuery query);
+    Expression<Func<TEntity, bool>> BuildFilterExpression(PaginationQuery query);
+    IQueryable<TEntity> ApplySorting(IQueryable<TEntity> entities, string? sortBy, SortDirection? sortDirection);
     Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
     IQueryable<TEntity> Query(bool asNoTracking = true);
     Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default);

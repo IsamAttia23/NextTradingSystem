@@ -77,14 +77,4 @@
         } catch { showError(modalElement.dataset.error); }
         finally { saving = false; buttons.forEach(button => button.disabled = false); form.removeAttribute("aria-busy"); }
     });
-    document.addEventListener("input", event => {
-        if (!event.target.matches("[data-table-search]")) return;
-        const term = event.target.value.trim().toLocaleLowerCase();
-        let visible = 0;
-        document.querySelectorAll("[data-record]").forEach(row => {
-            row.hidden = !row.textContent.toLocaleLowerCase().includes(term);
-            if (!row.hidden) visible++;
-        });
-        document.querySelector("[data-empty]").hidden = visible !== 0;
-    });
 })();

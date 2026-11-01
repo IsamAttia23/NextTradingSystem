@@ -12,13 +12,19 @@ namespace NEXT.Infrastructure.Persistence
 {
     public class PaginationServices : IPaginationServices
     {
-        public async Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query, CancellationToken cancellationToken = default) where T : class
+        public Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query, CancellationToken cancellationToken = default) where T : class
+            => GetPaggedList(entities, source => source, query, cancellationToken);
+
+        public async Task<TPaginationQueryModel<TResult>> GetPaggedList<TEntity, TResult>(IQueryable<TEntity> entities,
+            Func<IQueryable<TEntity>, IQueryable<TResult>> projection, PaginationQuery query, CancellationToken cancellationToken = default)
+            where TEntity : class where TResult : class
         {
             var pageNumber = query?.PageNumber > 0 ? query.PageNumber : 1;
             var pageSize = query?.PageSize > 0 ? query.PageSize : 10;
             pageSize = Math.Min(pageSize, 50);
 
             ArgumentNullException.ThrowIfNull(entities);
+            ArgumentNullException.ThrowIfNull(projection);
             if ((long)(pageNumber - 1) * pageSize > int.MaxValue)
                 throw new AppValidationException(new Dictionary<string, string[]> {
                     [nameof(query.PageNumber)] = ["The requested page is too large."]
@@ -27,20 +33,19 @@ namespace NEXT.Infrastructure.Persistence
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
             pageNumber = Math.Min(pageNumber, Math.Max(1, totalPages));
 
-            var pagedList = await entities.Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(cancellationToken);
+            var pageEntities = entities.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+            var data = await projection(pageEntities).ToListAsync(cancellationToken);
 
-            var result = new TPaginationQueryModel<T>
+            var pagedList = new TPaginationQueryModel<TResult>
             {
-                Data = pagedList,
+                Data = data,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount,
                 TotalPages = totalPages
             };
 
-            return result;
+            return pagedList;
         }
     }
 }

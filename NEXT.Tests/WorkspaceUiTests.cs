@@ -199,7 +199,10 @@ public sealed class WorkspaceUiTests
         using var client = Client(app);
         await Login(client, "ui-admin");
         foreach (var route in new[] { "Customers", "CustomersContact", "Tags", "Suppliers", "Categories", "Branches", "Products", "Units", "Warehouses", "Inventory", "Inventory/Movements", "Inventory/Batches" })
-            Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/" + route)).StatusCode);
+        {
+            var response = await client.GetAsync("/" + route);
+            Assert.True(response.StatusCode == HttpStatusCode.OK, $"/{route} returned {response.StatusCode}.");
+        }
         foreach (var route in new[] { "Customers", "CustomersContact", "Tags", "Suppliers", "Categories", "Branches", "Products", "Units", "Warehouses" })
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/" + route + "/Create")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Inventory/Receive")).StatusCode);

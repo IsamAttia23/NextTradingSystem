@@ -1,41 +1,16 @@
-using NEXT.Application.Common.QueryModels;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Application.QueryModels;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
-using NEXT.Application.QueryModels;
-using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
-/// <summary>EF Core repository for Product; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
-    public override IQueryable<Product> Search(PaginationQuery query) =>
-        Search(query as ProductQueryModel ?? new ProductQueryModel { SearchTerm = query.SearchTerm, SortBy = query.SortBy,
-            SortDirection = query.SortDirection, PageNumber = query.PageNumber, PageSize = query.PageSize });
-
     public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
-    public IQueryable<Product> Search(ProductQueryModel queryModel)
-    {
-        ArgumentNullException.ThrowIfNull(queryModel);
-
-        var products = Context.Products
-            .AsNoTracking()
-            .Include(p => p.Category)
-            .Include(p => p.UnitOfMeasure)
-            .AsQueryable();
-
-        products = ApplySearchTerm(products, queryModel);
-        products = ApplyIdentityFilters(products, queryModel);
-        products = ApplyPriceFilters(products, queryModel);
-        products = ApplyTaxFilters(products, queryModel);
-        products = ApplyStockFilters(products, queryModel);
-        products = ApplyStatusFilters(products, queryModel);
-        products = ApplySorting(products, queryModel.SortBy, queryModel.SortDirection ?? SortDirection.Ascending);
-
-        return products;
-    }
 
     public Task<List<Product>> GetLowStockAsync(Guid? warehouseId = null, CancellationToken cancellationToken = default)
     {
@@ -49,144 +24,45 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
         return q.OrderBy(x => x.Name).ToListAsync(cancellationToken);
     }
 
-    // General search
-    private static IQueryable<Product> ApplySearchTerm(IQueryable<Product> products, ProductQueryModel queryModel)
+    public override Expression<Func<Product, bool>> BuildFilterExpression(PaginationQuery query)
     {
-        if (string.IsNullOrWhiteSpace(queryModel.SearchTerm))
-            return products;
-
-        var term = queryModel.SearchTerm.Trim();
-
-        return products.Where(p =>
-            p.Name.Contains(term) ||
-            (p.Barcode != null && p.Barcode.Contains(term)) ||
-            (p.Description != null && p.Description.Contains(term)));
+        ArgumentNullException.ThrowIfNull(query);
+        return BuildFilterExpression(query as ProductQueryModel ?? new ProductQueryModel { SearchTerm = query.SearchTerm });
     }
 
-    // Barcode, name, description, category and unit
-    private static IQueryable<Product> ApplyIdentityFilters(IQueryable<Product> products, ProductQueryModel queryModel)
+    public Expression<Func<Product, bool>> BuildFilterExpression(ProductQueryModel query)
     {
-        if (!string.IsNullOrWhiteSpace(queryModel.Barcode))
-        {
-            var barcode = queryModel.Barcode.Trim();
-            products = products.Where(p =>
-                p.Barcode != null && p.Barcode.Contains(barcode));
-        }
+        ArgumentNullException.ThrowIfNull(query);
+        var barcode = query.Barcode?.Trim();
+        var name = query.Name?.Trim();
+        var description = query.Description?.Trim();
+        Expression<Func<Product, bool>> filters = entity =>
+            (string.IsNullOrEmpty(barcode) || (entity.Barcode != null && entity.Barcode.Contains(barcode))) &&
+            (string.IsNullOrEmpty(name) || entity.Name.Contains(name)) &&
+            (string.IsNullOrEmpty(description) || (entity.Description != null && entity.Description.Contains(description))) &&
+            (!query.CategoryId.HasValue || entity.CategoryId == query.CategoryId.Value) &&
+            (!query.UnitOfMeasureId.HasValue || entity.UnitOfMeasureId == query.UnitOfMeasureId.Value) &&
+            (!query.IsActive.HasValue || entity.IsActive == query.IsActive.Value) &&
+            (!query.HasExpiry.HasValue || entity.HasExpiry == query.HasExpiry.Value) &&
+            (!query.MinCostPrice.HasValue || entity.CostPrice >= query.MinCostPrice.Value) &&
+            (!query.MaxCostPrice.HasValue || entity.CostPrice <= query.MaxCostPrice.Value) &&
+            (!query.MinRetailPrice.HasValue || entity.RetailPrice >= query.MinRetailPrice.Value) &&
+            (!query.MaxRetailPrice.HasValue || entity.RetailPrice <= query.MaxRetailPrice.Value) &&
+            (!query.MinWholesalePrice.HasValue || entity.WholesalePrice >= query.MinWholesalePrice.Value) &&
+            (!query.MaxWholesalePrice.HasValue || entity.WholesalePrice <= query.MaxWholesalePrice.Value) &&
+            (!query.MinVipPrice.HasValue || entity.VipPrice >= query.MinVipPrice.Value) &&
+            (!query.MaxVipPrice.HasValue || entity.VipPrice <= query.MaxVipPrice.Value) &&
+            (!query.MinTaxRate.HasValue || entity.TaxRate >= query.MinTaxRate.Value) &&
+            (!query.MaxTaxRate.HasValue || entity.TaxRate <= query.MaxTaxRate.Value) &&
+            (!query.MinStock.HasValue || entity.MinStock >= query.MinStock.Value) &&
+            (!query.MaxStock.HasValue || (entity.MaxStock.HasValue && entity.MaxStock.Value <= query.MaxStock.Value));
 
-        if (!string.IsNullOrWhiteSpace(queryModel.Name))
-        {
-            var name = queryModel.Name.Trim();
-            products = products.Where(p => p.Name.Contains(name));
-        }
-
-        if (!string.IsNullOrWhiteSpace(queryModel.Description))
-        {
-            var description = queryModel.Description.Trim();
-            products = products.Where(p =>
-                p.Description != null &&
-                p.Description.Contains(description));
-        }
-
-        if (queryModel.CategoryId.HasValue)
-        {
-            products = products.Where(p =>
-                p.CategoryId == queryModel.CategoryId.Value);
-        }
-
-        if (queryModel.UnitOfMeasureId.HasValue)
-        {
-            products = products.Where(p =>
-                p.UnitOfMeasureId == queryModel.UnitOfMeasureId.Value);
-        }
-
-        return products;
+        return CombineSearchExpression(filters, query.SearchTerm, "Name", "Barcode", "Description");
     }
 
-    // Cost, retail, wholesale and VIP prices
-    private static IQueryable<Product> ApplyPriceFilters(IQueryable<Product> products, ProductQueryModel queryModel)
+    public override IQueryable<Product> ApplySorting(IQueryable<Product> products, string? sortBy, SortDirection? sortDirection)
     {
-        if (queryModel.MinCostPrice.HasValue)
-            products = products.Where(p =>
-                p.CostPrice >= queryModel.MinCostPrice.Value);
-
-        if (queryModel.MaxCostPrice.HasValue)
-            products = products.Where(p =>
-                p.CostPrice <= queryModel.MaxCostPrice.Value);
-
-        if (queryModel.MinRetailPrice.HasValue)
-            products = products.Where(p =>
-                p.RetailPrice >= queryModel.MinRetailPrice.Value);
-
-        if (queryModel.MaxRetailPrice.HasValue)
-            products = products.Where(p =>
-                p.RetailPrice <= queryModel.MaxRetailPrice.Value);
-
-        if (queryModel.MinWholesalePrice.HasValue)
-            products = products.Where(p =>
-                p.WholesalePrice >= queryModel.MinWholesalePrice.Value);
-
-        if (queryModel.MaxWholesalePrice.HasValue)
-            products = products.Where(p =>
-                p.WholesalePrice <= queryModel.MaxWholesalePrice.Value);
-
-        if (queryModel.MinVipPrice.HasValue)
-            products = products.Where(p =>
-                p.VipPrice >= queryModel.MinVipPrice.Value);
-
-        if (queryModel.MaxVipPrice.HasValue)
-            products = products.Where(p =>
-                p.VipPrice <= queryModel.MaxVipPrice.Value);
-
-        return products;
-    }
-
-    // Tax rate
-    private static IQueryable<Product> ApplyTaxFilters(IQueryable<Product> products, ProductQueryModel queryModel)
-    {
-        if (queryModel.MinTaxRate.HasValue)
-            products = products.Where(p =>
-                p.TaxRate >= queryModel.MinTaxRate.Value);
-
-        if (queryModel.MaxTaxRate.HasValue)
-            products = products.Where(p =>
-                p.TaxRate <= queryModel.MaxTaxRate.Value);
-
-        return products;
-    }
-
-    // Configured minimum and maximum stock thresholds
-    private static IQueryable<Product> ApplyStockFilters(IQueryable<Product> products, ProductQueryModel queryModel)
-    {
-        if (queryModel.MinStock.HasValue)
-            products = products.Where(p =>
-                p.MinStock >= queryModel.MinStock.Value);
-
-        if (queryModel.MaxStock.HasValue)
-            products = products.Where(p =>
-                p.MaxStock.HasValue &&
-                p.MaxStock.Value <= queryModel.MaxStock.Value);
-
-        return products;
-    }
-
-    // Active status and expiry
-    private static IQueryable<Product> ApplyStatusFilters(IQueryable<Product> products, ProductQueryModel queryModel)
-    {
-        if (queryModel.IsActive.HasValue)
-            products = products.Where(p =>
-                p.IsActive == queryModel.IsActive.Value);
-
-        if (queryModel.HasExpiry.HasValue)
-            products = products.Where(p =>
-                p.HasExpiry == queryModel.HasExpiry.Value);
-
-        return products;
-    }
-
-    // Sorting
-    private static IQueryable<Product> ApplySorting(IQueryable<Product> products, string? sortBy, SortDirection direction)
-    {
-        var descending = direction == SortDirection.Descending;
+        var descending = sortDirection == SortDirection.Descending;
 
         return sortBy?.Trim().ToLowerInvariant() switch
         {

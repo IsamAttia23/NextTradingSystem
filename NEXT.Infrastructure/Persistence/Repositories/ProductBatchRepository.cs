@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using NEXT.Application.Common.QueryModels;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence.Repositories;
@@ -10,13 +11,12 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 /// <summary>EF Core repository for ProductBatch; inherits common CRUD behavior from the generic repository.</summary>
 public sealed class ProductBatchRepository(NEXTDbContext context) : KeyRepository<ProductBatch, Guid>(context), IProductBatchRepository
 {
-    public override IQueryable<ProductBatch> Search(PaginationQuery query)
+    public override Expression<Func<ProductBatch, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        var result = base.Search(new PaginationQuery { SortBy = query.SortBy, SortDirection = query.SortDirection });
-        if (string.IsNullOrWhiteSpace(query.SearchTerm)) return result;
-        var term = query.SearchTerm.Trim();
-        return result.Where(x => x.BatchNumber.Contains(term) || x.Product.Name.Contains(term) || x.Warehouse.Name.Contains(term));
+        var parameter = Expression.Parameter(typeof(ProductBatch), "entity");
+        return Expression.Lambda<Func<ProductBatch, bool>>(
+            BuildSearchExpression(query.SearchTerm, parameter, "BatchNumber", "Product.Name", "Warehouse.Name"), parameter);
     }
 
 

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using NEXT.Domain.Entities;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Abstractions.Persistence;
@@ -7,5 +8,5 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 /// <summary>Persistence contract for Payment. Domain-specific queries live here; EF Core details remain in Infrastructure.</summary>
 public interface IPaymentRepository : IKeyRepository<Payment, Guid>
 {
-    IQueryable<Payment> SearchAsync(PaymentQueryModel queryModel, CancellationToken cancellationToken = default);
+    Expression<Func<Payment, bool>> BuildFilterExpression(PaymentQueryModel query);
 }

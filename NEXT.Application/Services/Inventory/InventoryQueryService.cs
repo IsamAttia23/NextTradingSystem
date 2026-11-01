@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Abstractions.Persistence.Repositories;
 using NEXT.Application.Abstractions.IServices;
@@ -11,12 +12,24 @@ public sealed class InventoryQueryService(IStockRepository stocks, IStockMovemen
     IProductBatchRepository batches, IPaginationServices pagination) : IInventoryQueryService
 {
     public Task<TPaginationQueryModel<StockDto>> StocksAsync(PaginationQuery query, CancellationToken ct = default) =>
-        pagination.GetPaggedList(stocks.Search(query).Select(x => new StockDto(x.Id, x.ProductId, x.Product.Name,
-            x.WarehouseId, x.Warehouse.Name, x.Quantity, x.ReservedQuantity, x.Quantity - x.ReservedQuantity, x.AverageCost)), query, ct);
+        GetPaggedList(stocks, query, x => new StockDto(x.Id, x.ProductId, x.Product.Name,
+            x.WarehouseId, x.Warehouse.Name, x.Quantity, x.ReservedQuantity, x.Quantity - x.ReservedQuantity, x.AverageCost), ct);
     public Task<TPaginationQueryModel<StockMovementDto>> MovementsAsync(PaginationQuery query, CancellationToken ct = default) =>
-        pagination.GetPaggedList(movements.Search(query).Select(x => new StockMovementDto(x.Id, x.Product.Name,
-            x.Warehouse.Name, x.Type.ToString(), x.Quantity, x.UnitCost, x.ReferenceId, x.Notes, x.CreatedAt)), query, ct);
+        GetPaggedList(movements, query, x => new StockMovementDto(x.Id, x.Product.Name,
+            x.Warehouse.Name, x.Type.ToString(), x.Quantity, x.UnitCost, x.ReferenceId, x.Notes, x.CreatedAt), ct);
     public Task<TPaginationQueryModel<ProductBatchDto>> BatchesAsync(PaginationQuery query, CancellationToken ct = default) =>
-        pagination.GetPaggedList(batches.Search(query).Select(x => new ProductBatchDto(x.Id, x.Product.Name,
-            x.Warehouse.Name, x.BatchNumber, x.ExpiryDate, x.Quantity, x.CostPrice)), query, ct);
+        GetPaggedList(batches, query, x => new ProductBatchDto(x.Id, x.Product.Name,
+            x.Warehouse.Name, x.BatchNumber, x.ExpiryDate, x.Quantity, x.CostPrice), ct);
+
+    private async Task<TPaginationQueryModel<TDto>> GetPaggedList<TEntity, TDto>(
+        IRepository<TEntity> repository, PaginationQuery query, Expression<Func<TEntity, TDto>> selector, CancellationToken ct)
+        where TEntity : class where TDto : class
+    {
+        var expression = repository.BuildFilterExpression(query);
+        var entities = repository.FindAsync(expression, ct);
+        var orderedEntities = repository.ApplySorting(entities, query.SortBy, query.SortDirection);
+        var pagedList = await pagination.GetPaggedList(orderedEntities,
+            source => source.Select(selector), query, ct);
+        return pagedList;
+    }
 }
