@@ -28,7 +28,7 @@ using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
 using NEXT.Infrastructure.Persistence.Repositories;
 using NEXT.Infrastructure.Persistence.Repositories.Entities;
-using NEXT.Infrastructure.Persistence.UsersManagment;
+using NEXT.Infrastructure.Persistence.UsersManagement;
 using Xunit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -150,7 +150,7 @@ public sealed class ApplicationRepairTests
     }
 
     [PostgresFact]
-    public async Task IdentityCreationRollsBackReturnedFailuresExceptionsAndNestedFailures()
+    public async Task IdentityCreationKeepsSavedUserWhenRoleAssignmentFails()
     {
         foreach (var scenario in new[] { "result", "exception", "nested" })
         {
@@ -172,18 +172,14 @@ public sealed class ApplicationRepairTests
                 Role = "Admin"
             });
             var sender = services.GetRequiredService<ISender>();
-            if (scenario == "exception")
-                await Assert.ThrowsAsync<InvalidOperationException>(() => sender.Send(request));
-            else
-            {
-                var result = scenario == "nested"
-                    ? await services.GetRequiredService<IUnitOfWork>().ExecuteInTransactionAsync(ct => sender.Send(request, ct))
-                    : await sender.Send(request);
-                Assert.False(result.Succeeded);
-                Assert.Contains(result.Errors, x => x.Code == "InjectedRoleFailure");
-            }
+            var result = scenario == "nested"
+                ? await services.GetRequiredService<IUnitOfWork>().ExecuteInTransactionAsync(ct => sender.Send(request, ct))
+                : await sender.Send(request);
+            Assert.True(result.Succeeded);
+            Assert.Contains(result.Warnings, x => x.Code == "RoleAssignmentFailed");
             db.ChangeTracker.Clear();
-            Assert.False(await db.Users.AnyAsync(x => x.UserName == request.User.UserName));
+            var saved = await db.Users.SingleAsync(x => x.UserName == request.User.UserName);
+            Assert.False(await db.UserRoles.AnyAsync(x => x.UserId == saved.Id));
         }
     }
 

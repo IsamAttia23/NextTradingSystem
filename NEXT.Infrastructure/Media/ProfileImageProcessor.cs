@@ -11,7 +11,7 @@ namespace NEXT.Infrastructure.Media;
 
 public sealed class ProfileImageProcessor : IProfileImageProcessor
 {
-    private static readonly object Gate = new();
+    private static readonly SemaphoreSlim Gate = new(1, 1);
     private static readonly HashSet<string> SvgElements = new(StringComparer.OrdinalIgnoreCase)
     { "svg", "g", "defs", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon",
       "linearGradient", "radialGradient", "stop", "clipPath", "title", "desc", "use" };
@@ -45,41 +45,62 @@ public sealed class ProfileImageProcessor : IProfileImageProcessor
 
     public byte[] Normalize(byte[] data)
     {
+        Gate.Wait();
+        try { return NormalizeCore(data, CancellationToken.None); }
+        finally { Gate.Release(); }
+    }
+
+    public async Task<byte[]> NormalizeAsync(byte[] data, CancellationToken ct = default)
+    {
+        await Gate.WaitAsync(ct);
+        try { return NormalizeCore(data, ct); }
+        finally { Gate.Release(); }
+    }
+
+    private static byte[] NormalizeCore(byte[] data, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(data);
         if (data.Length is <= 0 or > ProfileImageRules.MaxBytes) throw Invalid("ImageSizeError");
-        // Bound native allocations across concurrent uploads, not just within a single request.
-        lock (Gate)
+        try
         {
-            try
-            {
-                var settings = new MagickReadSettings { FrameIndex = 0, FrameCount = 1 };
-                if (LooksLikeXml(data))
-                {
-                    data = ValidateSvg(data);
-                    settings.Format = MagickFormat.Msvg;
-                }
-                if (data.Length >= 4 && data[0] == 0 && data[1] == 0 && data[3] == 0 && data[2] is 1 or 2)
-                    settings.Format = data[2] == 1 ? MagickFormat.Ico : MagickFormat.Cur;
-                var info = new MagickImageInfo(data, settings);
-                // MVG is needed internally by the sanitized SVG renderer, never as an upload format.
-                if (info.Format == MagickFormat.Mvg) throw Invalid("ImageInvalidError");
-                if (settings.Format != MagickFormat.Msvg && info.Format is MagickFormat.Svg or MagickFormat.Msvg)
-                    throw Invalid("ImageInvalidError");
-                if (info.Width == 0 || info.Height == 0 || (long)info.Width * info.Height > ProfileImageRules.MaxPixels)
-                    throw Invalid("ImageDimensionsError");
-                using var image = new MagickImage();
-                var timer = Stopwatch.StartNew();
-                image.Progress += (_, progress) => { if (timer.Elapsed > TimeSpan.FromSeconds(10)) progress.Cancel = true; };
-                image.Read(data, settings);
-                image.AutoOrient();
-                if (image.Width > 512 || image.Height > 512) image.Thumbnail(512, 512);
-                image.Strip();
-                return image.ToByteArray(MagickFormat.Png32);
-            }
-            catch (Exception exception) when (exception is MagickException or XmlException or InvalidOperationException or ArgumentException)
-            {
-                throw Invalid("ImageInvalidError");
-            }
+            var (content, settings) = PrepareRead(data);
+            ValidateInfo(content, settings);
+            return Encode(content, settings, ct);
         }
+        catch (Exception error) when (error is MagickException or XmlException or InvalidOperationException or ArgumentException)
+        {
+            ct.ThrowIfCancellationRequested();
+            throw Invalid("ImageInvalidError");
+        }
+    }
+    private static (byte[] Content, MagickReadSettings Settings) PrepareRead(byte[] data)
+    {
+        var settings = new MagickReadSettings { FrameIndex = 0, FrameCount = 1 };
+        if (LooksLikeXml(data)) { data = ValidateSvg(data); settings.Format = MagickFormat.Msvg; }
+        if (data.Length >= 4 && data[0] == 0 && data[1] == 0 && data[3] == 0 && data[2] is 1 or 2)
+            settings.Format = data[2] == 1 ? MagickFormat.Ico : MagickFormat.Cur;
+        return (data, settings);
+    }
+    private static void ValidateInfo(byte[] data, MagickReadSettings settings)
+    {
+        var info = new MagickImageInfo(data, settings);
+        if (info.Format == MagickFormat.Mvg || settings.Format != MagickFormat.Msvg && info.Format is MagickFormat.Svg or MagickFormat.Msvg)
+            throw Invalid("ImageInvalidError");
+        if (info.Width == 0 || info.Height == 0 || (long)info.Width * info.Height > ProfileImageRules.MaxPixels)
+            throw Invalid("ImageDimensionsError");
+    }
+    private static byte[] Encode(byte[] data, MagickReadSettings settings, CancellationToken ct)
+    {
+        using var image = new MagickImage();
+        var timer = Stopwatch.StartNew();
+        image.Progress += (_, progress) => { if (ct.IsCancellationRequested || timer.Elapsed > TimeSpan.FromSeconds(10)) progress.Cancel = true; };
+        image.Read(data, settings);
+        ct.ThrowIfCancellationRequested();
+        image.AutoOrient();
+        if (image.Width > 512 || image.Height > 512) image.Thumbnail(512, 512);
+        image.Strip();
+        return image.ToByteArray(MagickFormat.Png32);
     }
 
     private static bool LooksLikeXml(byte[] bytes)

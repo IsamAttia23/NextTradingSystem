@@ -25,7 +25,7 @@
         @foreach (var record in Model.Activity.Records)
         {
             <article class="activity-record"><span class="eyebrow">@L[Model.Activity.Selected!] · <bdi>@record.Id</bdi></span><dl class="detail-grid">
-                <partial name="_DetailFields" model="record.Fields" />
+                <partial name="_DetailFields" model="NEXT.web.Services.RelatedRecordPresenter.Fields(record)" />
             </dl></article>
         }
         </div>

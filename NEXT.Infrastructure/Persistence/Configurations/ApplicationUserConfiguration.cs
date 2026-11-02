@@ -10,11 +10,9 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
     {
         builder.ToTable("Users", "security");
         builder.Property(x => x.FullName).HasMaxLength(150).IsRequired();
-        builder.Property(x => x.AvatarUrl).HasMaxLength(500);
         builder.HasIndex(x => x.NormalizedUserName).IsUnique();
-        builder.HasIndex(x => x.NormalizedEmail);
+        builder.HasIndex(x => x.NormalizedEmail).IsUnique();
         builder.HasOne(x => x.Branch).WithMany(x => x.Users)
             .HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
-        builder.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

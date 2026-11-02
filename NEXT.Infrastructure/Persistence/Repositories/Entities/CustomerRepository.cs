@@ -38,36 +38,11 @@ public sealed class CustomerRepository(NEXTDbContext context) : KeyRepository<Cu
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "CompanyName", "Phone", "Email");
     }
 
-    public override IQueryable<Customer> ApplySorting(IQueryable<Customer> customers, string? sortBy, SortDirection? sortDirection)
+    private static readonly string[] SortFields = ["Name", "CompanyName", "CreditLimit", "CurrentBalance", "PaymentTermsDays"];
+    public override IQueryable<Customer> ApplySorting(IQueryable<Customer> source, string? sortBy, SortDirection? sortDirection)
     {
-        sortBy = new CustomerQueryModel().GetSortFields()
-            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
-        var descending = sortDirection == SortDirection.Descending;
-
-        var ordered = sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "name" => descending
-                ? customers.OrderByDescending(c => c.Name)
-                : customers.OrderBy(c => c.Name),
-
-            "companyname" => descending
-                ? customers.OrderByDescending(c => c.CompanyName)
-                : customers.OrderBy(c => c.CompanyName),
-
-            "creditlimit" => descending
-                ? customers.OrderByDescending(c => c.CreditLimit)
-                : customers.OrderBy(c => c.CreditLimit),
-
-            "currentbalance" => descending
-                ? customers.OrderByDescending(c => c.CurrentBalance)
-                : customers.OrderBy(c => c.CurrentBalance),
-
-            "paymenttermsdays" => descending
-                ? customers.OrderByDescending(c => c.PaymentTermsDays)
-                : customers.OrderBy(c => c.PaymentTermsDays),
-
-            _ => customers.OrderBy(c => c.Name)
-        };
-        return ordered.ThenBy(entity => entity.Id);
+        var selected = SortFields.FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var descending = selected is not null && sortDirection == SortDirection.Descending;
+        return ThenByField(OrderByField(source, selected ?? "Name", descending), "Id");
     }
 }

@@ -5,6 +5,7 @@ using NEXT.Application.Abstractions.Context;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Infrastructure.Features.RecycleBin;
+using NEXT.Application.Features.RecycleBin;
 using NEXT.Infrastructure.Persistence;
 using NEXT.Infrastructure.Persistence.Repositories;
 using NEXT.Infrastructure.Persistence.SaveChanges;
@@ -51,7 +52,7 @@ public class PersistenceRegressionTests
         Assert.Empty(await db.Tags().ToListAsync());
         Assert.Single(await db.RecycleBinEntries.ToListAsync());
         Assert.True(await db.AuditLogs.AnyAsync(x => x.Action == AuditAction.Delete));
-        var recycle = new RecycleBinService<Tag, Guid>(db, new PaginationServices(), []);
+        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices()), new UnitOfWork(db), []);
         var page = await recycle.List(new());
         Assert.Equal(tag.Id, Assert.Single(page.Data).EntityId);
         await recycle.Restore(tag.Id);
@@ -80,7 +81,7 @@ public class PersistenceRegressionTests
         await first.SaveChangesAsync();
         Assert.False(original.SequenceEqual(product.RowVersion));
         stale.Name = "Stale edit";
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => second.SaveChangesAsync());
+        await Assert.ThrowsAsync<NEXT.Application.Exceptions.ConflictException>(() => second.SaveChangesAsync());
     }
 
     [Fact]
@@ -90,7 +91,7 @@ public class PersistenceRegressionTests
         var tag = new Tag { Name = "Active", Color = "blue" };
         db.Add(tag);
         await db.SaveChangesAsync();
-        var recycle = new RecycleBinService<Tag, Guid>(db, new PaginationServices(), []);
+        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices()), new UnitOfWork(db), []);
         await Assert.ThrowsAsync<NEXT.Application.Exceptions.NotFoundException>(() => recycle.HardDelete(tag.Id));
         Assert.Single(await db.Set<Tag>().ToListAsync());
     }

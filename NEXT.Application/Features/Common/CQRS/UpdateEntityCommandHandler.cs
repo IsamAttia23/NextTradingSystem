@@ -31,7 +31,7 @@ public sealed class UpdateEntityCommandHandler<TEntity, TDto, TUpdateDto>(
         var existing = (entity as IHasProfileImage)?.AvatarUrl;
         mapper.Map(request.Data, entity);
         entity.Id = request.Id;
-        EntityInput.SetImage(entity, request.Data, images, existing);
+        await EntityInput.SetImageAsync(entity, request.Data, images, ct, existing);
         await unitOfWork.SaveChangesAsync(ct);
         return mapper.Map<TDto>(entity);
     }

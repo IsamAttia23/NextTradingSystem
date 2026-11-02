@@ -12,8 +12,10 @@ namespace NEXT.Infrastructure.Identity;
 public sealed class TemporaryAdministratorBootstrapper(NEXTDbContext db, UserManager<ApplicationUser> users,
     RoleManager<Role> roles, IHostEnvironment environment, IConfiguration configuration) : NEXT.Application.Abstractions.Context.IApplicationInitializer
 {
-    public async Task InitializeAsync(CancellationToken ct = default)
+    public Task InitializeAsync(CancellationToken ct = default) => StorageErrors.ExecuteAsync(() => InitializeCoreAsync(ct));
+    private async Task InitializeCoreAsync(CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
         if (!environment.IsDevelopment() || !configuration.GetValue<bool>("DevelopmentAccess:Enabled")) return;
         var name = configuration["DevelopmentAccess:UserName"];
         var password = configuration["DevelopmentAccess:Password"];

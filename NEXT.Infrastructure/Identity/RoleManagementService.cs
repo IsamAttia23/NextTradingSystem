@@ -1,4 +1,4 @@
-using NEXT.Infrastructure.Persistence.UsersManagment;
+using NEXT.Infrastructure.Persistence.UsersManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Identity;
@@ -11,18 +11,18 @@ namespace NEXT.Infrastructure.Identity;
 public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbContext context) : IRoleManagementService
 {
     public async Task<Role?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        await roleManager.Roles.FirstOrDefaultAsync(role => role.Id == id, cancellationToken);
+        await StorageErrors.ExecuteAsync(() => roleManager.Roles.FirstOrDefaultAsync(role => role.Id == id, cancellationToken));
 
     public async Task<IReadOnlyList<Role>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await roleManager.Roles.AsNoTracking().OrderBy(role => role.Name).ToListAsync(cancellationToken);
+        await StorageErrors.ExecuteAsync(() => roleManager.Roles.AsNoTracking().OrderBy(role => role.Name).ToListAsync(cancellationToken));
 
     public async Task<IdentityOperationResult> CreateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.CreateAsync(role), ct));
     public async Task<IdentityOperationResult> UpdateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.UpdateAsync(role), ct));
 
     public async Task<IdentityOperationResult> DeleteAsync(Role role, CancellationToken ct = default)
     {
-        if (await context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id, ct) ||
-            await context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id, ct))
+        if (await StorageErrors.ExecuteAsync(() => context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id, ct)) ||
+            await StorageErrors.ExecuteAsync(() => context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id, ct)))
         {
             return IdentityOperationResult.Failure([
                 new IdentityOperationError("RoleInUse", "The role is assigned to users or permissions and cannot be deleted.")
@@ -35,9 +35,9 @@ public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbC
     public async Task<bool> NameExistsAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default)
     {
         var normalized = roleManager.NormalizeKey(name.Trim());
-        return await roleManager.Roles.AnyAsync(role =>
+        return await StorageErrors.ExecuteAsync(() => roleManager.Roles.AnyAsync(role =>
             role.NormalizedName == normalized && (!excludingId.HasValue || role.Id != excludingId.Value),
-            cancellationToken);
+            cancellationToken));
     }
 
     private static IdentityOperationResult Convert(IdentityResult result) =>

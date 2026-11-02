@@ -13,7 +13,6 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(x => x.Code).HasMaxLength(40);
         builder.HasIndex(x => x.Code).IsUnique().HasFilter("\"Code\" IS NOT NULL");
         builder.Property(x => x.CurrentBalance).HasPrecision(15, 2);
-        builder.HasQueryFilter(x => x.DeletedAt == null);
         builder.Property(x => x.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
     }
 }

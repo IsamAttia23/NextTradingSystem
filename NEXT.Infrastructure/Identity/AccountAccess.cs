@@ -4,13 +4,16 @@ using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.Authentication;
 using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Identity;
 
 public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginAccessPolicy policy,
     ICurrentUserService current, IEntityValidator<LoginDto> loginValidator,
     IEntityValidator<VerifyLoginDto> verifyValidator) : IAccountAccess
 {
-    public async Task<LoginOutcome> LoginAsync(LoginDto input)
+    public Task<LoginOutcome> LoginAsync(LoginDto input) => StorageErrors.ExecuteAsync(() => LoginCoreAsync(input));
+    private async Task<LoginOutcome> LoginCoreAsync(LoginDto input)
     {
         loginValidator.Validate(input);
 
@@ -22,8 +25,9 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
         return result.Succeeded ? LoginOutcome.Succeeded 
             : result.RequiresTwoFactor ? LoginOutcome.RequiresTwoFactor : LoginOutcome.Failed;
     }
-    public async Task<bool> HasChallengeAsync() => await signIn.GetTwoFactorAuthenticationUserAsync() is not null;
-    public async Task<LoginOutcome> VerifyAsync(VerifyLoginDto input)
+    public Task<bool> HasChallengeAsync() => StorageErrors.ExecuteAsync(async () => await signIn.GetTwoFactorAuthenticationUserAsync() is not null);
+    public Task<LoginOutcome> VerifyAsync(VerifyLoginDto input) => StorageErrors.ExecuteAsync(() => VerifyCoreAsync(input));
+    private async Task<LoginOutcome> VerifyCoreAsync(VerifyLoginDto input)
     {
         verifyValidator.Validate(input);
 
@@ -37,7 +41,8 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
        
         return result.Succeeded ? LoginOutcome.Succeeded : LoginOutcome.Failed;
     }
-    public Task LogoutAsync() => signIn.SignOutAsync();
-    public async Task<byte[]?> AvatarAsync() => current.UserId is { } id
-        ? (await signIn.UserManager.FindByIdAsync(id.ToString()))?.AvatarUrl : null;
+    public Task LogoutAsync() => StorageErrors.ExecuteAsync(() => signIn.SignOutAsync());
+    public Task<byte[]?> AvatarAsync() => current.UserId is { } id
+        ? StorageErrors.ExecuteAsync(() => signIn.UserManager.Users.AsNoTracking().Where(x => x.Id == id).Select(x => x.AvatarUrl).FirstOrDefaultAsync())
+        : Task.FromResult<byte[]?>(null);
 }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Domain.Entities;
-namespace NEXT.Infrastructure.Persistence.UsersManagment;
+namespace NEXT.Infrastructure.Persistence.UsersManagement;
 public sealed class UserCommandService(UserManager<ApplicationUser> users) : IUserCommandService
 {
     public Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password, CancellationToken ct = default) =>

@@ -11,10 +11,6 @@ namespace NEXT.Infrastructure.Persistence;
 /// <summary>Read-only related-record graph, including invoice/payment ledger references without physical foreign keys.</summary>
 public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsReader
 {
-    private static readonly HashSet<string> DisplayFields = ["Name", "FullName", "UserName", "Code", "Number", "InvoiceNumber", "PaymentNumber", "EntryNumber", "BatchNumber",
-        "InvoiceDate", "OrderDate", "PaymentDate", "EntryDate", "ExpiryDate", "CreatedAt", "Type", "InvoiceType", "PaymentType", "Status", "PaymentStatus",
-        "Quantity", "ReservedQuantity", "AverageCost", "UnitPrice", "UnitCost", "CostPrice", "TotalAmount", "Amount", "PaidAmount", "RemainingAmount",
-        "TotalDebit", "TotalCredit", "Debit", "Credit", "Phone", "Email", "Position", "Description", "Notes", "IsActive"];
     public async Task<ActivityPageDto> ReadAsync<TEntity>(Guid id, string? kind, int page, CancellationToken ct) where TEntity : class
     {
         var root = Set(typeof(TEntity));
@@ -78,6 +74,7 @@ public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsRead
         var keys = db.Model.FindEntityType(type)!.GetForeignKeys().Where(x => x.PrincipalEntityType.ClrType == type && x.Properties.Count == 1).ToArray();
         if (keys.Length == 0) return query;
         var visited = (await Ids(query, ct)).ToHashSet();
+        if (db.Database.IsNpgsql()) return await ExpandPostgres(query, keys, visited.ToArray(), ct);
         var frontier = visited.ToArray();
         while (frontier.Length > 0)
         {
@@ -98,12 +95,27 @@ public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsRead
         var record = Expression.Parameter(type, "record");
         return Where(Set(type), Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], Expression.Constant(visited.ToArray()), Expression.Property(record, "Id")), record));
     }
+    private async Task<IQueryable> ExpandPostgres(IQueryable query, Microsoft.EntityFrameworkCore.Metadata.IForeignKey[] keys, Guid[] seeds, CancellationToken ct)
+    {
+        var metadata = db.Model.FindEntityType(query.ElementType)!;
+        var table = Microsoft.EntityFrameworkCore.Metadata.StoreObjectIdentifier.Table(metadata.GetTableName()!, metadata.GetSchema());
+        static string Quote(string name) => "\"" + name.Replace("\"", "\"\"") + "\"";
+        var name = (table.Schema is null ? "" : Quote(table.Schema) + ".") + Quote(table.Name);
+        var id = Quote(metadata.FindProperty("Id")!.GetColumnName(table)!);
+        var links = string.Join(" OR ", keys.Select(key => "child." + Quote(key.Properties[0].GetColumnName(table)!) + " = parent.\"Value\""));
+        var deleted = metadata.FindProperty("DeletedAt");
+        var visible = deleted is null ? "TRUE" : "child." + Quote(deleted.GetColumnName(table)!) + " IS NULL";
+        var sql = $"WITH RECURSIVE related AS (SELECT child.{id} AS \"Value\" FROM {name} child WHERE child.{id} = ANY (@seeds) AND {visible} UNION SELECT child.{id} AS \"Value\" FROM {name} child JOIN related parent ON ({links}) WHERE {visible}) SELECT \"Value\" FROM related";
+        var ids = await StorageErrors.ExecuteAsync(() => db.Database.SqlQueryRaw<Guid>(sql, new Npgsql.NpgsqlParameter("seeds", seeds)).ToArrayAsync(ct));
+        var record = Expression.Parameter(query.ElementType, "record");
+        return Where(Set(query.ElementType), Expression.Lambda(Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], Expression.Constant(ids), Expression.Property(record, "Id")), record));
+    }
     private static Task<List<Guid>> Ids(IQueryable query, CancellationToken ct) =>
         (Task<List<Guid>>)typeof(RelatedRecordsReader).GetMethod(nameof(IdsOf), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(query.ElementType).Invoke(null, [query, ct])!;
     private static Task<List<Guid>> IdsOf<T>(IQueryable<T> query, CancellationToken ct)
     {
         var parameter = Expression.Parameter(typeof(T), "record");
-        return query.Select(Expression.Lambda<Func<T,Guid>>(Expression.Property(parameter, "Id"), parameter)).ToListAsync(ct);
+        return StorageErrors.ExecuteAsync(() => query.Select(Expression.Lambda<Func<T,Guid>>(Expression.Property(parameter, "Id"), parameter)).ToListAsync(ct));
     }
     private IQueryable Child(IQueryable parent, Type childType, string foreignKey, string principalKey, string? discriminator = null, object? expected = null)
     {
@@ -125,21 +137,19 @@ public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsRead
     private static IQueryable Where(IQueryable query, LambdaExpression predicate) => query.Provider.CreateQuery(Expression.Call(typeof(Queryable), nameof(Queryable.Where), [query.ElementType], query.Expression, Expression.Quote(predicate)));
     private static Task<int> Count(IQueryable query, CancellationToken ct) =>
         (Task<int>)typeof(RelatedRecordsReader).GetMethod(nameof(CountOf), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(query.ElementType).Invoke(null, [query, ct])!;
-    private static Task<int> CountOf<T>(IQueryable<T> query, CancellationToken ct) => query.CountAsync(ct);
+    private static Task<int> CountOf<T>(IQueryable<T> query, CancellationToken ct) => StorageErrors.ExecuteAsync(() => query.CountAsync(ct));
     private static Task<IReadOnlyList<RelatedRecordDto>> Fetch(IQueryable query, int page, CancellationToken ct) =>
         (Task<IReadOnlyList<RelatedRecordDto>>)typeof(RelatedRecordsReader).GetMethod(nameof(FetchOf), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(query.ElementType).Invoke(null, [query, page, ct])!;
     private static async Task<IReadOnlyList<RelatedRecordDto>> FetchOf<T>(IQueryable<T> query, int page, CancellationToken ct)
     {
         var parameter = Expression.Parameter(typeof(T), "record");
         var selector = Expression.Lambda<Func<T, Guid>>(Expression.Property(parameter, "Id"), parameter);
-        var records = await query.OrderBy(selector).Skip((page - 1) * 10).Take(10).ToListAsync(ct);
-        var properties = typeof(T).GetProperties().Where(x => DisplayFields.Contains(x.Name)).ToArray();
-        return records.Select(x => new RelatedRecordDto((Guid)typeof(T).GetProperty("Id")!.GetValue(x)!, properties
-            .Select(p => new DetailFieldDto(p.Name, p.GetValue(x) is decimal quantity && p.Name.Contains("Quantity") ? quantity.ToString("N3") : Format(p.GetValue(x)), (Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType).IsEnum || p.PropertyType == typeof(bool))).ToArray())).ToArray();
+        var properties = typeof(T).GetProperties().Where(x => RelatedRecordDto.FieldNames.Contains(x.Name)).ToArray();
+        var columns = new[] { typeof(T).GetProperty("Id")! }.Concat(properties).ToArray();
+        var projection = Expression.Lambda<Func<T, object[]>>(Expression.NewArrayInit(typeof(object), columns
+            .Select(property => Expression.Convert(Expression.Property(parameter, property), typeof(object)))), parameter);
+        var records = await StorageErrors.ExecuteAsync(() => query.OrderBy(selector).Skip((page - 1) * 10).Take(10).Select(projection).ToListAsync(ct));
+        return records.Select(row => new RelatedRecordDto((Guid)row[0], properties.Select((property, index) =>
+            new KeyValuePair<string, object?>(property.Name, row[index + 1])).ToDictionary())).ToArray();
     }
-    private static string Format(object? value) => value switch
-    {
-        null => "—", DateTimeOffset date => date.ToLocalTime().ToString("g"), DateOnly date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-        decimal number => number.ToString("N2"), bool flag => flag ? "Active" : "Inactive", _ => Convert.ToString(value, CultureInfo.CurrentCulture) ?? "—"
-    };
 }

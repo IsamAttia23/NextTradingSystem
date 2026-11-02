@@ -9,7 +9,7 @@ using NEXT.Infrastructure.Persistence;
 using NEXT.Application.Abstractions.Persistence;
 using NEXT.Infrastructure.Persistence.Repositories;
 using NEXT.Infrastructure.Persistence.SaveChanges;
-using NEXT.Infrastructure.Persistence.UsersManagment;
+using NEXT.Infrastructure.Persistence.UsersManagement;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Infrastructure.Services;
 
@@ -31,7 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
         services.AddScoped<IAccountAccess, AccountAccess>();
-        services.AddScoped<IUserDeletionPolicy, UserDeletionPolicy>();
+        services.AddScoped<IAdministratorLookup, AdministratorLookup>();
         services.AddScoped<TemporaryAdministratorBootstrapper>();
         services.AddScoped<IApplicationInitializer>(sp => sp.GetRequiredService<TemporaryAdministratorBootstrapper>());
         services.AddScoped<IUserCommandService, UserCommandService>();
@@ -71,7 +71,7 @@ public static class DependencyInjection
         services.AddScoped<SoftDeleteHandler>();
         services.AddScoped<TrackedChangesProcessor>();
 
-        services.AddScoped(typeof(NEXT.Application.Features.RecycleBin.IRecycleBinService<,>), typeof(NEXT.Infrastructure.Features.RecycleBin.RecycleBinService<,>));
+        services.AddScoped(typeof(IRecycleBinStore<,>), typeof(NEXT.Infrastructure.Features.RecycleBin.RecycleBinStore<,>));
         services.AddNEXTIdentity();
         return services;
     }

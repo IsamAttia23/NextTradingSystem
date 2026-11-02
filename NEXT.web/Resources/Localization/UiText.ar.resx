@@ -481,4 +481,6 @@
 <data name="CustomerCategoryFilter" xml:space="preserve"><value>فئة العميل</value></data>
 <data name="ExpiryFrom" xml:space="preserve"><value>الصلاحية من تاريخ</value></data>
 <data name="ExpiryThrough" xml:space="preserve"><value>الصلاحية إلى تاريخ</value></data>
+  <data name="RoleAssignmentFailed" xml:space="preserve"><value>تم حفظ المستخدم، لكن فشل إسناد الدور. يمكنك إسناده من قائمة المستخدمين.</value></data>
+  <data name="UserHasNoRole" xml:space="preserve"><value>هذا المستخدم ليس لديه دور.</value></data>
 </root>

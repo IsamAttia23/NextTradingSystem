@@ -25,7 +25,8 @@
             {
                 <td class="@(Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">@if (Model.Columns[i] == "TagId" && row.Badge is {} badge) { <partial name="_ColorBadge" model="badge" /> }
                     else if (Model.Columns[i] == "Name" && row.Identity is {} identity) { <partial name="_RecordIdentity" model="identity" /> }
-                    else if (Model.Columns[i] is "Status" or "Type" or "MovementType") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }</td>
+                    else if (Model.Columns[i] is "Status" or "Type" or "MovementType") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }
+                    @if (i == 0 && row.NameWarning is {} warning) { <span class="text-danger ms-1" data-no-role title="@L[warning]" aria-label="@L[warning]">●<span class="visually-hidden"> @L[warning]</span></span> }</td>
             }
             <td class="actions-column">@foreach (var item in row.Actions)
             {

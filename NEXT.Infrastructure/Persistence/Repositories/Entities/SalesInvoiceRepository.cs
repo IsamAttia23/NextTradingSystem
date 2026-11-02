@@ -11,13 +11,13 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
 {
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => Context.SalesInvoices.AsNoTracking()
+        => StorageErrors.ExecuteAsync(() => Context.SalesInvoices.AsNoTracking()
         .Include(x => x.Customer)
         .Include(x => x.Warehouse)
         .Include(x => x.User)
         .Include(x => x.Items)
         .ThenInclude(i => i.Product)
-        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken));
 
     public override Expression<Func<SalesInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
@@ -39,24 +39,9 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
         return CombineSearchExpression(filters, query.SearchTerm, "InvoiceNumber", "Notes");
     }
 
-    public override IQueryable<SalesInvoice> ApplySorting(IQueryable<SalesInvoice> invoices,string? sortBy, SortDirection? sortDirection)
+    public override IQueryable<SalesInvoice> ApplySorting(IQueryable<SalesInvoice> source, string? sortBy, SortDirection? sortDirection)
     {
         var descending = sortDirection == SortDirection.Descending;
-
-        var ordered = sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "invoicedate" => descending
-                ? invoices.OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.Id)
-                : invoices.OrderBy(x => x.InvoiceDate)
-                    .ThenBy(x => x.Id),
-
-            _ => descending
-                ? invoices.OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.Id)
-                : invoices.OrderBy(x => x.InvoiceDate)
-                    .ThenBy(x => x.Id)
-        };
-        return ordered.ThenBy(entity => entity.Id);
+        return ThenByField(OrderByField(source, "InvoiceDate", descending), "Id", descending);
     }
 }

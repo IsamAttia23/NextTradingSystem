@@ -19,8 +19,4 @@ internal static class UserOperationTransaction
         }
         catch (UserOperationFailedException failure) { return failure.Result; }
     }
-    public static void RequireSuccess(UserOperationResult result)
-    {
-        if (!result.Succeeded) throw new UserOperationFailedException(result);
-    }
 }

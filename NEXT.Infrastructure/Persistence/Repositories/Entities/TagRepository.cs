@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NEXT.Infrastructure.Persistence.Repositories
+namespace NEXT.Infrastructure.Persistence.Repositories.Entities
 {
     public sealed class TagRepository(NEXTDbContext context) : KeyRepository<Tag, Guid>(context), ITagRepository 
     {

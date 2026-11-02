@@ -23,7 +23,7 @@ public sealed class UpdateApplicationUserHandler(IUserCommandService commands, U
         var user = await reader.RequireAsync(userId, ct);
         await rules.BranchAsync(request.User.BranchId, user.BranchId, ct);
         await rules.UniqueAsync(request.User.UserName, request.User.Email, userId, ct);
-        var avatar = request.User.AvatarUrl is null ? user.AvatarUrl : images.Normalize(request.User.AvatarUrl);
+        var avatar = request.User.AvatarUrl is null ? user.AvatarUrl : await images.NormalizeAsync(request.User.AvatarUrl, ct);
         mapper.Map(request.User, user);
         user.AvatarUrl = avatar;
         return await commands.UpdateUserAsync(user, ct);

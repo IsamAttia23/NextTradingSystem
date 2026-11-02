@@ -11,10 +11,10 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class JournalEntryRepository(NEXTDbContext context) : KeyRepository<JournalEntry, Guid>(context), IJournalEntryRepository
 {
     public Task<JournalEntry?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => Context.JournalEntries.AsNoTracking()
+        => StorageErrors.ExecuteAsync(() => Context.JournalEntries.AsNoTracking()
         .Include(x => x.Lines)
         .ThenInclude(x => x.Account)
-        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken));
 
     public override Expression<Func<JournalEntry, bool>> BuildFilterExpression(PaginationQuery query)
     {

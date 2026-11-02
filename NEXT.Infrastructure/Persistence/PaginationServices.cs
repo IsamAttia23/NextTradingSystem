@@ -29,12 +29,12 @@ namespace NEXT.Infrastructure.Persistence
                 throw new AppValidationException(new Dictionary<string, string[]> {
                     [nameof(query.PageNumber)] = ["The requested page is too large."]
                 });
-            var totalCount = await entities.CountAsync(cancellationToken);
+            var totalCount = await StorageErrors.ExecuteAsync(() => entities.CountAsync(cancellationToken));
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
             pageNumber = Math.Min(pageNumber, Math.Max(1, totalPages));
 
             var pageEntities = entities.Skip((pageNumber - 1) * pageSize).Take(pageSize);
-            var data = await projection(pageEntities).ToListAsync(cancellationToken);
+            var data = await StorageErrors.ExecuteAsync(() => projection(pageEntities).ToListAsync(cancellationToken));
 
             var pagedList = new TPaginationQueryModel<TResult>
             {

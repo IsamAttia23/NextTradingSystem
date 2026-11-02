@@ -25,7 +25,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories
         }
         public virtual async Task<bool> IsExistsAsync(TKey id, CancellationToken ct = default)
         {
-            return await _set.AnyAsync(x => x.Id.Equals(id), ct);
+            return await StorageErrors.ExecuteAsync(() => _set.AnyAsync(x => x.Id.Equals(id), ct));
         }
     }
 }

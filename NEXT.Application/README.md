@@ -12,8 +12,10 @@ CQRS contracts:
 - Create/update results are saved entity snapshots. Read queries provide enriched relationship fields when needed.
 - User commands and related queries carry UserId instead of a caller-owned ApplicationUser. GetUsersAsync returns lightweight UserResponseDto values.
 
-Identity creation and role assignment share a transaction; failed Identity results trigger rollback. Relational nested operations use savepoints. Cancellation propagates through I/O ports; Identity APIs without token support are checked before and after completion.
+Account creation is saved before optional role assignment. A role-assignment failure returns a successful save with RoleAssignmentFailed in Warnings; the user remains saved without a role. The UI marks users without roles until a role is assigned. Failed Identity results roll back only their own operation. Relational nested operations use savepoints and restore the enclosing tracked state when an inner failure is handled. Cancellation propagates through I/O ports; Identity APIs without token support are checked before and after completion.
 
 AppException.Code describes an application error. Web translates it to HTTP; unexpected failures retain their diagnostic cause and return a generic response with traceId. Transaction conflicts are surfaced without automatic retries. InMemory test storage has no rollback guarantee; transaction behavior is tested with PostgreSQL.
 
 Mapster configuration belongs to each service provider. Registration rejects conflicting entity/DTO mappings. Input normalization is explicit and precedes validation. Required identifiers reject Guid.Empty.
+
+RelatedRecordDto carries raw, allowlisted column values; Web owns formatting and localization. Recycle-bin use cases coordinate lifecycle handlers and transactions here; IRecycleBinStore supplies infrastructure reads and purge operations. IUserDeletionPolicy makes the last-administrator decision using IAdministratorLookup facts. Temporary development access deliberately retains the fixed Admin role.

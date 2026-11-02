@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Domain.Entities;
+using NEXT.Infrastructure.Persistence;
 
 namespace NEXT.Infrastructure.Identity;
 
@@ -13,7 +14,8 @@ public sealed class LoginAccessPolicy(UserManager<ApplicationUser> users, IHostE
 {
     public const string TemporaryClaim = "next:temporary-administrator";
 
-    public async Task<bool> CanSignInAsync(Guid userId)
+    public Task<bool> CanSignInAsync(Guid userId) => StorageErrors.ExecuteAsync(() => CanSignInCoreAsync(userId));
+    private async Task<bool> CanSignInCoreAsync(Guid userId)
     {
         var user = await users.FindByIdAsync(userId.ToString());
         if (user is null || !user.IsActive || user.DeletedAt is not null) return false;

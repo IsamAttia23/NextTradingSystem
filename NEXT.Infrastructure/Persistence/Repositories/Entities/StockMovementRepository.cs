@@ -29,23 +29,9 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
         return CombineSearchExpression(filters, query.SearchTerm, "Product.Name", "Warehouse.Name", "Notes");
     }
 
-    public override IQueryable<StockMovement> ApplySorting( IQueryable<StockMovement> query, string? sortBy,SortDirection? sortDirection)
+    public override IQueryable<StockMovement> ApplySorting(IQueryable<StockMovement> source, string? sortBy, SortDirection? sortDirection)
     {
         var descending = sortDirection == SortDirection.Descending;
-
-        return sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "createdat" => descending
-                ? query.OrderByDescending(x => x.CreatedAt)
-                    .ThenByDescending(x => x.Id)
-                : query.OrderBy(x => x.CreatedAt)
-                    .ThenBy(x => x.Id),
-
-            _ => descending
-                ? query.OrderByDescending(x => x.CreatedAt)
-                    .ThenByDescending(x => x.Id)
-                : query.OrderBy(x => x.CreatedAt)
-                    .ThenBy(x => x.Id)
-        };
+        return ThenByField(OrderByField(source, "CreatedAt", descending), "Id", descending);
     }
 }

@@ -10,7 +10,6 @@ public interface IRecycleBinHandler<TEntity, TKey>
     {
         string EntityKey { get; }
 
-        Task OnSoftDeleteAsync(TEntity entity, CancellationToken ct = default);
         Task OnRestoreAsync(TEntity entity, CancellationToken ct = default);
         Task OnHardDeleteAsync(TEntity entity, CancellationToken ct = default);
     }

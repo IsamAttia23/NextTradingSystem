@@ -6,4 +6,5 @@ public sealed record UserResponseDto(
     string? UserName,
     string? Email,
     bool IsActive,
-    Guid BranchId);
+    Guid BranchId,
+    bool HasRole = false);

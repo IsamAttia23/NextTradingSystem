@@ -18,10 +18,10 @@ public sealed class StockRepository(NEXTDbContext context) : KeyRepository<Stock
     }
 
     public Task<Stock?> GetForProductAsync(Guid productId, Guid warehouseId, CancellationToken cancellationToken = default)
-        => Context.Stocks.AsNoTracking()
+        => StorageErrors.ExecuteAsync(() => Context.Stocks.AsNoTracking()
         .Include(x => x.Product)
         .Include(x => x.Warehouse)
-        .FirstOrDefaultAsync(x => x.ProductId == productId && x.WarehouseId == warehouseId, cancellationToken);
+        .FirstOrDefaultAsync(x => x.ProductId == productId && x.WarehouseId == warehouseId, cancellationToken));
 
     public IQueryable<Stock> GetByWarehouseAsync(Guid warehouseId)
         => Context.Stocks.AsNoTracking()

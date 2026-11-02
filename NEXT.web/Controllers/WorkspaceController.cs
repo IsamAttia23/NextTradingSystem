@@ -18,7 +18,12 @@ public abstract class WorkspaceController : Controller
         Form(new(title, Route(action, values), title is "Delete" or "Purge" ? [new("Reason", "DeletionReason", Type: "textarea", Required: true, MaxLength: 500)] : [], title, message, title is "Delete" or "Purge"));
     protected IActionResult Operation(UserOperationResult result)
     {
-        if (result.Succeeded) return Ok();
+        if (result.Succeeded)
+        {
+            if (result.Warnings.Count == 0) return Ok();
+            var text = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText>>();
+            return Ok(new { notification = new { kind = "warning", message = string.Join(" ", result.Warnings.Select(x => text[x.Code].Value)) } });
+        }
         foreach (var error in result.Errors) ModelState.AddModelError(error.Code, error.Description);
         return ValidationProblem(ModelState);
     }

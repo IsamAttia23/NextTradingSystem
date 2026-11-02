@@ -11,7 +11,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Supplier, Guid>(context), ISupplierRepository
 {
     public Task<Supplier?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
-        => Context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken);
+        => StorageErrors.ExecuteAsync(() => Context.Suppliers.AsNoTracking().FirstOrDefaultAsync(x => x.Code == code, cancellationToken));
 
     public override Expression<Func<Supplier, bool>> BuildFilterExpression(PaginationQuery query)
     {
@@ -28,25 +28,11 @@ public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Su
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "Code", "Phone", "Email");
     }
 
-    public override IQueryable<Supplier> ApplySorting(IQueryable<Supplier> query, string? sortBy, SortDirection? sortDirection)
+    private static readonly string[] SortFields = ["Name", "Code"];
+    public override IQueryable<Supplier> ApplySorting(IQueryable<Supplier> source, string? sortBy, SortDirection? sortDirection)
     {
-        sortBy = new SupplierQueryModel().GetSortFields()
-            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var selected = SortFields.FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
         var descending = sortDirection == SortDirection.Descending;
-
-        return sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "name" => descending
-                ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
-
-            "code" => descending
-                ? query.OrderByDescending(x => x.Code).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.Code).ThenBy(x => x.Id),
-
-            _ => descending
-                ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.Name).ThenBy(x => x.Id)
-        };
+        return ThenByField(OrderByField(source, selected ?? "Name", descending), "Id");
     }
 }

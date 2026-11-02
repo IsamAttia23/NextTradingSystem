@@ -31,7 +31,9 @@ public static class ApplicationRegistrationExtensions
         mapping.Scan(typeof(ApplicationUserMappingRegister).Assembly);
         services.AddSingleton(mapping);
         services.AddMapster();
+        services.AddScoped<NEXT.Application.Abstractions.Identity.IUserDeletionPolicy, NEXT.Application.Features.ApplicationUsers.UserDeletionPolicy>();
         services.AddScoped<IRecycleBinAccess, RecycleBinAccess>();
+        services.AddScoped(typeof(IRecycleBinService<,>), typeof(RecycleBinService<,>));
         services.AddScoped<NEXT.Application.Abstractions.Context.IDeletionAuditContext, DeletionAuditContext>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IInventoryQueryService, InventoryQueryService>();

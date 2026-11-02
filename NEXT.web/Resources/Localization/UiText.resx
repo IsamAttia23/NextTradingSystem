@@ -481,4 +481,6 @@
 <data name="CustomerCategoryFilter" xml:space="preserve"><value>Customer category</value></data>
 <data name="ExpiryFrom" xml:space="preserve"><value>Expiry from</value></data>
 <data name="ExpiryThrough" xml:space="preserve"><value>Expiry through</value></data>
+  <data name="RoleAssignmentFailed" xml:space="preserve"><value>The user was saved, but role assignment failed. Assign a role from the users list.</value></data>
+  <data name="UserHasNoRole" xml:space="preserve"><value>This user has no role.</value></data>
 </root>

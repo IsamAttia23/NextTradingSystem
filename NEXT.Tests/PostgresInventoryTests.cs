@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using NEXT.web.Models;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Common.QueryModels;
@@ -206,8 +207,10 @@ public sealed class PostgresInventoryTests
     public async Task UserDeletionProtectsCurrentAndLastAdministratorAndDisablesDeletedLogin()
     {
         await using var f = await Database.Create();
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?> {
-            ["ConnectionStrings:NEXTDatabase"] = f.TestConnection }).Build();
+        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:NEXTDatabase"] = f.TestConnection
+        }).Build();
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
         Microsoft.Extensions.DependencyInjection.LoggingServiceCollectionExtensions.AddLogging(services);
         services.AddSingleton<IConfiguration>(config);
@@ -297,7 +300,7 @@ public sealed class PostgresInventoryTests
         await f.Db.SaveChangesAsync();
         var reader = new RelatedRecordsReader(f.Db);
         var result = await reader.ReadAsync<Customer>(customer.Id, "Payment", 1, default);
-        Assert.Single(result.Records); Assert.Contains(result.Records[0].Fields, x => x.Value == "PAY-LINKED");
+        Assert.Single(result.Records); Assert.Contains(result.Records[0].Values, x => Equals(x.Value, "PAY-LINKED"));
         Assert.Equal(2, result.Sections.Single(x => x.Key == "SalesInvoice").Count);
         Assert.Equal(1, result.Sections.Single(x => x.Key == "JournalEntry").Count);
         Assert.Equal(1, result.Sections.Single(x => x.Key == "StockMovement").Count);
@@ -353,11 +356,11 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task RepositoryExpressionsUseProductRangesAndGeneralStockSortingOnPostgres()
     {
-        await using var f=await Database.Create();
-        var product=await f.Db.Products.SingleAsync(); product.CostPrice=10;product.RetailPrice=25;product.MinStock=5;product.MaxStock=100;product.HasExpiry=true;
-        f.Db.Stocks.Add(new Stock{ProductId=f.Product,WarehouseId=f.Source,Quantity=20,ReservedQuantity=6,AverageCost=10});await f.Db.SaveChangesAsync();
+        await using var f = await Database.Create();
+        var product = await f.Db.Products.SingleAsync(); product.CostPrice = 10; product.RetailPrice = 25; product.MinStock = 5; product.MaxStock = 100; product.HasExpiry = true;
+        f.Db.Stocks.Add(new Stock { ProductId = f.Product, WarehouseId = f.Source, Quantity = 20, ReservedQuantity = 6, AverageCost = 10 }); await f.Db.SaveChangesAsync();
         var productRepository = new ProductRepository(f.Db);
-        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice=9, MaxRetailPrice=30, MinStock=4, MaxStock=101, HasExpiry=true }));
+        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 9, MaxRetailPrice = 30, MinStock = 4, MaxStock = 101, HasExpiry = true }));
         Assert.Single(await products.ToListAsync());
         var stockRepository = new StockRepository(f.Db);
         var stocks = stockRepository.ApplySorting(stockRepository.FindAsync(stockRepository.BuildFilterExpression(new PaginationQuery())), "Quantity", SortDirection.Descending);
@@ -388,7 +391,7 @@ public sealed class PostgresInventoryTests
         public Guid Source { get; private set; }
         public Guid Target { get; private set; }
         private Database(string connection) => adminConnection = new NpgsqlConnectionStringBuilder(connection) { Database = "postgres", Pooling = false }.ConnectionString;
-        public static async Task<Database> Create(bool expiry = false)
+        public static async Task<Database> Create(bool expiry = false, bool migrate = false, bool preupgraded = false)
         {
             var configuration = new ConfigurationBuilder().AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629").AddEnvironmentVariables().Build();
             var connection = Environment.GetEnvironmentVariable("NEXT_TEST_POSTGRES") ?? configuration.GetConnectionString("NEXTDatabase")
@@ -400,7 +403,21 @@ public sealed class PostgresInventoryTests
             try
             {
                 database.Db = database.NewContext();
-                await database.Db.Database.EnsureCreatedAsync();
+                if (migrate)
+                {
+                    if (preupgraded)
+                    {
+                        await database.Db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261027072142_UseApplicationManagedConcurrencyTokens");
+                        foreach (var file in new[] { "20261028_inventory_constraints.sql", "20261028_partner_profiles.sql" })
+                            await database.Db.Database.ExecuteSqlRawAsync(await File.ReadAllTextAsync(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../docs/sql", file))));
+                        var script = database.Db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().GenerateScript(
+                            "20261027072142_UseApplicationManagedConcurrencyTokens", null, Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGenerationOptions.Idempotent);
+                        await database.Db.Database.ExecuteSqlRawAsync(script);
+                        await database.Db.Database.ExecuteSqlRawAsync(script);
+                    }
+                    await database.Db.Database.MigrateAsync();
+                }
+                else await database.Db.Database.EnsureCreatedAsync();
                 var product = new Product { Name = "Test product", HasExpiry = expiry };
                 var source = new Warehouse { Name = "Source", Code = "S" };
                 var target = new Warehouse { Name = "Target", Code = "T" };

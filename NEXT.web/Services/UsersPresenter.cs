@@ -17,7 +17,7 @@ public sealed class UsersPresenter(ISender sender)
     {
         var users = (await sender.Send(new GetApplicationUsersQuery(), ct)).ToArray();
         return new("Users", "UsersDescription", ["FullName", "UserName", "Email", "Status"],
-            users.Select(x => new TableRow([x.FullName, x.UserName ?? "—", x.Email ?? "—", x.IsActive ? "Active" : "Inactive"], [new("Edit", route("Edit", new { x.Id })), new("AssignRole", route("AssignRole", new { x.Id })), new("Delete", route("Delete", new { x.Id }), true)])).ToArray(),
+            users.Select(x => new TableRow([x.FullName, x.UserName ?? "—", x.Email ?? "—", x.IsActive ? "Active" : "Inactive"], [new("Edit", route("Edit", new { x.Id })), new("AssignRole", route("AssignRole", new { x.Id })), new("Delete", route("Delete", new { x.Id }), true)], NameWarning: x.HasRole ? null : "UserHasNoRole")).ToArray(),
             new("CreateUser", route("Create", null)), TotalCount: users.Length);
     }
     public async Task<ModalForm> FormAsync(UserDto? user, Func<string, object?, string> route, CancellationToken ct)
@@ -32,7 +32,13 @@ public sealed class UsersPresenter(ISender sender)
             new("PhoneNumber", "PhoneNumber", user?.PhoneNumber, "tel", MaxLength: 32),
             new("BranchId", "Branch", user?.BranchId.ToString(), "select", true, Options: options),
             new("IsActive", "Active", (user?.IsActive ?? true).ToString().ToLowerInvariant(), "checkbox")];
-        if (user is null) fields.Add(new("Password", "Password", Type: "password", Required: true, MaxLength: 128));
+        if (user is null)
+        {
+            fields.Add(new("Password", "Password", Type: "password", Required: true, MaxLength: 128));
+            var roles = await sender.Send(new GetRolesQuery(), ct);
+            fields.Add(new("Role", "Role", Type: "select", Options: roles.Where(x => x.Name is not null)
+                .Select(x => new FieldOption(x.Name!, x.Name!)).ToArray()));
+        }
         return new(user is null ? "CreateUser" : "EditUser", user is null ? route("Create", null) : route("Edit", new { user.Id }), fields,
             Message: user is null ? "PasswordHint" : null);
     }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
 using MapsterMapper;
 using MediatR;
 using NEXT.Application.Abstractions.Media;
@@ -14,7 +15,7 @@ namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
 public sealed class CreateApplicationUserHandler(IUserCommandService commands, IRoleManagementService roles,
     UserIdentityRules rules, IProfileImageProcessor images, IEntityValidator<UserCreationDto> validator,
-    IMapper mapper, IUnitOfWork unitOfWork) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
+    IMapper mapper, IUnitOfWork unitOfWork, ILogger<CreateApplicationUserHandler> logger) : IRequestHandler<CreateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(CreateApplicationUserCommand request, CancellationToken ct)
     {
@@ -22,18 +23,31 @@ public sealed class CreateApplicationUserHandler(IUserCommandService commands, I
         validator.Validate(dto);
         await rules.BranchAsync(dto.BranchId, null, ct);
         await rules.UniqueAsync(dto.UserName, dto.Email, null, ct);
-        if (!string.IsNullOrWhiteSpace(dto.Role) && !await roles.NameExistsAsync(dto.Role.Trim(), cancellationToken: ct))
-            RequestValidation.Fail("Role", "Select an existing role.");
         var user = mapper.Map<ApplicationUser>(dto);
-        user.AvatarUrl = dto.AvatarUrl is null ? null : images.Normalize(dto.AvatarUrl);
-        return await UserOperationTransaction.ExecuteAsync(unitOfWork, async token =>
+        user.AvatarUrl = dto.AvatarUrl is null ? null : await images.NormalizeAsync(dto.AvatarUrl, ct);
+        var created = await UserOperationTransaction.ExecuteAsync(unitOfWork,
+            token => commands.CreateUserAsync(user, dto.Password, token), ct);
+        if (!created.Succeeded || string.IsNullOrWhiteSpace(dto.Role)) return created;
+        try
         {
-            if (!string.IsNullOrWhiteSpace(dto.Role) && !await roles.NameExistsAsync(dto.Role.Trim(), cancellationToken: token))
-                RequestValidation.Fail("Role", "Select an existing role.");
-            UserOperationTransaction.RequireSuccess(await commands.CreateUserAsync(user, dto.Password, token));
-            if (!string.IsNullOrWhiteSpace(dto.Role))
-                UserOperationTransaction.RequireSuccess(await commands.AddUserToRole(user, dto.Role.Trim(), token));
-            return UserOperationResult.Success;
-        }, ct);
+            var assigned = await UserOperationTransaction.ExecuteAsync(unitOfWork, async token =>
+            {
+                if (!await roles.NameExistsAsync(dto.Role.Trim(), cancellationToken: token))
+                    return UserOperationResult.Failure([new UserOperationError("RoleNotFound", "The selected role no longer exists.")]);
+                return await commands.AddUserToRole(user, dto.Role.Trim(), token);
+            }, ct);
+            return assigned.Succeeded ? created : RoleWarning();
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception error)
+        {
+            try { logger.LogError(error, "Role assignment failed for saved user {UserId}.", user.Id); }
+            catch (Exception loggingError) { error.Data["LoggingFailure"] = loggingError; }
+            return RoleWarning();
+        }
     }
+    private static UserOperationResult RoleWarning() => UserOperationResult.Success with
+    {
+        Warnings = [new UserOperationError("RoleAssignmentFailed", "The user was saved, but role assignment failed. Assign a role from the users list.")]
+    };
 }

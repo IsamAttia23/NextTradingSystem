@@ -10,7 +10,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
-    public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
+    public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => StorageErrors.ExecuteAsync(() => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken));
 
     public Task<List<Product>> GetLowStockAsync(Guid? warehouseId = null, CancellationToken cancellationToken = default)
     {
@@ -21,7 +21,7 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
 
         if (warehouseId.HasValue) q = q.Where(x => x.Stocks
         .Any(s => s.WarehouseId == warehouseId && s.Quantity - s.ReservedQuantity <= x.MinStock));
-        return q.OrderBy(x => x.Name).ToListAsync(cancellationToken);
+        return StorageErrors.ExecuteAsync(() => q.OrderBy(x => x.Name).ToListAsync(cancellationToken));
     }
 
     public override Expression<Func<Product, bool>> BuildFilterExpression(PaginationQuery query)
@@ -60,41 +60,11 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "Barcode", "Description");
     }
 
-    public override IQueryable<Product> ApplySorting(IQueryable<Product> products, string? sortBy, SortDirection? sortDirection)
+    private static readonly string[] SortFields = ["Name", "Barcode", "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice"];
+    public override IQueryable<Product> ApplySorting(IQueryable<Product> source, string? sortBy, SortDirection? sortDirection)
     {
-        sortBy = new ProductQueryModel().GetSortFields()
-            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
-        var descending = sortDirection == SortDirection.Descending;
-
-        return sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "name" => descending
-                ? products.OrderByDescending(p => p.Name).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.Name).ThenBy(p => p.Id),
-
-            "barcode" => descending
-                ? products.OrderByDescending(p => p.Barcode).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.Barcode).ThenBy(p => p.Id),
-
-            "costprice" => descending
-                ? products.OrderByDescending(p => p.CostPrice).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.CostPrice).ThenBy(p => p.Id),
-
-            "retailprice" => descending
-                ? products.OrderByDescending(p => p.RetailPrice).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.RetailPrice).ThenBy(p => p.Id),
-
-            "wholesaleprice" => descending
-                ? products.OrderByDescending(p => p.WholesalePrice).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.WholesalePrice).ThenBy(p => p.Id),
-
-            "vipprice" => descending
-                ? products.OrderByDescending(p => p.VipPrice).ThenByDescending(p => p.Id)
-                : products.OrderBy(p => p.VipPrice).ThenBy(p => p.Id),
-
-            _ => products
-                .OrderBy(p => p.Name)
-                .ThenBy(p => p.Id)
-        };
+        var selected = SortFields.FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var descending = selected is not null && sortDirection == SortDirection.Descending;
+        return ThenByField(OrderByField(source, selected ?? "Name", descending), "Id", descending);
     }
 }

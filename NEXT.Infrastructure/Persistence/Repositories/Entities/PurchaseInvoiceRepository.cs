@@ -11,7 +11,7 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyRepository<PurchaseInvoice, Guid>(context), IPurchaseInvoiceRepository
 {
     public Task<PurchaseInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => Context.PurchaseInvoices.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        => StorageErrors.ExecuteAsync(() => Context.PurchaseInvoices.AsNoTracking().Include(x => x.Supplier).Include(x => x.Warehouse).Include(x => x.Items).ThenInclude(i => i.Product).FirstOrDefaultAsync(x => x.Id == id, cancellationToken));
 
     public override Expression<Func<PurchaseInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
@@ -48,66 +48,13 @@ public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyReposi
         return CombineSearchExpression(filters, query.SearchTerm, "InvoiceNumber", "Notes");
     }
 
-    public override IQueryable<PurchaseInvoice> ApplySorting(IQueryable<PurchaseInvoice> invoices, string? sortBy, SortDirection? sortDirection)
+    private static readonly string[] SortFields = ["InvoiceNumber", "InvoiceDate", "SubTotal", "DiscountAmount", "TaxAmount", "TotalAmount", "PaidAmount", "RemainingAmount"];
+    public override IQueryable<PurchaseInvoice> ApplySorting(IQueryable<PurchaseInvoice> source, string? sortBy, SortDirection? sortDirection)
     {
+        var field = SortFields.FirstOrDefault(name => string.Equals(name, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase)) ?? "InvoiceDate";
         var descending = sortDirection == SortDirection.Descending;
-
-        var ordered = sortBy?.Trim().ToLowerInvariant() switch
-        {
-            "invoicenumber" => descending
-                ? invoices.OrderByDescending(x => x.InvoiceNumber)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.InvoiceNumber)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "invoicedate" => descending
-                ? invoices.OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.InvoiceNumber)
-                : invoices.OrderBy(x => x.InvoiceDate)
-                    .ThenBy(x => x.InvoiceNumber),
-
-            "subtotal" => descending
-                ? invoices.OrderByDescending(x => x.SubTotal)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.SubTotal)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "discountamount" => descending
-                ? invoices.OrderByDescending(x => x.DiscountAmount)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.DiscountAmount)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "taxamount" => descending
-                ? invoices.OrderByDescending(x => x.TaxAmount)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.TaxAmount)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "totalamount" => descending
-                ? invoices.OrderByDescending(x => x.TotalAmount)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.TotalAmount)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "paidamount" => descending
-                ? invoices.OrderByDescending(x => x.PaidAmount)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.PaidAmount)
-                    .ThenBy(x => x.InvoiceDate),
-
-            "remainingamount" => descending
-                ? invoices.OrderByDescending(x => x.RemainingAmount)
-                    .ThenByDescending(x => x.InvoiceDate)
-                : invoices.OrderBy(x => x.RemainingAmount)
-                    .ThenBy(x => x.InvoiceDate),
-
-            _ => descending
-                ? invoices.OrderByDescending(x => x.InvoiceDate)
-                    .ThenByDescending(x => x.InvoiceNumber)
-                : invoices.OrderBy(x => x.InvoiceDate)
-                    .ThenBy(x => x.InvoiceNumber)
-        };
-        return ordered.ThenBy(entity => entity.Id);
+        var ordered = OrderByField(source, field, descending);
+        ordered = ThenByField(ordered, field == "InvoiceDate" ? "InvoiceNumber" : "InvoiceDate", descending);
+        return ThenByField(ordered, "Id");
     }
 }

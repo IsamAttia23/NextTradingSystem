@@ -73,26 +73,30 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     public virtual IQueryable<TEntity> ApplySorting(IQueryable<TEntity> source, string? sortBy, SortDirection? sortDirection)
     {
         ArgumentNullException.ThrowIfNull(source);
-        var parameter = Expression.Parameter(typeof(TEntity), "entity");
         var properties = Context.Model.FindEntityType(typeof(TEntity))!.GetProperties().Where(p => p.ClrType != typeof(byte[])).ToArray();
         var sort = properties.FirstOrDefault(p => string.Equals(p.Name, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? properties.FirstOrDefault(p => p.Name == "Name") ?? properties.First(p => p.IsPrimaryKey());
-        var key = Expression.Call(typeof(EF), nameof(EF.Property), [sort.ClrType], parameter, Expression.Constant(sort.Name));
-        var ordered = source.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable),
-            sortDirection == SortDirection.Descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy),
-            [typeof(TEntity), sort.ClrType], source.Expression, Expression.Quote(Expression.Lambda(key, parameter))));
-        // A unique tie-breaker keeps paging stable for duplicate names.
+        var ordered = OrderByField(source, sort.Name, sortDirection == SortDirection.Descending);
         foreach (var primary in properties.Where(p => p.IsPrimaryKey() && p.Name != sort.Name))
-        {
-            var member = Expression.Call(typeof(EF), nameof(EF.Property), [primary.ClrType], parameter, Expression.Constant(primary.Name));
-            ordered = ordered.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable), nameof(Queryable.ThenBy),
-                [typeof(TEntity), primary.ClrType], ordered.Expression, Expression.Quote(Expression.Lambda(member, parameter))));
-        }
+            ordered = ThenByField(ordered, primary.Name);
         return ordered;
+    }
+    protected IOrderedQueryable<TEntity> OrderByField(IQueryable<TEntity> source, string field, bool descending) =>
+        OrderField(source, field, descending ? nameof(Queryable.OrderByDescending) : nameof(Queryable.OrderBy));
+    protected IOrderedQueryable<TEntity> ThenByField(IOrderedQueryable<TEntity> source, string field, bool descending = false) =>
+        OrderField(source, field, descending ? nameof(Queryable.ThenByDescending) : nameof(Queryable.ThenBy));
+    private IOrderedQueryable<TEntity> OrderField(IQueryable<TEntity> source, string field, string operation)
+    {
+        var property = Context.Model.FindEntityType(typeof(TEntity))!.FindProperty(field)
+            ?? throw new ArgumentException("Unknown sort field.", nameof(field));
+        var parameter = Expression.Parameter(typeof(TEntity), "entity");
+        var key = Expression.Call(typeof(EF), nameof(EF.Property), [property.ClrType], parameter, Expression.Constant(property.Name));
+        return (IOrderedQueryable<TEntity>)source.Provider.CreateQuery<TEntity>(Expression.Call(typeof(Queryable), operation,
+            [typeof(TEntity), property.ClrType], source.Expression, Expression.Quote(Expression.Lambda(key, parameter))));
     }
 
     public Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
-        => _set.FirstOrDefaultAsync(predicate, cancellationToken);
+        => StorageErrors.ExecuteAsync(() => _set.FirstOrDefaultAsync(predicate, cancellationToken));
 
     public IQueryable<TEntity> Query(bool asNoTracking = true) => asNoTracking ? _set.AsNoTracking() : _set;
 
@@ -102,7 +106,7 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         if (keyValues.Length == 0)
             throw new ArgumentException("At least one key value is required.", nameof(keyValues));
 
-        var entity = await _set.FindAsync(keyValues, cancellationToken);
+        var entity = await StorageErrors.ExecuteAsync(() => _set.FindAsync(keyValues, cancellationToken).AsTask());
         // FindAsync can return a tracked instance without executing the soft-delete query filter.
         return entity is IIsDeletableEntity { DeletedAt: not null } ? null : entity;
     }
@@ -119,19 +123,19 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     public Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(predicate);
-        return _set.AsNoTracking().FirstOrDefaultAsync(predicate, cancellationToken);
+        return StorageErrors.ExecuteAsync(() => _set.AsNoTracking().FirstOrDefaultAsync(predicate, cancellationToken));
     }
 
     public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(predicate);
-        return _set.AnyAsync(predicate, cancellationToken);
+        return StorageErrors.ExecuteAsync(() => _set.AnyAsync(predicate, cancellationToken));
     }
 
     public Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default)
         => predicate is null
-            ? _set.CountAsync(cancellationToken)
-            : _set.CountAsync(predicate, cancellationToken);
+            ? StorageErrors.ExecuteAsync(() => _set.CountAsync(cancellationToken))
+            : StorageErrors.ExecuteAsync(() => _set.CountAsync(predicate, cancellationToken));
 
     public Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {

@@ -16,6 +16,5 @@ public sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.HasIndex(x => x.Code).IsUnique();
         builder.HasIndex(x => x.IsDefault).IsUnique()
             .HasFilter("\"IsDefault\" = TRUE AND \"DeletedAt\" IS NULL");
-        builder.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

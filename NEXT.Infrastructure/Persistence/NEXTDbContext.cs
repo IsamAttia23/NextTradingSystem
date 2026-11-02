@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+using NEXT.Infrastructure.Persistence.Transactions;
 using System.Linq.Expressions;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence.SaveChanges;
@@ -69,19 +69,13 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         builder.Entity<IdentityUserClaim<Guid>>()
             .ToTable("UserClaims", "security");
 
-        builder.Entity<UserRole>()
-            .ToTable("UserRoles", "security");
-
-        builder.Entity<IdentityUserLogin<Guid>>()
+builder.Entity<IdentityUserLogin<Guid>>()
             .ToTable("UserLogins", "security");
 
         builder.Entity<IdentityUserToken<Guid>>()
             .ToTable("UserTokens", "security");
 
-        builder.Entity<Role>()
-            .ToTable("Roles", "security");
-
-        builder.Entity<IdentityRoleClaim<Guid>>()
+builder.Entity<IdentityRoleClaim<Guid>>()
             .ToTable("RoleClaims", "security");
 
         // تطبيق فلاتر الحذف المنطقي
@@ -110,112 +104,81 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         }
     }
 
-    public override int SaveChanges() => SaveChanges(acceptAllChangesOnSuccess: true);
-
-    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    internal Exception? TransactionFailure { get; set; }
+    internal void EnsureTransactionUsable()
     {
-        IDbContextTransaction? transaction = null;
-        try
-        {
-            if (Database.IsRelational() && Database.CurrentTransaction is null)
-                transaction = Database.BeginTransaction();
-
-            var pendingAuditEntries = trackedChangesProcessor.Prepare(this);
-            var statePreserver = new SaveChangesStatePreserver(this);
-            var stateSnapshots = acceptAllChangesOnSuccess ? null : statePreserver.Capture();
-            var result = base.SaveChanges(acceptAllChangesOnSuccess);
-
-            if (pendingAuditEntries.Count == 0)
-            {
-                transaction?.Commit();
-                return result;
-            }
-
-            var auditRowsCount = auditEntryFactory.AddAuditRows(this, pendingAuditEntries);
-            if (auditRowsCount > 0)
-            {
-                if (stateSnapshots is not null)
-                    statePreserver.MarkUnchanged(stateSnapshots);
-
-                try
-                {
-                    result += base.SaveChanges(acceptAllChangesOnSuccess);
-                }
-                finally
-                {
-                    if (stateSnapshots is not null)
-                        statePreserver.Restore(stateSnapshots);
-                }
-            }
-
-            transaction?.Commit();
-            return result;
-        }
-        catch
-        {
-            transaction?.Rollback();
-            throw;
-        }
-        finally
-        {
-            transaction?.Dispose();
-        }
+        if (TransactionFailure is not null) throw new InvalidOperationException("The transaction cannot continue after a failed rollback.", TransactionFailure);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
-
-    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    public override int SaveChanges() => SaveChanges(true);
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        IDbContextTransaction? transaction = null;
+        EnsureTransactionUsable();
+        var state = new SaveChangesStatePreserver(this);
+        var before = state.Capture();
+        PersistenceTransaction? transaction = null;
+        Exception? failure = null;
         try
         {
-            if (Database.IsRelational() && Database.CurrentTransaction is null)
-                transaction = await Database.BeginTransactionAsync(cancellationToken);
-
-            var pendingAuditEntries = trackedChangesProcessor.Prepare(this);
-            var statePreserver = new SaveChangesStatePreserver(this);
-            var stateSnapshots = acceptAllChangesOnSuccess ? null : statePreserver.Capture();
-            var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-
-            if (pendingAuditEntries.Count == 0)
-            {
-                if (transaction is not null)
-                    await transaction.CommitAsync(cancellationToken);
-                return result;
-            }
-
-            var auditRowsCount = auditEntryFactory.AddAuditRows(this, pendingAuditEntries);
-            if (auditRowsCount > 0)
-            {
-                if (stateSnapshots is not null)
-                    statePreserver.MarkUnchanged(stateSnapshots);
-
-                try
-                {
-                    result += await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-                }
-                finally
-                {
-                    if (stateSnapshots is not null)
-                        statePreserver.Restore(stateSnapshots);
-                }
-            }
-
-            if (transaction is not null)
-                await transaction.CommitAsync(cancellationToken);
+            transaction = PersistenceTransaction.Begin(this);
+            var pending = trackedChangesProcessor.Prepare(this);
+            var result = base.SaveChanges(false);
+            var written = state.Capture(); // Includes generated keys and new concurrency tokens.
+            state.MarkWritten();
+            if (auditEntryFactory.AddAuditRows(this, pending) > 0) result += base.SaveChanges(false);
+            transaction.Complete();
+            FinishSave(state, written, acceptAllChangesOnSuccess);
             return result;
         }
-        catch
+        catch (Exception error)
         {
-            if (transaction is not null)
-                await transaction.RollbackAsync(cancellationToken);
+            failure = error;
+            if (transaction?.Rollback(error) == false) TransactionFailure = error;
+            RestoreAfterFailure(state, before, error);
+            StorageErrors.ThrowTranslated(error);
             throw;
         }
-        finally
+        finally { transaction?.Dispose(failure); }
+    }
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => SaveChangesAsync(true, cancellationToken);
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        EnsureTransactionUsable();
+        cancellationToken.ThrowIfCancellationRequested();
+        var state = new SaveChangesStatePreserver(this);
+        var before = state.Capture();
+        PersistenceTransaction? transaction = null;
+        Exception? failure = null;
+        try
         {
-            if (transaction is not null)
-                await transaction.DisposeAsync();
+            transaction = await PersistenceTransaction.BeginAsync(this, cancellationToken);
+            var pending = trackedChangesProcessor.Prepare(this);
+            var result = await base.SaveChangesAsync(false, cancellationToken);
+            var written = state.Capture();
+            state.MarkWritten();
+            if (auditEntryFactory.AddAuditRows(this, pending) > 0) result += await base.SaveChangesAsync(false, cancellationToken);
+            await transaction.CompleteAsync(cancellationToken);
+            FinishSave(state, written, acceptAllChangesOnSuccess);
+            return result;
         }
+        catch (Exception error)
+        {
+            failure = error;
+            if (transaction is not null && !await transaction.RollbackAsync(error)) TransactionFailure = error;
+            RestoreAfterFailure(state, before, error);
+            StorageErrors.ThrowTranslated(error);
+            throw;
+        }
+        finally { if (transaction is not null) await transaction.DisposeAsync(failure); }
+    }
+    private void FinishSave(SaveChangesStatePreserver state, IReadOnlyList<EntryStateSnapshot> written, bool accept)
+    {
+        if (accept) ChangeTracker.AcceptAllChanges();
+        else state.Restore(written, removeNewEntries: false);
+    }
+    private void RestoreAfterFailure(SaveChangesStatePreserver state, IReadOnlyList<EntryStateSnapshot> before, Exception original)
+    {
+        try { state.Restore(before); }
+        catch (Exception cleanup) { original.Data["TrackerRestoreFailure"] = cleanup; TransactionFailure = original; }
     }
 }
