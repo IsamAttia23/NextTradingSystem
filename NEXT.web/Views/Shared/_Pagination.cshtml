@@ -19,7 +19,7 @@
         @if (Model.AllowPageSize)
         {
             <form class="page-size-form" method="get" action="@Context.Request.Path">
-                @foreach (var parameter in Context.Request.Query.Where(x => !new[]{"page", "PageNumber", "PageSize", Model.PageKey}.Contains(x.Key, StringComparer.OrdinalIgnoreCase))) { <input type="hidden" name="@parameter.Key" value="@parameter.Value" /> }
+                <partial name="_QueryParameters" model='@(new string[]{"page", "PageNumber", "PageSize", Model.PageKey})' />
                 <label><span>@L["PageSize"]</span><select class="form-select" name="PageSize" data-page-size aria-label="@L["PageSize"]">@foreach (var size in new[]{10,20,50}.Append(Model.PageSize).Distinct().Order()) { <option value="@size" selected="@(size == Model.PageSize)">@size</option> }</select></label>
                 <noscript><button class="btn btn-light btn-sm" type="submit">@L["ApplyFilters"]</button></noscript>
             </form>
@@ -27,7 +27,7 @@
         @if (totalPages > 5)
         {
             <form class="page-jump-form" method="get" action="@Context.Request.Path">
-                @foreach (var parameter in Context.Request.Query.Where(x => !new[]{"page", "PageNumber", Model.PageKey}.Contains(x.Key, StringComparer.OrdinalIgnoreCase))) { <input type="hidden" name="@parameter.Key" value="@parameter.Value" /> }
+                <partial name="_QueryParameters" model='@(new string[]{"page", "PageNumber", Model.PageKey})' />
                 <input class="form-control" type="number" name="@Model.PageKey" min="1" max="@totalPages" value="@Model.Page" aria-label="@L["JumpToPage"]" /><button class="page-control" type="submit">@L["GoToPage"]</button>
             </form>
         }

@@ -8,9 +8,7 @@
     let request;
     let trigger;
     let saving = false;
-    const messageFor = status => status === 401 ? modalElement.dataset.expired :
-        status === 403 ? modalElement.dataset.forbidden : status === 400 || status === 422 ?
-        modalElement.dataset.validation : status === 409 ? modalElement.dataset.conflict : modalElement.dataset.error;
+    const messageFor = status => window.NextHttp.messageFor(status, modalElement.dataset);
     function showError(message) {
         let panel = body.querySelector("[data-form-errors]");
         if (!panel) { panel = document.createElement("div"); panel.className = "alert alert-danger"; panel.setAttribute("role", "alert"); panel.tabIndex = -1; body.append(panel); }
@@ -30,7 +28,7 @@
         try {
             const url = new URL(button.dataset.modalUrl, location.href);
             if (url.origin !== location.origin) throw new Error("Origin");
-            const response = await fetch(url, { signal: request.signal, headers: { "X-Requested-With": "XMLHttpRequest" } });
+            const response = await window.NextHttp.request(url, {signal: request.signal});
             if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
                 body.replaceChildren(); title.textContent = modalElement.dataset.error; showError(messageFor(response.status)); modal.show(); return;
             }
@@ -55,16 +53,11 @@
         if (saving || !form.reportValidity()) return;
         saving = true;
         const buttons = [...modalElement.querySelectorAll("button")];
-        buttons.forEach(button => button.disabled = true);
-        form.setAttribute("aria-busy", "true");
+        window.NextHttp.setBusy(form, true, buttons);
         try {
-            const response = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "X-Requested-With": "XMLHttpRequest" } });
+            const response = await window.NextHttp.request(form.action, {method: "POST", body: new FormData(form)});
             if (!response.ok) {
-                const problem = await response.json().catch(() => null);
-                let message = messageFor(response.status);
-                // Application validation descriptions are preserved; status guidance is localized.
-                if (problem?.errors) message += "\n" + Object.values(problem.errors).flat().join("\n");
-                showError(message);
+                showError(await window.NextHttp.problemMessage(response, modalElement.dataset));
                 return;
             }
             const result = await response.json().catch(() => null);
@@ -75,6 +68,6 @@
             // A refresh can fail after the mutation succeeds; do not invite a duplicate submission.
             if (updated === false) window.NextNotifications?.show(modalElement.dataset.refreshError, "warning");
         } catch { showError(modalElement.dataset.error); }
-        finally { saving = false; buttons.forEach(button => button.disabled = false); form.removeAttribute("aria-busy"); }
+        finally { saving = false; window.NextHttp.setBusy(form, false); }
     });
 })();

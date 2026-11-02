@@ -2,7 +2,7 @@
 @{ var id = "field-" + Model.Name.Replace(".", "-"); }
 <div class="profile-picker" data-profile-picker>
     <div class="profile-picker-control">
-        <input class="profile-picker-input" id="@id" name="@Model.Name" type="file" accept="image/*" data-profile-upload aria-describedby="@(id + "-hint")" />
+        <input class="profile-picker-input" id="@id" name="@Model.Name" type="file" accept="image/*" data-profile-upload data-max-bytes="@NEXT.Application.Abstractions.Media.ProfileImageRules.MaxBytes" aria-describedby="@(id + "-hint")" />
         <div class="profile-picker-circle" aria-hidden="true">
             <img src="@(Model.Value ?? Url.Content("~/images/avatar-placeholder.svg"))" data-profile-preview data-placeholder="@Url.Content("~/images/avatar-placeholder.svg")" alt="" />
             <span class="profile-picker-badge"><partial name="_Icon" model='@("edit")' /></span>

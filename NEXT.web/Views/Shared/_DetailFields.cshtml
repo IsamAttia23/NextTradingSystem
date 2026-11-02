@@ -1,0 +1,5 @@
+@model IReadOnlyList<DetailFieldDto>
+@foreach (var field in Model)
+{
+    <div><dt>@L[field.Label]</dt><dd><bdi>@(field.TranslateValue ? L[field.Value].Value : field.Value)</bdi></dd></div>
+}

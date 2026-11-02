@@ -65,6 +65,10 @@ public static class EntityFeatureRegistration
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<UnitOfMeasure>("Units",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<UnitOfMeasure>>(),
             sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+        services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Permission>("Permissions",
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Permission>>(),
+            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(),
+            x => new ReferenceOptionDto(x.Id.ToString(), x.Module + " / " + x.Code)));
         return services;
     }
 }

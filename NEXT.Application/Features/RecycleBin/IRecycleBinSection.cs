@@ -7,7 +7,7 @@ namespace NEXT.Application.Features.RecycleBin;
 public interface IRecycleBinSection
 {
     string Name { get; }
-    Task<TPaginationQueryModel<RecycleBinItemDto<Guid>>> List(PaginationQuery query);
+    Task<TPaginationQueryModel<RecycleBinItemDto<Guid>>> List(PaginationQuery query, CancellationToken ct = default);
     Task Restore(Guid id, CancellationToken ct);
     Task Purge(Guid id, CancellationToken ct);
 }
@@ -16,7 +16,7 @@ public sealed class RecycleBinSection<TEntity>(IRecycleBinService<TEntity, Guid>
     where TEntity : IsDeletableEntity<Guid>
 {
     public string Name => typeof(TEntity).Name;
-    public Task<TPaginationQueryModel<RecycleBinItemDto<Guid>>> List(PaginationQuery query) => service.List(query);
+    public Task<TPaginationQueryModel<RecycleBinItemDto<Guid>>> List(PaginationQuery query, CancellationToken ct = default) => service.List(query, ct);
     public Task Restore(Guid id, CancellationToken ct) => service.Restore(id, ct);
     public Task Purge(Guid id, CancellationToken ct) => service.HardDelete(id, ct);
 }

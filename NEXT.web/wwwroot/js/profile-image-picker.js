@@ -13,8 +13,13 @@
         if (!picker) return;
         const preview = picker.querySelector("[data-profile-preview]");
         const filename = picker.querySelector("[data-profile-filename]");
-        const file = input.files[0];
+        let file = input.files[0];
         release(input);
+        if (file && (file.size === 0 || file.size > Number(input.dataset.maxBytes))) {
+            input.value = "";
+            file = null;
+            window.NextNotifications?.show(document.getElementById("notifications")?.dataset.imageSize, "error");
+        }
         filename.textContent = file?.name ?? "";
         preview.onerror = null;
         if (!file) { preview.src = preview.dataset.placeholder; return; }

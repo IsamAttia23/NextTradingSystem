@@ -76,15 +76,4 @@
             setTimeout(() => delete form.dataset.notifiedInvalid, 0);
         }
     }, true);
-    document.addEventListener("change", event => {
-        const input = event.target.closest("[data-profile-upload]");
-        if (!input) return;
-        const file = input.files[0];
-        if (!file) return;
-        if (file.size > 7 * 1024 * 1024 || file.size === 0) {
-            input.value = "";
-            show(stack.dataset.imageSize, "error");
-        }
-        // MIME types and extensions are hints only; the server decodes every submitted image.
-    });
 })();

@@ -62,6 +62,8 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
 
     public override IQueryable<Product> ApplySorting(IQueryable<Product> products, string? sortBy, SortDirection? sortDirection)
     {
+        sortBy = new ProductQueryModel().GetSortFields()
+            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
         var descending = sortDirection == SortDirection.Descending;
 
         return sortBy?.Trim().ToLowerInvariant() switch

@@ -15,6 +15,8 @@ public static class PresentationRegistration
         services.AddScoped(typeof(Services.EntityPresenter<,>));
         services.AddScoped<Services.InventoryPresenter>();
         services.AddScoped<Services.QueryFilterPresenter>();
+        services.AddScoped<Services.FormFieldPresenter>();
+        services.AddScoped<Services.TablePresenter>();
         services.AddScoped<Services.RecycleBinPresenter>();
         services.AddScoped<Services.UsersPresenter>();
         services.AddScoped<Services.RolesPresenter>();

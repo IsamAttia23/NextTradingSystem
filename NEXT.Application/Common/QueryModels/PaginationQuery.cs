@@ -5,6 +5,8 @@ namespace NEXT.Application.Common.QueryModels;
 
 public class PaginationQuery : IValidatableObject
 {
+    public virtual IReadOnlyList<string> GetSortFields() => [];
+
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public string? SortBy { get; set; }

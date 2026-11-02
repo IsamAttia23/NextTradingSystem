@@ -36,7 +36,7 @@ public sealed class InventoryController(IInventoryService inventory, InventoryPr
     }
   
     [HttpGet]
-    public async Task<IActionResult> Receive(CancellationToken ct) => Form(await presenter.FormAsync(false, Route("Receive"), null, null, ct));
+    public async Task<IActionResult> Receive(CancellationToken ct) => Form(await presenter.ReceiveFormAsync(Route("Receive"), ct));
    
     [HttpPost]
     public async Task<IActionResult> Receive(ReceiveStockDto input, CancellationToken ct)
@@ -50,7 +50,7 @@ public sealed class InventoryController(IInventoryService inventory, InventoryPr
    
     [HttpGet]
     public async Task<IActionResult> Transfer(Guid? productId, Guid? sourceWarehouseId, CancellationToken ct) =>
-        Form(await presenter.FormAsync(true, Route("Transfer"), productId, sourceWarehouseId, ct));
+        Form(await presenter.TransferFormAsync(Route("Transfer"), productId, sourceWarehouseId, ct));
 
     [HttpPost]
     public async Task<IActionResult> Transfer(TransferStockDto input, CancellationToken ct)

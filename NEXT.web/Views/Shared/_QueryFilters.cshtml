@@ -9,14 +9,7 @@
             {
                 var fieldId = "query-" + field.Name;
                 <div class="filter-field @(field.Type == "search" ? "filter-search" : "")"><label for="@fieldId">@L[field.Label]</label>
-                @if (field.Type == "select")
-                {
-                    <select class="form-select" id="@fieldId" name="@field.Name"><option value="">@L["AllValues"]</option>@foreach (var option in field.Options ?? []) { <option value="@option.Value" selected="@(field.Value == option.Value)">@L[option.Label]</option> }</select>
-                }
-                else
-                {
-                    <input class="form-control" id="@fieldId" name="@field.Name" type="@field.Type" value="@field.Value" step="@(field.Type == "number" ? "any" : null)" maxlength="@field.MaxLength" placeholder="@(field.Type == "search" ? L["SearchAllHint"].Value : null)" />
-                }
+                <partial name="_FieldControl" model='@(new NEXT.web.Models.FieldControlModel(field, fieldId, "AllValues", field.Type == "search" ? L["SearchAllHint"].Value : null))' />
                 </div>
             }
             @if (Model.SortOptions is {Count: > 0})

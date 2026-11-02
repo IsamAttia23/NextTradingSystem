@@ -8,10 +8,19 @@ namespace NEXT.web.ViewComponents;
 
 public sealed class HeaderProfileViewComponent(ISender sender) : ViewComponent
 {
+    private static readonly object ProfileKey = new();
+
     public async Task<IViewComponentResult> InvokeAsync()
+    {
+        if (HttpContext.Items[ProfileKey] is not Task<HeaderProfile> profile)
+            HttpContext.Items[ProfileKey] = profile = LoadProfileAsync();
+        return View(await profile);
+    }
+
+    private async Task<HeaderProfile> LoadProfileAsync()
     {
         var id = UserClaimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
         var user = id is null ? null : await sender.Send(new GetApplicationUserByIdQuery(id), HttpContext.RequestAborted);
-        return View(new HeaderProfile(user?.FullName ?? User.Identity?.Name ?? "", user?.AvatarUrl is { Length: > 0 }));
+        return new(user?.FullName ?? User.Identity?.Name ?? "", user?.AvatarUrl is { Length: > 0 });
     }
 }

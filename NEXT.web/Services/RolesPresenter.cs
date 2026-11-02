@@ -6,7 +6,7 @@ using NEXT.Application.DTOs.Presentation;
 
 namespace NEXT.web.Services;
 
-public sealed class RolesPresenter(ISender sender)
+public sealed class RolesPresenter(ISender sender, FormFieldPresenter fields)
 
 {
     public async Task<TableModel> IndexAsync(Func<string, object?, string> route, CancellationToken ct)
@@ -17,7 +17,11 @@ public sealed class RolesPresenter(ISender sender)
                 x.IsSystem ? [new("Edit", route("Edit", new { x.Id }))] : [new("Edit", route("Edit", new { x.Id })), new("Delete", route("Delete", new { x.Id }), true)])).ToArray(),
             new("CreateRole", route("Create", null)), TotalCount: roles.Count);
     }
-    public ModalForm RoleForm(string title, string action, RoleDto? role = null) => new(title, action,
-        [new("Name", "Name", role?.Name, Required: true, MaxLength: 50),
-         new("Description", "Description", role?.Description, "textarea", MaxLength: 500)]);
+    public async Task<ModalForm> RoleFormAsync(string title, string action, RoleDto? role = null, CancellationToken ct = default)
+    {
+        var formFields = role is null
+            ? await fields.FormAsync(new RoleCreationDto { Name = role?.Name ?? "", Description = role?.Description }, ct, includedFields: ["Name", "Description"])
+            : await fields.FormAsync(new RoleUpdateDto { Name = role?.Name ?? "", Description = role?.Description }, ct, includedFields: ["Name", "Description"]);
+        return new(title, action, formFields);
+    }
 }

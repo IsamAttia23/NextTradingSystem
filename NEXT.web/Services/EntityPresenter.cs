@@ -1,117 +1,63 @@
-using NEXT.Application.DTOs.Common;
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 using System.Reflection;
 using MediatR;
+using NEXT.Application.Common.QueryModels;
+using NEXT.Application.DTOs.Common;
+using NEXT.Application.DTOs.Presentation;
+using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
 
-using NEXT.Application.Abstractions.IServices;
-using NEXT.Application.Common.QueryModels;
-using NEXT.Application.DTOs.Presentation;
 namespace NEXT.web.Services;
-/// <summary>Builds reusable administration forms from application DTO metadata, never from domain entities.</summary>
-public sealed class EntityPresenter<TDto, TInput>(ISender sender, IReferenceDataService references, QueryFilterPresenter filters)
-    where TDto : class where TInput : class, new()
+
+public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter tables, FormFieldPresenter fields)
+    where TDto : class, TInput, IRecordDto where TInput : class, new()
 {
     public async Task<TableModel> TableAsync(string title, Func<string, object?, string> route, PaginationQuery query, CancellationToken ct)
     {
-        var result = await sender.Send(new GetEntitiesQuery<TDto>(query), ct);
-        query.PageNumber = result.PageNumber; query.PageSize = result.PageSize;
-
-        var columns = typeof(TInput).GetProperties().Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "IsActive" or "Symbol" or "Color").Take(5).ToArray();
+        var pagedList = await sender.Send(new GetEntitiesQuery<TDto>(query), ct);
+        var columns = typeof(TInput).GetProperties()
+            .Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "IsActive" or "Symbol" or "Color").Take(5).ToArray();
         var tagged = typeof(ITaggedRecordDto).IsAssignableFrom(typeof(TDto));
         var labels = columns.Select(x => x.Name == "IsActive" ? "Status" : x.Name).ToList();
-
-        if (tagged)
-            labels.Add("TagId");
-
-        var filterFields = await filters.FieldsAsync(query, ct);
-
-        return new(
-            title, title + "Description", labels,
-            result.Data.Select(item => new TableRow(columns.Select(p => Display(p.GetValue(item))).Concat(tagged ? [""] : Array.Empty<string>()).ToArray(),
-                [new("Details", route("Details", new { id = Id(item), returnUrl = route("Index", query) }), Modal: false), new("Edit", route("Edit", new { id = Id(item) })), new("Delete", route("Delete", new { id = Id(item) }), true)],
-                Badge(item), new RecordIdentityDto(Name(item), HasImage(item) ? route("Avatar", new { id = Id(item) }) : null))).ToArray(),
-            new("Create", route("Create", null)), result.PageNumber, result.TotalPages, result.TotalCount,
-            Query: query, SortOptions:
-            SortFields(query).Select(name => new FieldOption(name, name)).ToArray(), FilterFields: filterFields, ActiveFilters: QueryFilterPresenter.ActiveCount(query), PageSize: result.PageSize);
+        if (tagged) labels.Add("TagId");
+        return await tables.BuildAsync(title, labels, pagedList, query,
+            item => Row(item, columns, tagged, route, query),
+            SortFields(query).Select(name => new FieldOption(name, name)).ToArray(), ct, new("Create", route("Create", null)));
     }
-    public async Task<RecordDetailsDto> DetailsAsync(string section, Guid id, string? kind, int page, Func<string, object?, string> route, CancellationToken ct)
+
+    private static TableRow Row(TDto item, PropertyInfo[] columns, bool tagged,
+        Func<string, object?, string> route, PaginationQuery query) =>
+        new(columns.Select(p => FormFieldPresenter.Display(p.GetValue(item))).Concat(tagged ? [""] : Array.Empty<string>()).ToArray(),
+            [new("Details", route("Details", new { id = item.Id, returnUrl = route("Index", query) }), Modal: false),
+             new("Edit", route("Edit", new { id = item.Id })), new("Delete", route("Delete", new { id = item.Id }), true)],
+            Badge(item), Identity(item, route));
+
+    public async Task<RecordDetailsDto> DetailsAsync(string section, Guid id, string? kind, int page,
+        Func<string, object?, string> route, CancellationToken ct)
     {
-        var item = (await sender.Send(new GetEntityByIdQuery<TDto>(id), ct))!;
-        var fields = new List<DetailFieldDto>();
-        foreach (var p in typeof(TDto).GetProperties())
-        {
-            if (p.Name is "Id" or "Name" or "AvatarUrl" or "RemoveAvatar" or "TagName" or "TagColor") continue;
-            var value = p.GetValue(item);
-            if (p.Name == "TagId") continue;
-            if (ReferenceKey(p.Name) is { } reference && value is Guid selected)
-                fields.Add(new(p.Name, (await references.GetAsync(reference, ct)).SingleOrDefault(x => x.Value == selected.ToString())?.Label ?? "—"));
-            else fields.Add(new(p.Name, value is decimal number ? number.ToString("N2") : Display(value),
-                (Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType).IsEnum || p.PropertyType == typeof(bool)));
-        }
-        return new(section, Name(item), fields, new(Name(item), HasImage(item) ? route("Avatar", new { id }) : null), Badge(item),
-            await sender.Send(new GetEntityActivityQuery<TDto>(id, kind, page), ct), route("Edit", new { id }), route("Index", null));
+        var item = await FindAsync(id, ct);
+        var details = await fields.DetailsAsync(item, ct);
+        var activity = await sender.Send(new GetEntityActivityQuery<TDto>(id, kind, page), ct);
+        return new(section, Name(item), details, Identity(item, route), Badge(item), activity,
+            route("Edit", new { id }), route("Index", null));
     }
-    private static string[] SortFields(PaginationQuery query) => query switch
-    {
-        NEXT.Application.QueryModels.CustomerQueryModel => ["Name", "CompanyName", "CreditLimit", "CurrentBalance", "PaymentTermsDays"],
-        NEXT.Application.QueryModels.SupplierQueryModel => ["Name", "Code"],
-        NEXT.Application.QueryModels.ProductQueryModel => ["Name", "Barcode", "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice"],
-        _ => typeof(TDto).GetProperties().Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "Symbol").Select(p => p.Name).Append("CreatedAt").ToArray()
-    };
-    private static string Name(TDto item) => typeof(TDto).GetProperty("Name")?.GetValue(item)?.ToString() ?? typeof(TDto).Name;
-    private static bool HasImage(TDto item) => item is IProfileImageInput { AvatarUrl.Length: > 0 };
-    private static ColorBadgeDto? Badge(TDto item) => item is ITaggedRecordDto { TagName: { } name } tag ? new(name, tag.TagColor ?? "#778195") : null;
+
     public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct)
     {
-        object input = id is { } key ? (await sender.Send(new GetEntityByIdQuery<TDto>(key), ct))! : new TInput();
-        List<FormField> fields = [];
-        foreach (var property in typeof(TInput).GetProperties())
-        {
-            if (property.Name == "AvatarUrl")
-            {
-                fields.Add(new("Avatar", "ProfileImage", id is not null && input is IProfileImageInput { AvatarUrl.Length: > 0 }
-                    ? "data:image/png;base64," + Convert.ToBase64String(((IProfileImageInput)input).AvatarUrl!) : null, "file"));
-                continue;
-            }
-            var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
-            var value = property.GetValue(input);
-            var reference = ReferenceKey(property.Name);
-            IReadOnlyList<FieldOption>? options = null;
-            var kind = "text";
-            if (reference is not null)
-            {
-                kind = "select";
-                options = (await references.GetAsync(reference, ct)).Where(x => !(property.Name is "ParentId" or "BaseUnitId" && x.Value == id?.ToString()))
-                    .Select(x => new FieldOption(x.Value, x.Label)).ToArray();
-            }
-            else if (type.IsEnum)
-            {
-                kind = "select";
-                options = Enum.GetValues(type).Cast<object>().Select(x => new FieldOption(x.ToString()!, x.ToString()!)).ToArray();
-            }
-            else if (type == typeof(bool)) kind = "checkbox";
-            else if (type == typeof(decimal) || type == typeof(int)) kind = "number";
-            else if (property.GetCustomAttribute<EmailAddressAttribute>() is not null) kind = "email";
-            else if (property.Name is "Notes" or "Description" or "Address") kind = "textarea";
-            else if (property.Name == "Color") kind = "color";
-            fields.Add(new(property.Name, property.Name, Format(value), kind,
-                property.GetCustomAttribute<RequiredAttribute>() is not null || (type == typeof(Guid) && Nullable.GetUnderlyingType(property.PropertyType) is null),
-                property.GetCustomAttribute<StringLengthAttribute>()?.MaximumLength, options));
-        }
-        return new(title, action, fields);
+        TInput input = id is { } key ? await FindAsync(key, ct) : new TInput();
+        return new(title, action, await fields.FormAsync(input, ct, id));
     }
-    private static string? ReferenceKey(string name) => name switch
-    {
-        "TagId" => "Tags",
-        "CustomerId" => "Customers",
-        "ParentId" or "CategoryId" => "Categories",
-        "BranchId" => "Branches",
-        "BaseUnitId" or "UnitOfMeasureId" => "Units",
-        _ => null
-    };
-    private static object? Id(TDto item) => typeof(TDto).GetProperty("Id")!.GetValue(item);
-    private static string Display(object? value) => value is bool flag ? flag ? "Active" : "Inactive" : string.IsNullOrWhiteSpace(Format(value)) ? "—" : Format(value)!;
-    private static string? Format(object? value) => value is bool flag ? flag.ToString().ToLowerInvariant() : Convert.ToString(value, CultureInfo.InvariantCulture);
+
+    private async Task<TDto> FindAsync(Guid id, CancellationToken ct) =>
+        await sender.Send(new GetEntityByIdQuery<TDto>(id), ct) ?? throw new NotFoundException("Record was not found.");
+
+    private static string[] SortFields(PaginationQuery query) => query.GetSortFields() is { Count: > 0 } names
+        ? names.ToArray()
+        : typeof(TDto).GetProperties().Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "Symbol")
+            .Select(p => p.Name).Append("CreatedAt").ToArray();
+
+    private static string Name(TDto item) => typeof(TInput).GetProperty("Name")?.GetValue(item)?.ToString() ?? typeof(TDto).Name;
+    private static RecordIdentityDto Identity(TDto item, Func<string, object?, string> route) =>
+        new(Name(item), item is IProfileImageInput { AvatarUrl.Length: > 0 } ? route("Avatar", new { id = item.Id }) : null);
+    private static ColorBadgeDto? Badge(TDto item) => item is ITaggedRecordDto { TagName: { } name } tag
+        ? new(name, tag.TagColor ?? "#778195") : null;
 }

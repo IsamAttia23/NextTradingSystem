@@ -5,11 +5,11 @@ using NEXT.web.Services;
 namespace NEXT.web.Controllers;
 public sealed class RecycleBinController(IRecycleBinAccess access, RecycleBinPresenter presenter) : WorkspaceController
 {
-    [HttpGet] public async Task<IActionResult> Index(string section = "Product", int page = 1)
+    [HttpGet] public async Task<IActionResult> Index(string section = "Product", int page = 1, CancellationToken ct = default)
     {
         ViewData["Sections"] = access.Sections.ToArray();
         ViewData["Section"] = section;
-        return Table(await presenter.TableAsync(section, page, (action, values) => Route(action, values)));
+        return Table(await presenter.TableAsync(section, page, (action, values) => Route(action, values), ct));
     }
     [HttpGet] public IActionResult Restore(string section, Guid id)
     {

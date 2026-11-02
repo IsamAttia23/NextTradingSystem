@@ -81,6 +81,17 @@
         if (initialError) notice(initialError);
         document.dispatchEvent(new CustomEvent("next:navigated", {detail: {url: location.href}}));
     }
+    async function readDocument(response) {
+        if (new URL(response.url).origin !== location.origin) throw new Error("Unexpected response origin");
+        const html = new DOMParser().parseFromString(await response.text(), "text/html");
+        if (!html.getElementById("main") || !html.querySelector(".app-shell")) throw new Error("Unexpected response");
+        return html;
+    }
+    function updateHistory(url, options) {
+        if (options.history === false || options.fromHistory) return;
+        history[options.replace ? "replaceState" : "pushState"](
+            {nextNavigation: true, mainScroll: options.keepScroll ? main().scrollTop : 0}, "", url);
+    }
     async function navigate(url, options = {}) {
         const target = new URL(url, location.href);
         if (target.origin !== location.origin) return false;
@@ -92,23 +103,19 @@
         if (!options.fromHistory) rememberScroll();
         main()?.setAttribute("aria-busy", "true");
         try {
-            const response = await fetch(target.href, {method, body: options.body, signal: controller?.signal, credentials: "same-origin", cache: "no-store", headers: {"X-Requested-With": "XMLHttpRequest"}});
+            const response = await window.NextHttp.request(target.href, {method, body: options.body, signal: controller?.signal, cache: "no-store"});
             if (token !== sequence) return false;
             if (response.status === 401) {
                 notice(messages().expired);
                 return navigate(new URL((messages().loginUrl ?? "/Account/Login") + "?returnUrl=" + encodeURIComponent(target.pathname + target.search), location.origin).href, {replace: true});
             }
             if (!response.headers.get("content-type")?.includes("text/html")) {
-                const problem = await response.json().catch(() => null);
-                notice(problem?.errors ? Object.values(problem.errors).flat().join("\n") : response.status === 403 ? messages().forbidden : messages().error);
+                notice(await window.NextHttp.problemMessage(response, messages()));
                 return false;
             }
-            if (new URL(response.url).origin !== location.origin) throw new Error("Unexpected response origin");
-            const html = new DOMParser().parseFromString(await response.text(), "text/html");
+            const html = await readDocument(response);
             if (token !== sequence) return false;
-            if (!html.getElementById("main") || !html.querySelector(".app-shell")) throw new Error("Unexpected response");
-            if (options.history !== false && !options.fromHistory)
-                history[options.replace ? "replaceState" : "pushState"]({nextNavigation: true, mainScroll: options.keepScroll ? main().scrollTop : 0}, "", response.url);
+            updateHistory(response.url, options);
             render(html, options);
             return true;
         } catch (error) {
@@ -144,9 +151,9 @@
         } else {
             form.dataset.navigationBusy = "true";
             const buttons = [...form.querySelectorAll('button[type="submit"], button:not([type])')];
-            buttons.forEach(button => button.disabled = true);
+            window.NextHttp.setBusy(form, true, buttons);
             try { await navigate(url.href, {method, body, replace: true, keepFocus: true}); }
-            finally { delete form.dataset.navigationBusy; buttons.forEach(button => button.disabled = false); }
+            finally { delete form.dataset.navigationBusy; window.NextHttp.setBusy(form, false); }
         }
     });
     document.addEventListener("change", event => {

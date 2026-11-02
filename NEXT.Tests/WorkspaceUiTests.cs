@@ -26,7 +26,8 @@ namespace NEXT.Tests;
 /// <summary>Real HTTP, cookies, Razor, antiforgery and application handlers; isolated in-memory storage.</summary>
 public sealed class WorkspaceUiTests
 {
-    public static async Task<WebApplication> StartAsync(string? contentRoot = null, string? postgresConnection = null)
+    public static async Task<WebApplication> StartAsync(string? contentRoot = null, string? postgresConnection = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var webRoot = contentRoot ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../NEXT.web"));
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -57,6 +58,7 @@ public sealed class WorkspaceUiTests
             options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
         }).AddIdentityCookies();
         builder.Services.AddPresentation(builder.Configuration);
+        configureServices?.Invoke(builder.Services);
         var app = builder.Build();
         app.UseStatusCodePagesWithReExecute("/Status/{0}");
         app.UseMiddleware<ExceptionHandlingMiddleware>();

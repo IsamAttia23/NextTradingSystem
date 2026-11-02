@@ -8,6 +8,8 @@ namespace NEXT.Application.QueryModels
 {
     public class CustomerQueryModel : PaginationQuery
     {
+    public override IReadOnlyList<string> GetSortFields() => ["Name", "CompanyName", "CreditLimit", "CurrentBalance", "PaymentTermsDays"];
+
 
         public CustomerType? Type { get; set; }
 

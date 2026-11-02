@@ -1,7 +1,7 @@
 using NEXT.Application.DTOs.Common;
 namespace NEXT.Application.DTOs.Customers;
 
-public sealed class CustomerDto : CustomerInputDto, ITaggedRecordDto
+public sealed class CustomerDto : CustomerInputDto, ITaggedRecordDto, NEXT.Application.DTOs.Common.IRecordDto
 {
     public string? TagName { get; set; }
     public string? TagColor { get; set; }

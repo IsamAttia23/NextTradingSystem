@@ -15,14 +15,7 @@
         else
         {
             <label class="form-label" for="@id">@L[field.Label] @if (field.Required) { <span class="required" aria-hidden="true">*</span> }</label>
-            @if (field.Type == "select")
-            {
-                <select class="form-select" id="@id" name="@field.Name" required="@field.Required">
-                    <option value="">@L["Choose"]</option>
-                    @foreach (var option in field.Options ?? []) { <option value="@option.Value" selected="@(field.Value == option.Value)">@L[option.Label]</option> }
-                </select>
-            }
-            else if (field.Type == "file")
+            @if (field.Type == "file")
             {
                 <partial name="_ProfileImagePicker" model="field" />
             }
@@ -32,8 +25,7 @@
             }
             else
             {
-                <input class="form-control" id="@id" name="@field.Name" type="@field.Type" step="@(field.Type == "number" ? "any" : null)" value="@field.Value" required="@field.Required" maxlength="@field.MaxLength"
-                       minlength="@(field.Type == "password" ? 10 : (int?)null)" autocomplete="@(field.Type == "password" ? "new-password" : "off")" />
+                <partial name="_FieldControl" model='@(new NEXT.web.Models.FieldControlModel(field, id, "Choose"))' />
             }
         }
         </div>

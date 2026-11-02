@@ -40,6 +40,8 @@ public sealed class CustomerRepository(NEXTDbContext context) : KeyRepository<Cu
 
     public override IQueryable<Customer> ApplySorting(IQueryable<Customer> customers, string? sortBy, SortDirection? sortDirection)
     {
+        sortBy = new CustomerQueryModel().GetSortFields()
+            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
         var descending = sortDirection == SortDirection.Descending;
 
         var ordered = sortBy?.Trim().ToLowerInvariant() switch

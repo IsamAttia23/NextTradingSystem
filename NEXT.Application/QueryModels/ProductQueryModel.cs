@@ -6,6 +6,8 @@ namespace NEXT.Application.QueryModels;
 
 public sealed class ProductQueryModel : PaginationQuery
 {
+    public override IReadOnlyList<string> GetSortFields() => ["Name", "Barcode", "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice"];
+
     // Product filters
     public string? Barcode { get; set; }
     public string? Name { get; set; }

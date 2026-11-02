@@ -9,7 +9,7 @@ using NEXT.Application.Features.Security.Roles;
 
 namespace NEXT.web.Services;
 
-public sealed class UsersPresenter(ISender sender, IBranchLookup branches)
+public sealed class UsersPresenter(ISender sender)
 
 {
     public async Task<TableModel> IndexAsync(Func<string, object?, string> route, CancellationToken ct)
@@ -21,17 +21,16 @@ public sealed class UsersPresenter(ISender sender, IBranchLookup branches)
     }
     public async Task<ModalForm> FormAsync(UserDto? user, Func<string, object?, string> route, CancellationToken ct)
     {
-        var prefix = "";
-        var options = (await branches.GetAsync(ct)).Where(x => x.IsActive || x.Id == user?.BranchId)
+        var options = (await sender.Send(new GetAssignableBranchesQuery(user?.BranchId), ct))
             .Select(x => new FieldOption(x.Id.ToString(), x.Name)).ToArray();
         List<FormField> fields = [
-            new(prefix + "Avatar", "ProfileImage", user?.AvatarUrl is { Length: > 0 } avatar ? "data:image/png;base64," + Convert.ToBase64String(avatar) : null, Type: "file"),
-            new(prefix + "FullName", "FullName", user?.FullName, Required: true, MaxLength: 200),
-            new(prefix + "UserName", "UserName", user?.UserName, Required: true, MaxLength: 256),
-            new(prefix + "Email", "Email", user?.Email, "email", true, 256),
-            new(prefix + "PhoneNumber", "PhoneNumber", user?.PhoneNumber, "tel", MaxLength: 32),
-            new(prefix + "BranchId", "Branch", user?.BranchId.ToString(), "select", true, Options: options),
-            new(prefix + "IsActive", "Active", (user?.IsActive ?? true).ToString().ToLowerInvariant(), "checkbox")];
+            new("Avatar", "ProfileImage", FormFieldPresenter.Avatar(user?.AvatarUrl), Type: "file"),
+            new("FullName", "FullName", user?.FullName, Required: true, MaxLength: 200),
+            new("UserName", "UserName", user?.UserName, Required: true, MaxLength: 256),
+            new("Email", "Email", user?.Email, "email", true, 256),
+            new("PhoneNumber", "PhoneNumber", user?.PhoneNumber, "tel", MaxLength: 32),
+            new("BranchId", "Branch", user?.BranchId.ToString(), "select", true, Options: options),
+            new("IsActive", "Active", (user?.IsActive ?? true).ToString().ToLowerInvariant(), "checkbox")];
         if (user is null) fields.Add(new("Password", "Password", Type: "password", Required: true, MaxLength: 128));
         return new(user is null ? "CreateUser" : "EditUser", user is null ? route("Create", null) : route("Edit", new { user.Id }), fields,
             Message: user is null ? "PasswordHint" : null);

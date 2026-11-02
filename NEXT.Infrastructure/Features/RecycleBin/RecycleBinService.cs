@@ -16,7 +16,7 @@ public sealed class RecycleBinService<TEntity, TKey>(
     where TKey : struct
     where TEntity : IsDeletableEntity<TKey>
 {
-    public Task<TPaginationQueryModel<RecycleBinItemDto<TKey>>> List(PaginationQuery query)
+    public Task<TPaginationQueryModel<RecycleBinItemDto<TKey>>> List(PaginationQuery query, CancellationToken ct = default)
     {
         var deleted = db.Set<TEntity>().IgnoreQueryFilters().AsNoTracking()
             .Where(x => x.DeletedAt != null)
@@ -28,7 +28,7 @@ public sealed class RecycleBinService<TEntity, TKey>(
                 DeletionReason = x.DeletionReason,
                 DeletedOn = x.DeletedAt!.Value
             });
-        return pagination.GetPaggedList(deleted, query);
+        return pagination.GetPaggedList(deleted, query, ct);
     }
 
     public async Task HardDelete(TKey id, CancellationToken ct = default)

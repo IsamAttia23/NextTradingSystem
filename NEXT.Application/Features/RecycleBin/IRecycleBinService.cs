@@ -7,7 +7,7 @@ public interface IRecycleBinService<TEntity, TKey>
     where TKey : struct
     where TEntity : IsDeletableEntity<TKey>
 {
-    Task<TPaginationQueryModel<RecycleBinItemDto<TKey>>> List(PaginationQuery query);
+    Task<TPaginationQueryModel<RecycleBinItemDto<TKey>>> List(PaginationQuery query, CancellationToken ct = default);
     Task HardDelete(TKey id, CancellationToken ct = default);
     Task Restore(TKey id, CancellationToken ct = default);
 }

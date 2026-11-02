@@ -30,6 +30,8 @@ public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Su
 
     public override IQueryable<Supplier> ApplySorting(IQueryable<Supplier> query, string? sortBy, SortDirection? sortDirection)
     {
+        sortBy = new SupplierQueryModel().GetSortFields()
+            .FirstOrDefault(field => string.Equals(field, sortBy?.Trim(), StringComparison.OrdinalIgnoreCase));
         var descending = sortDirection == SortDirection.Descending;
 
         return sortBy?.Trim().ToLowerInvariant() switch

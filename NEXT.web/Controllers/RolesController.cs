@@ -11,7 +11,7 @@ public sealed class RolesController(ISender sender, RolesPresenter presenter) : 
 {
     [HttpGet] public async Task<IActionResult> Index(CancellationToken ct) => Table(await presenter.IndexAsync((action, values) => Route(action, values), ct));
 
-    [HttpGet] public IActionResult Create() => Form(presenter.RoleForm("CreateRole", Route("Create")));
+    [HttpGet] public async Task<IActionResult> Create(CancellationToken ct) => Form(await presenter.RoleFormAsync("CreateRole", Route("Create"), ct: ct));
     [HttpPost] public async Task<IActionResult> Create(RoleCreationDto input, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -21,7 +21,7 @@ public sealed class RolesController(ISender sender, RolesPresenter presenter) : 
     [HttpGet] public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
     {
         var role = await sender.Send(new GetRoleByIdQuery(id), ct);
-        return role is null ? NotFound() : Form(presenter.RoleForm("EditRole", Route("Edit", new { id }), role));
+        return role is null ? NotFound() : Form(await presenter.RoleFormAsync("EditRole", Route("Edit", new { id }), role, ct));
     }
     [HttpPost] public async Task<IActionResult> Edit(Guid id, RoleUpdateDto input, CancellationToken ct)
     {

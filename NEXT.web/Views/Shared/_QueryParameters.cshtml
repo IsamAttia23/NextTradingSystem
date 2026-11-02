@@ -1,0 +1,5 @@
+@model string[]
+@foreach (var parameter in Context.Request.Query.Where(x => !Model.Contains(x.Key, StringComparer.OrdinalIgnoreCase)))
+{
+    <input type="hidden" name="@parameter.Key" value="@parameter.Value" />
+}
