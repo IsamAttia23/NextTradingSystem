@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.Text;
 using ImageMagick;
 using NEXT.Application.Abstractions.Media;

@@ -1,7 +1,9 @@
 using NEXT.Application.DTOs.Common;
 using System.ComponentModel.DataAnnotations;
 using NEXT.Domain.Enums;
+
 namespace NEXT.Application.DTOs.Customers;
+
 public class CustomerInputDto : IProfileImageInput
 {
     [EnumDataType(typeof(CustomerType))] public CustomerType Type { get; set; } = CustomerType.Individual;
@@ -19,5 +21,5 @@ public class CustomerInputDto : IProfileImageInput
     [Range(0,3650)] public int PaymentTermsDays { get; set; }
     [StringLength(2000)] public string? Notes { get; set; }
      public bool IsActive { get; set; } = true;
-    [Required] public Guid TagId { get; set; }
+    [Required] [NEXT.Application.Validation.NotEmptyGuid] public Guid TagId { get; set; }
 }

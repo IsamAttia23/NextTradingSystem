@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Reflection;
@@ -76,7 +77,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         List<DetailFieldDto> fields = [];
         foreach (var property in typeof(TDto).GetProperties())
         {
-            if (property.Name is "Id" or "Name" or "AvatarUrl" or "RemoveAvatar" or "TagName" or "TagColor" or "TagId") continue;
+            if (property.Name is "Id" or "Name" or "AvatarUrl" or "RemoveAvatar" or "TagName" or "TagColor" or "TagId" or "RowVersion") continue;
             var value = property.GetValue(item);
             if (ReferenceKey(property.Name) is { } key && value is Guid selected)
                 fields.Add(new(property.Name, (await OptionsAsync(key, ct)).SingleOrDefault(x => x.Value == selected.ToString())?.Label ?? "—"));

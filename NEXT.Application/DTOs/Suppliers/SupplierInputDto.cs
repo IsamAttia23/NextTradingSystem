@@ -1,7 +1,9 @@
 using NEXT.Application.DTOs.Common;
 using System.ComponentModel.DataAnnotations;
 using NEXT.Domain.Enums;
+
 namespace NEXT.Application.DTOs.Suppliers;
+
 public class SupplierInputDto : IProfileImageInput
 {
     [StringLength(40)] public string? Code { get; set; }
@@ -15,5 +17,5 @@ public class SupplierInputDto : IProfileImageInput
     [Range(0,3650)] public int PaymentTermsDays { get; set; }
     [StringLength(2000)] public string? Notes { get; set; }
      public bool IsActive { get; set; } = true;
-    [Required] public Guid TagId { get; set; }
+    [Required] [NEXT.Application.Validation.NotEmptyGuid] public Guid TagId { get; set; }
 }

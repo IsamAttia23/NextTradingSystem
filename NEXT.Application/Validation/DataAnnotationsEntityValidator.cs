@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NEXT.Application.Validation;
 
-/// <summary>Default validator for DataAnnotations; replace per entity to add domain rules.</summary>
 public sealed class DataAnnotationsEntityValidator<TEntity> : IEntityValidator<TEntity>
     where TEntity : class
 {

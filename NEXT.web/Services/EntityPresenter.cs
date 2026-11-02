@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.Reflection;
 using MediatR;
 using NEXT.Application.Common.QueryModels;
@@ -44,7 +45,10 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
     public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct)
     {
         TInput input = id is { } key ? await FindAsync(key, ct) : new TInput();
-        return new(title, action, await fields.FormAsync(input, ct, id));
+        var formFields = (await fields.FormAsync(input, ct, id)).ToList();
+        if (id.HasValue && input is IVersionedRecordDto versioned)
+            formFields.Add(new("RowVersion", "RowVersion", Convert.ToBase64String(versioned.RowVersion), "hidden"));
+        return new(title, action, formFields);
     }
 
     private async Task<TDto> FindAsync(Guid id, CancellationToken ct) =>

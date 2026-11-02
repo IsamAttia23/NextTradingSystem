@@ -1,8 +1,7 @@
-﻿using NEXT.Domain.Entities;
+using NEXT.Domain.Entities;
 
-namespace NEXT.Application.Abstractions.Persistence.Repositories
-{
-    public interface ITagRepository : IKeyRepository<Tag, Guid>
+namespace NEXT.Application.Abstractions.Persistence.Repositories;
+
+public interface ITagRepository : IKeyRepository<Tag, Guid>
     {
     }
-}

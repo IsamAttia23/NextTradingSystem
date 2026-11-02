@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+
 namespace NEXT.Application.DTOs.Security;
+
 public sealed record RoleCreationDto
 {
     public RoleCreationDto() { }

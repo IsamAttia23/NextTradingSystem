@@ -1,5 +1,6 @@
 using NEXT.Application.Common.QueryModels;
 using NEXT.Application.DTOs.Inventory;
+
 namespace NEXT.Application.Abstractions.IServices;
 
 public interface IInventoryQueryService

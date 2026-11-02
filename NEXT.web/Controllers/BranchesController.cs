@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.DTOs.Branches;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Common.QueryModels;

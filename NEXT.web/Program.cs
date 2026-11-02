@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using NEXT.web.Middleware;

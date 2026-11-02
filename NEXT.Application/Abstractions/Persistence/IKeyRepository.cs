@@ -6,5 +6,5 @@ public interface IKeyRepository<TEntity, TKey> : IRepository<TEntity>
 {
     Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
     Task DeleteAsync(TEntity entity);
-    Task<bool> IsExistsAsync(TKey id);
+    Task<bool> IsExistsAsync(TKey id, CancellationToken ct = default);
 }

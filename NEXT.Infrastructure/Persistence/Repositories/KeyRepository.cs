@@ -23,9 +23,9 @@ namespace NEXT.Infrastructure.Persistence.Repositories
             _set.Remove(entity);
             return Task.CompletedTask;
         }
-        public virtual async Task<bool> IsExistsAsync(TKey id)
+        public virtual async Task<bool> IsExistsAsync(TKey id, CancellationToken ct = default)
         {
-            return await _set.AnyAsync(x => x.Id.Equals(id));
+            return await _set.AnyAsync(x => x.Id.Equals(id), ct);
         }
     }
 }

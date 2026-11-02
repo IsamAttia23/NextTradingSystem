@@ -1,8 +1,11 @@
 using NEXT.Application.DTOs.Common;
+
 namespace NEXT.Application.DTOs.Customers;
 
-public sealed class CustomerDto : CustomerInputDto, ITaggedRecordDto, NEXT.Application.DTOs.Common.IRecordDto
+public sealed class CustomerDto : CustomerInputDto, ITaggedRecordDto, NEXT.Application.DTOs.Common.IVersionedRecordDto
 {
+    public byte[] RowVersion { get; set; } = [];
+
     public string? TagName { get; set; }
     public string? TagColor { get; set; }
     public Guid Id { get; set; }

@@ -1,5 +1,7 @@
 using NEXT.Application.DTOs.Authentication;
+
 namespace NEXT.Application.Abstractions.Identity;
+
 public interface IAccountAccess
 {
     Task<LoginOutcome> LoginAsync(LoginDto input);

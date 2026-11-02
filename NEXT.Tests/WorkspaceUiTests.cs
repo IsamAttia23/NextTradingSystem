@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
@@ -97,14 +98,23 @@ public sealed class WorkspaceUiTests
     internal static string Token(string html) => WebUtility.HtmlDecode(Regex.Match(html,
         "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
 
-    internal static Task<HttpResponseMessage> Post(HttpClient client, string url, string token, params (string Key, string Value)[] fields)
+    internal static async Task<HttpResponseMessage> Post(HttpClient client, string url, string token, params (string Key, string Value)[] fields)
     {
         // Existing CRUD scenarios supply a reason; dedicated validation tests explicitly post an empty reason.
         if ((url.Contains("/Delete", StringComparison.Ordinal) || url.Contains("/Purge", StringComparison.Ordinal)) && !fields.Any(x => x.Key == "Reason"))
             fields = fields.Append(("Reason", "Test deletion reason")).ToArray();
-        return client.PostAsync(url, new FormUrlEncodedContent(fields.Append(("__RequestVerificationToken", token))
+        if (url.Contains("/Edit/", StringComparison.Ordinal) && !fields.Any(x => x.Key == "RowVersion"))
+        {
+            var currentForm = await client.GetStringAsync(url);
+            var version = RowVersion(currentForm);
+            if (!string.IsNullOrEmpty(version)) fields = fields.Append(("RowVersion", version)).ToArray();
+        }
+        return await client.PostAsync(url, new FormUrlEncodedContent(fields.Append(("__RequestVerificationToken", token))
             .Select(x => new KeyValuePair<string, string>(x.Item1, x.Item2))));
     }
+
+    internal static string RowVersion(string html) => WebUtility.HtmlDecode(Regex.Match(html,
+        "name=\"RowVersion\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
 
     internal static async Task Login(HttpClient client, string name)
     {
@@ -313,8 +323,10 @@ public sealed class WorkspaceUiTests
             var editUrl = $"/{route}/Edit/{id}"; var edit = await client.GetStringAsync(editUrl);
             Assert.Equal(HttpStatusCode.OK, (await Post(client, editUrl, Token(edit), ("Name", "Preserved"), ("TagId", tag.ToString()))).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/{route}/Avatar/{id}")).StatusCode);
+            edit = await client.GetStringAsync(editUrl);
             using var bad = new MultipartFormDataContent(); bad.Add(new StringContent(Token(edit)), "__RequestVerificationToken");
             bad.Add(new StringContent("Invalid"), "Name"); bad.Add(new StringContent(tag.ToString()), "TagId");
+            bad.Add(new StringContent(RowVersion(edit)), "RowVersion");
             bad.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("<script>bad</script>")), "Avatar", "fake.png");
             Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync(editUrl, bad)).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await Post(client, editUrl, Token(edit), ("Name", "First letter"), ("TagId", tag.ToString()), ("RemoveAvatar", "true"))).StatusCode);

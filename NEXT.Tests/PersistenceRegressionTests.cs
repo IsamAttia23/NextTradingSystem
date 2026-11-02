@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using NEXT.Application.Abstractions.Context;

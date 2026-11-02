@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Persistence.UsersManagment;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Identity;
@@ -15,20 +16,20 @@ public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbC
     public async Task<IReadOnlyList<Role>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await roleManager.Roles.AsNoTracking().OrderBy(role => role.Name).ToListAsync(cancellationToken);
 
-    public async Task<IdentityOperationResult> CreateAsync(Role role) => Convert(await roleManager.CreateAsync(role));
-    public async Task<IdentityOperationResult> UpdateAsync(Role role) => Convert(await roleManager.UpdateAsync(role));
+    public async Task<IdentityOperationResult> CreateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.CreateAsync(role), ct));
+    public async Task<IdentityOperationResult> UpdateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.UpdateAsync(role), ct));
 
-    public async Task<IdentityOperationResult> DeleteAsync(Role role)
+    public async Task<IdentityOperationResult> DeleteAsync(Role role, CancellationToken ct = default)
     {
-        if (await context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id) ||
-            await context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id))
+        if (await context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id, ct) ||
+            await context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id, ct))
         {
             return IdentityOperationResult.Failure([
                 new IdentityOperationError("RoleInUse", "The role is assigned to users or permissions and cannot be deleted.")
             ]);
         }
 
-        return Convert(await roleManager.DeleteAsync(role));
+        return Convert(await IdentityCall.CompleteAsync(() => roleManager.DeleteAsync(role), ct));
     }
 
     public async Task<bool> NameExistsAsync(string name, Guid? excludingId = null, CancellationToken cancellationToken = default)

@@ -2,7 +2,6 @@ using NEXT.Application.DTOs.Security;
 
 namespace NEXT.Application.Abstractions.Identity;
 
-/// <summary>Specialized access for the composite RoleId/PermissionId key.</summary>
 public interface IRolePermissionService
 {
     Task<IReadOnlyList<RolePermissionDto>> GetAllAsync(CancellationToken cancellationToken = default);

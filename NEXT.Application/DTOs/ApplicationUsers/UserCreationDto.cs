@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NEXT.Application.DTOs.ApplicationUsers;
 
-/// <summary>Input supplied by an administrator when creating a user.</summary>
 public sealed record UserCreationDto
 {
     [Required, StringLength(200)]

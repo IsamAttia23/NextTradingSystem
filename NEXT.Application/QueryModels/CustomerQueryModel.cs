@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NEXT.Application.QueryModels
-{
-    public class CustomerQueryModel : PaginationQuery
+namespace NEXT.Application.QueryModels;
+
+public class CustomerQueryModel : PaginationQuery
     {
     public override IReadOnlyList<string> GetSortFields() => ["Name", "CompanyName", "CreditLimit", "CurrentBalance", "PaymentTermsDays"];
 
@@ -35,4 +35,3 @@ namespace NEXT.Application.QueryModels
 
         public int? MaxPaymentTermsDays { get; set; }
     }
-}

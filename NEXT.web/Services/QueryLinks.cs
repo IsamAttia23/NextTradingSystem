@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using Microsoft.AspNetCore.WebUtilities;
 namespace NEXT.web.Services;
 public static class QueryLinks

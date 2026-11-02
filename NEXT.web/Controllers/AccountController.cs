@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.Abstractions.Identity;
 using Microsoft.AspNetCore.Authorization;
 

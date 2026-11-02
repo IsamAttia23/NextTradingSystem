@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NEXT.Application.DTOs.ApplicationUsers;
 
-/// <summary>Editable profile fields. Password and roles use dedicated commands.</summary>
 public sealed record UserUpdateDto
 {
     [Required, StringLength(200)]

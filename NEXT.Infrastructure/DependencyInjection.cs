@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IQueryExecutor, QueryExecutor>();
         services.AddScoped<IRelatedRecordsReader, RelatedRecordsReader>();
         // Register only dedicated repository contracts, without a service locator in UnitOfWork.
         foreach (var implementation in typeof(TRepository<>).Assembly.GetTypes()

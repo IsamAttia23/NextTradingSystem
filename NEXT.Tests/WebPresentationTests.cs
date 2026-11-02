@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

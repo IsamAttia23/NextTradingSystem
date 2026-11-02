@@ -28,7 +28,7 @@ public sealed class RecycleBinService<TEntity, TKey>(
                 DeletionReason = x.DeletionReason,
                 DeletedOn = x.DeletedAt!.Value
             });
-        return pagination.GetPaggedList(deleted, query, ct);
+        return pagination.GetPagedList(deleted, query, ct);
     }
 
     public async Task HardDelete(TKey id, CancellationToken ct = default)

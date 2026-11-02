@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.web.Controllers;
 using Xunit;
 namespace NEXT.Tests;

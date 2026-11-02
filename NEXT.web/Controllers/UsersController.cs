@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.DTOs;
 using NEXT.web.Services;
 using MediatR;

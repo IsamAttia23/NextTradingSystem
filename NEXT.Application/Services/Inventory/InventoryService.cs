@@ -6,101 +6,103 @@ using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
+
 namespace NEXT.Application.Services.Inventory;
+
 /// <summary>All balance, batch and ledger writes occur in one serializable transaction.</summary>
 public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKeyRepository<Warehouse, Guid> warehouses,
     IRepository<Stock> stocks, IRepository<StockMovement> movements, IRepository<ProductBatch> batches,
     IUnitOfWork unitOfWork, IEntityValidator<ReceiveStockDto> receiptValidator,
     IEntityValidator<TransferStockDto> transferValidator) : IInventoryService
 {
-    public async Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default)
+    public Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         receiptValidator.Validate(input);
-
         ValidateOperation(input);
         if (decimal.Round(input.UnitCost, 2) != input.UnitCost) Fail("UnitCost", "Cost supports at most two decimal places.");
-        await unitOfWork.ExecuteInTransactionAsync(async token =>
-        {
-            await EnsureNewOperation(input.OperationId, token);
-
-            var product = await Product(input.ProductId, token);
-
-            await Warehouse(input.WarehouseId, token);
-
-            ValidateBatch(product, input.BatchNumber);
-
-            if (product.HasExpiry && (input.ExpiryDate is null || input.ExpiryDate < DateOnly.FromDateTime(DateTime.UtcNow)))
-                Fail("ExpiryDate", "Select a non-expired expiry date.");
-
-            if (!product.HasExpiry && input.ExpiryDate is not null) Fail("ExpiryDate", "This product does not track expiry dates.");
-
-            var stock = await GetOrCreateStock(input.ProductId, input.WarehouseId, token);
-            EnsureCapacity(stock.Quantity, input.Quantity);
-
-            ProductBatch? batch = null;
-
-            if (product.HasExpiry)
-            {
-                batch = await GetOrCreateBatch(input.ProductId, input.WarehouseId, input.BatchNumber!.Trim(), input.ExpiryDate, token);
-                EnsureCapacity(batch.Quantity, input.Quantity);
-                batch.CostPrice = InventoryValuation.ReceiveCost(batch.Quantity, batch.CostPrice, input.Quantity, input.UnitCost);
-                batch.Quantity += input.Quantity;
-            }
-
-            Receive(stock, input.Quantity, input.UnitCost);
-            await movements.AddAsync(Movement(input, input.WarehouseId, StockMovementType.Purchase, input.UnitCost, "Receipt"), token);
-        }, ct);
+        return unitOfWork.ExecuteInTransactionAsync(token => ReceiveInTransactionAsync(input, token), ct);
     }
-    public async Task TransferAsync(TransferStockDto input, CancellationToken ct = default)
+
+    private async Task ReceiveInTransactionAsync(ReceiveStockDto input, CancellationToken ct)
     {
+        var now = DateTimeOffset.UtcNow;
+        await EnsureNewOperation(input.OperationId, ct);
+        var product = await Product(input.ProductId, ct);
+        await Warehouse(input.WarehouseId, ct);
+        ValidateReceiptExpiry(product, input, DateOnly.FromDateTime(now.UtcDateTime));
+        var stock = await GetOrCreateStock(input.ProductId, input.WarehouseId, ct);
+        EnsureCapacity(stock.Quantity, input.Quantity);
+        if (product.HasExpiry) await ReceiveBatchAsync(input, ct);
+        Receive(stock, input.Quantity, input.UnitCost, now);
+        await movements.AddAsync(Movement(input, input.WarehouseId, StockMovementType.Purchase, input.UnitCost, "Receipt", now), ct);
+    }
+
+    private static void ValidateReceiptExpiry(Product product, ReceiveStockDto input, DateOnly today)
+    {
+        ValidateBatch(product, input.BatchNumber);
+        if (product.HasExpiry && (input.ExpiryDate is null || input.ExpiryDate < today))
+            Fail("ExpiryDate", "Select a non-expired expiry date.");
+        if (!product.HasExpiry && input.ExpiryDate is not null) Fail("ExpiryDate", "This product does not track expiry dates.");
+    }
+
+    private async Task ReceiveBatchAsync(ReceiveStockDto input, CancellationToken ct)
+    {
+        var batch = await GetOrCreateBatch(input.ProductId, input.WarehouseId, input.BatchNumber!.Trim(), input.ExpiryDate, ct);
+        EnsureCapacity(batch.Quantity, input.Quantity);
+        batch.CostPrice = InventoryValuation.ReceiveCost(batch.Quantity, batch.CostPrice, input.Quantity, input.UnitCost);
+        batch.Quantity += input.Quantity;
+    }
+
+    public Task TransferAsync(TransferStockDto input, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
         transferValidator.Validate(input);
         ValidateOperation(input);
         if (input.SourceWarehouseId == input.DestinationWarehouseId) Fail("DestinationWarehouseId", "Choose a different destination warehouse.");
-        await unitOfWork.ExecuteInTransactionAsync(async token =>
-        {
-            await EnsureNewOperation(input.OperationId, token);
-
-            var product = await Product(input.ProductId, token);
-
-            await Warehouse(input.SourceWarehouseId, token);
-            await Warehouse(input.DestinationWarehouseId, token);
-            ValidateBatch(product, input.BatchNumber);
-
-            var source = await stocks.FindTrackedAsync(x => x.ProductId == input.ProductId && x.WarehouseId == input.SourceWarehouseId, token);
-
-            if (source is null || source.AvailableQuantity < input.Quantity)
-                Fail("Quantity", "Insufficient available stock; reserved quantities cannot be moved.");
-
-            var target = await GetOrCreateStock(input.ProductId, input.DestinationWarehouseId, token);
-            EnsureCapacity(target.Quantity, input.Quantity);
-
-            var cost = source!.AverageCost;
-
-            if (product.HasExpiry)
-            {
-                var number = input.BatchNumber!.Trim();
-                var batch = await batches.FindTrackedAsync(x => x.ProductId == input.ProductId && x.WarehouseId == input.SourceWarehouseId && x.BatchNumber == number, token);
-
-                if (batch is null || batch.Quantity < input.Quantity)
-                    Fail("BatchNumber", "Insufficient quantity in the selected batch.");
-
-                if (batch!.ExpiryDate is null || batch.ExpiryDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                    Fail("BatchNumber", "Expired batches cannot be transferred.");
-
-                var destination = await GetOrCreateBatch(input.ProductId, input.DestinationWarehouseId, number, batch.ExpiryDate, token);
-               
-                EnsureCapacity(destination.Quantity, input.Quantity);
-                destination.CostPrice = InventoryValuation.ReceiveCost(destination.Quantity, destination.CostPrice, input.Quantity, cost);
-                destination.Quantity += input.Quantity;
-                batch.Quantity -= input.Quantity;
-            }
-            source.Quantity -= input.Quantity;
-            source.LastUpdated = DateTimeOffset.UtcNow;
-            Receive(target, input.Quantity, cost);
-            await movements.AddAsync(Movement(input, input.SourceWarehouseId, StockMovementType.TransferOut, cost, "Transfer"), token);
-            await movements.AddAsync(Movement(input, input.DestinationWarehouseId, StockMovementType.TransferIn, cost, "Transfer"), token);
-        }, ct);
+        return unitOfWork.ExecuteInTransactionAsync(token => TransferInTransactionAsync(input, token), ct);
     }
+
+    private async Task TransferInTransactionAsync(TransferStockDto input, CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        await EnsureNewOperation(input.OperationId, ct);
+        var product = await Product(input.ProductId, ct);
+        await Warehouse(input.SourceWarehouseId, ct);
+        await Warehouse(input.DestinationWarehouseId, ct);
+        ValidateBatch(product, input.BatchNumber);
+        var source = await stocks.FindTrackedAsync(x => x.ProductId == input.ProductId && x.WarehouseId == input.SourceWarehouseId, ct);
+        if (source is null || source.AvailableQuantity < input.Quantity)
+            Fail("Quantity", "Insufficient available stock; reserved quantities cannot be moved.");
+        var target = await GetOrCreateStock(input.ProductId, input.DestinationWarehouseId, ct);
+        EnsureCapacity(target.Quantity, input.Quantity);
+        var cost = source.AverageCost;
+        if (product.HasExpiry) await TransferBatchAsync(input, cost, DateOnly.FromDateTime(now.UtcDateTime), ct);
+        source.Quantity -= input.Quantity;
+        source.LastUpdated = now;
+        Receive(target, input.Quantity, cost, now);
+        await RecordTransferAsync(input, cost, now, ct);
+    }
+
+    private async Task TransferBatchAsync(TransferStockDto input, decimal cost, DateOnly today, CancellationToken ct)
+    {
+        var number = input.BatchNumber!.Trim();
+        var batch = await batches.FindTrackedAsync(x => x.ProductId == input.ProductId && x.WarehouseId == input.SourceWarehouseId && x.BatchNumber == number, ct);
+        if (batch is null || batch.Quantity < input.Quantity) Fail("BatchNumber", "Insufficient quantity in the selected batch.");
+        if (batch.ExpiryDate is null || batch.ExpiryDate < today) Fail("BatchNumber", "Expired batches cannot be transferred.");
+        var destination = await GetOrCreateBatch(input.ProductId, input.DestinationWarehouseId, number, batch.ExpiryDate, ct);
+        EnsureCapacity(destination.Quantity, input.Quantity);
+        destination.CostPrice = InventoryValuation.ReceiveCost(destination.Quantity, destination.CostPrice, input.Quantity, cost);
+        destination.Quantity += input.Quantity;
+        batch.Quantity -= input.Quantity;
+    }
+
+    private async Task RecordTransferAsync(TransferStockDto input, decimal cost, DateTimeOffset now, CancellationToken ct)
+    {
+        await movements.AddAsync(Movement(input, input.SourceWarehouseId, StockMovementType.TransferOut, cost, "Transfer", now), ct);
+        await movements.AddAsync(Movement(input, input.DestinationWarehouseId, StockMovementType.TransferIn, cost, "Transfer", now), ct);
+    }
+
     private async Task<Product> Product(Guid id, CancellationToken ct)
     {
         var product = await products.GetByIdAsync(id, ct) ?? throw new NotFoundException("Product was not found.");
@@ -137,15 +139,16 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         await batches.AddAsync(batch, ct);
         return batch;
     }
-    private static void Receive(Stock stock, decimal quantity, decimal cost)
+    private static void Receive(Stock stock, decimal quantity, decimal cost, DateTimeOffset now)
     {
         stock.AverageCost = InventoryValuation.ReceiveCost(stock.Quantity, stock.AverageCost, quantity, cost);
         stock.Quantity += quantity;
-        stock.LastUpdated = DateTimeOffset.UtcNow;
+        stock.LastUpdated = now;
     }
-    private static StockMovement Movement(InventoryOperationDto input, Guid warehouse, StockMovementType type, decimal cost, string reference) => new()
+    private static StockMovement Movement(InventoryOperationDto input, Guid warehouse, StockMovementType type, decimal cost, string reference, DateTimeOffset now) => new()
     {
         Id = Guid.NewGuid(),
+        CreatedAt = now,
         ProductId = input.ProductId,
         WarehouseId = warehouse,
         Type = type,

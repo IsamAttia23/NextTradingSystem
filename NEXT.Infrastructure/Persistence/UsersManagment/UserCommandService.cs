@@ -1,39 +1,29 @@
 using Microsoft.AspNetCore.Identity;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Domain.Entities;
-
 namespace NEXT.Infrastructure.Persistence.UsersManagment;
-
-/// <summary>Implements identity mutations through ASP.NET Core Identity.</summary>
-public sealed class UserCommandService(UserManager<ApplicationUser> userManager) : IUserCommandService
+public sealed class UserCommandService(UserManager<ApplicationUser> users) : IUserCommandService
 {
-    public async Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password) =>
-        ToApplicationResult(await userManager.CreateAsync(user, password));
-
-    public async Task<UserOperationResult> UpdateUserAsync(ApplicationUser user) =>
-        ToApplicationResult(await userManager.UpdateAsync(user));
-
-    public async Task<UserOperationResult> DeleteUserAsync(ApplicationUser user) =>
-        ToApplicationResult(await userManager.DeleteAsync(user));
-
-    public async Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword) =>
-        ToApplicationResult(await userManager.ChangePasswordAsync(user, currentPassword, newPassword));
-
-    public async Task<UserOperationResult> SetUserNameAsync(ApplicationUser user, string userName) =>
-        ToApplicationResult(await userManager.SetUserNameAsync(user, userName));
-
-    public async Task<UserOperationResult> SetUserEmailAsync(ApplicationUser user, string email) =>
-        ToApplicationResult(await userManager.SetEmailAsync(user, email));
-
-    public async Task<UserOperationResult> SetPhoneNumberAsync(ApplicationUser user, string phoneNumber) =>
-        ToApplicationResult(await userManager.SetPhoneNumberAsync(user, phoneNumber));
-
-    public async Task<UserOperationResult> AddUserToRole(ApplicationUser user, string role) =>
-        ToApplicationResult(await userManager.AddToRoleAsync(user, role));
-
-    private static UserOperationResult ToApplicationResult(IdentityResult result) =>
-        result.Succeeded
-            ? UserOperationResult.Success
-            : UserOperationResult.Failure(result.Errors.Select(error =>
-                new UserOperationError(error.Code, error.Description)));
+    public Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.CreateAsync(user, password), ct);
+    public Task<UserOperationResult> UpdateUserAsync(ApplicationUser user, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.UpdateAsync(user), ct);
+    public Task<UserOperationResult> DeleteUserAsync(ApplicationUser user, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.DeleteAsync(user), ct);
+    public Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.ChangePasswordAsync(user, currentPassword, newPassword), ct);
+    public Task<UserOperationResult> SetUserNameAsync(ApplicationUser user, string userName, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.SetUserNameAsync(user, userName), ct);
+    public Task<UserOperationResult> SetUserEmailAsync(ApplicationUser user, string email, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.SetEmailAsync(user, email), ct);
+    public Task<UserOperationResult> SetPhoneNumberAsync(ApplicationUser user, string phoneNumber, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.SetPhoneNumberAsync(user, phoneNumber), ct);
+    public Task<UserOperationResult> AddUserToRole(ApplicationUser user, string role, CancellationToken ct = default) =>
+        ExecuteAsync(() => users.AddToRoleAsync(user, role), ct);
+    private static async Task<UserOperationResult> ExecuteAsync(Func<Task<IdentityResult>> action, CancellationToken ct)
+    {
+        var result = await IdentityCall.CompleteAsync(action, ct);
+        return result.Succeeded ? UserOperationResult.Success : UserOperationResult.Failure(
+            result.Errors.Select(x => new UserOperationError(x.Code, x.Description)));
+    }
 }

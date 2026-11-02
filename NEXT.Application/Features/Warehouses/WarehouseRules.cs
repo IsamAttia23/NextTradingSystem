@@ -5,7 +5,9 @@ using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Features.Common.Validation;
+
 namespace NEXT.Application.Features.Warehouses;
+
 public sealed class WarehouseRules(IRepository<Branch> branches, IRepository<Warehouse> warehouses) : IEntityRules<Warehouse, WarehouseInputDto>
 {
     public async Task ValidateAsync(Guid? id, WarehouseInputDto input, CancellationToken ct)

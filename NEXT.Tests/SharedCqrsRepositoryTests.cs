@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -84,7 +85,7 @@ public sealed class SharedCqrsRepositoryTests
         await db.SaveChangesAsync();
         var service = new InventoryQueryService(services.GetRequiredService<IStockRepository>(),
             services.GetRequiredService<IStockMovementRepository>(), services.GetRequiredService<IProductBatchRepository>(),
-            new PaginationServices());
+            new PaginationServices(), new NEXT.Application.Validation.DataAnnotationsEntityValidator<PaginationQuery>());
         Assert.Single((await service.StocksAsync(new PaginationQuery { SearchTerm = "warehouse", PageSize = 1 })).Data);
         Assert.Single((await service.BatchesAsync(new PaginationQuery { SearchTerm = "product", PageSize = 1 })).Data);
         Assert.Single((await service.MovementsAsync(new StockMovementQueryModel { ProductId = product.Id, SearchTerm = "Needle", PageSize = 1 })).Data);

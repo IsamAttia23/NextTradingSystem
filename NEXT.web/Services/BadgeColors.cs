@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.Text.RegularExpressions;
 namespace NEXT.web.Services;
 public static partial class BadgeColors

@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.DTOs.CustomerContacts;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Common.QueryModels;

@@ -21,6 +21,7 @@ using NEXT.Application.Services.ReferenceData;
 
 using NEXT.Domain.Entities;
 using NEXT.Application.Features.Common.CQRS;
+
 namespace NEXT.Application.Features;
 
 public static class EntityFeatureRegistration
@@ -46,28 +47,28 @@ public static class EntityFeatureRegistration
         services.AddScoped<IReferenceDataService, ReferenceDataService>();
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Customer>("Customers",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Customer>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Tag>("Tags",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Tag>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Category>("Categories",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Category>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Branch>("Branches",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Branch>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Warehouse>("Warehouses",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Warehouse>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Product>("Products",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Product>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<UnitOfMeasure>("Units",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<UnitOfMeasure>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), x => new ReferenceOptionDto(x.Id.ToString(), x.Name)));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Permission>("Permissions",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Permission>>(),
-            sp.GetRequiredService<NEXT.Application.Abstractions.Services.IPaginationServices>(),
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(),
             x => new ReferenceOptionDto(x.Id.ToString(), x.Module + " / " + x.Code)));
         return services;
     }

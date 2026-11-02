@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Common.QueryModels;

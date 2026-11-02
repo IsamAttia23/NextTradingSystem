@@ -5,7 +5,6 @@ using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Application.Abstractions.Persistence;
 
-/// <summary>Persistence contract consumed by the application layer.</summary>
 public interface IRepository<TEntity> where TEntity : class
 {
     Expression<Func<TEntity, bool>> BuildFilterExpression(PaginationQuery query);
@@ -21,6 +20,6 @@ public interface IRepository<TEntity> where TEntity : class
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
     Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
     Task Update(TEntity entity);
-    void SetRowVersion<TEntityWithVersion>(TEntityWithVersion entity, byte[] rowVersion) where TEntityWithVersion : class, IRowVersionProperty;
-    Task<bool> HasActiveRelationsAsync(TEntity entity);
+    void SetRowVersion(TEntity entity, byte[]? rowVersion);
+    Task<bool> HasActiveRelationsAsync(TEntity entity, CancellationToken ct = default);
 }

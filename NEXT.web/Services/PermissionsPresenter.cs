@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using MediatR;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Common.QueryModels;

@@ -5,7 +5,7 @@ namespace NEXT.Application.DTOs.Security;
 
 public sealed class PermissionUpdateDto : TIdType<Guid>
 {
-    public Guid Id { get; set; }
+    [NEXT.Application.Validation.NotEmptyGuid] public Guid Id { get; set; }
     [Required, StringLength(120)]
     public string Code { get; set; } = string.Empty;
     [Required, StringLength(80)]

@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 namespace NEXT.web.Services;
 public sealed record NavigationItem(string Controller, string Title, string Action = "Index");
 public sealed record NavigationGroup(string Title, NavigationItem[] Items);

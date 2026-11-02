@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using Microsoft.Extensions.Localization;
 using NEXT.web.Localization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
         catch (Exception exception) when (!context.Response.HasStarted)
         {
-            var status = exception is AppException appException ? (int)appException.StatusCode : 500;
+            var status = exception is AppException appException ? StatusFor(appException.Code) : 500;
             if (status >= 500)
                 logger.LogError(exception, "Request {TraceIdentifier} failed", context.TraceIdentifier);
             ProblemDetails problem = exception is AppValidationException validation
@@ -31,4 +32,13 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                 cancellationToken: context.RequestAborted);
         }
     }
+    private static int StatusFor(ApplicationErrorCode code) => code switch
+    {
+        ApplicationErrorCode.Validation => StatusCodes.Status400BadRequest,
+        ApplicationErrorCode.NotFound => StatusCodes.Status404NotFound,
+        ApplicationErrorCode.Conflict => StatusCodes.Status409Conflict,
+        ApplicationErrorCode.RuleViolation => StatusCodes.Status422UnprocessableEntity,
+        ApplicationErrorCode.DependencyUnavailable => StatusCodes.Status503ServiceUnavailable,
+        _ => StatusCodes.Status500InternalServerError
+    };
 }

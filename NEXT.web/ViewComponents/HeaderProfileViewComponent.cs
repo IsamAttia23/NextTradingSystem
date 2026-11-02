@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

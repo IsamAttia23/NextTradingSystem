@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.Common.QueryModels;
 using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Features.RecycleBin;

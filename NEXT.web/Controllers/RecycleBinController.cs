@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Features.RecycleBin;

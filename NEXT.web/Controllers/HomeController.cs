@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Features.Dashboard;

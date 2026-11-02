@@ -1,4 +1,3 @@
-
 using NEXT.Application.Common.QueryModels;
 using NEXT.Domain.Enums;
 

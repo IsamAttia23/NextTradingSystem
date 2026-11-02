@@ -12,10 +12,10 @@ namespace NEXT.Infrastructure.Persistence
 {
     public class PaginationServices : IPaginationServices
     {
-        public Task<TPaginationQueryModel<T>> GetPaggedList<T>(IQueryable<T> entities, PaginationQuery query, CancellationToken cancellationToken = default) where T : class
-            => GetPaggedList(entities, source => source, query, cancellationToken);
+        public Task<TPaginationQueryModel<T>> GetPagedList<T>(IQueryable<T> entities, PaginationQuery query, CancellationToken cancellationToken = default) where T : class
+            => GetPagedList(entities, source => source, query, cancellationToken);
 
-        public async Task<TPaginationQueryModel<TResult>> GetPaggedList<TEntity, TResult>(IQueryable<TEntity> entities,
+        public async Task<TPaginationQueryModel<TResult>> GetPagedList<TEntity, TResult>(IQueryable<TEntity> entities,
             Func<IQueryable<TEntity>, IQueryable<TResult>> projection, PaginationQuery query, CancellationToken cancellationToken = default)
             where TEntity : class where TResult : class
         {

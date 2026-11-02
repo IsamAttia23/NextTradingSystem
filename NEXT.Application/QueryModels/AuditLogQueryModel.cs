@@ -3,10 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NEXT.Application.QueryModels
+namespace NEXT.Application.QueryModels;
 
-{
-    public sealed class AuditLogQueryModel : PaginationQuery
+public sealed class AuditLogQueryModel : PaginationQuery
     {
         public DateTimeOffset? From { get; init; }
 
@@ -16,4 +15,3 @@ namespace NEXT.Application.QueryModels
 
         public string? EntityType { get; init; }
     }
-}

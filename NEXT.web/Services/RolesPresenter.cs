@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using MediatR;
 
 using NEXT.Application.DTOs.Security;

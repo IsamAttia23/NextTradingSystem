@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.DTOs.Common;
 using NEXT.Application.DTOs;
 using MediatR;
@@ -39,11 +40,11 @@ public abstract class EntityController<TDto, TInput, TQuery>(ISender sender, Ent
     public async Task<IActionResult> Edit(Guid id, CancellationToken ct) => Form(await presenter.FormAsync("Edit", Route("Edit", new { id }), id, ct));
    
     [HttpPost]
-    public async Task<IActionResult> Edit(Guid id, TInput input, IFormFile? avatar, CancellationToken ct)
+    public async Task<IActionResult> Edit(Guid id, TInput input, IFormFile? avatar, byte[]? rowVersion, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         if (input is IProfileImageInput image) image.AvatarUrl = await ProfileUploadReader.ReadAsync(avatar, ct);
-        await sender.Send(new UpdateEntityCommand<TDto, TInput>(id, input), ct);
+        await sender.Send(new UpdateEntityCommand<TDto, TInput>(id, input, rowVersion), ct);
         return Ok();
     }
   

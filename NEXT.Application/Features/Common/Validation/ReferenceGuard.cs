@@ -3,7 +3,9 @@ using NEXT.Application.Abstractions.Persistence;
 using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Application.Features.Common.CQRS;
+
 namespace NEXT.Application.Features.Common.Validation;
+
 internal static class ReferenceGuard
 {
     public static async Task Require<T>(IRepository<T> repository, System.Linq.Expressions.Expression<Func<T,bool>> predicate,

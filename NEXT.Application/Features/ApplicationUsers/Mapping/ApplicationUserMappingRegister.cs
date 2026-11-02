@@ -4,7 +4,6 @@ using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Mapping;
 
-/// <summary>Central Mapster registration for application-user DTOs.</summary>
 public sealed class ApplicationUserMappingRegister : IRegister
 {
     public void Register(TypeAdapterConfig config)

@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 namespace NEXT.web.Services;
 public static class UiIcons
 {

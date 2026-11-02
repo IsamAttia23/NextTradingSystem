@@ -1,8 +1,5 @@
 namespace NEXT.Application.DTOs.ApplicationUsers;
 
-/// <summary>
-/// Detailed administrative user representation. Password hashes, security stamps, and tokens are never exposed.
-/// </summary>
 public sealed record UserDto(
     Guid Id,
     string FullName,

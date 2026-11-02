@@ -1,3 +1,4 @@
+using NEXT.web.Models;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Common.QueryModels;
 using NEXT.Infrastructure.Persistence.Repositories.Entities;
@@ -183,14 +184,14 @@ public sealed class PostgresInventoryTests
             new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), [new CustomerRules(new TRepository<Tag>(f.Db))]);
         var update = new UpdateEntityCommandHandler<Customer, CustomerDto, CustomerInputDto>(repository, mapper,
             new UnitOfWork(f.Db), new DataAnnotationsEntityValidator<CustomerInputDto>(), [new CustomerRules(new TRepository<Tag>(f.Db))]);
-        var get = new GetEntityByIdQueryHandler<Customer, CustomerDto>(repository, new PaginationServices());
-        var list = new GetEntitiesQueryHandler<Customer, CustomerDto>(repository, new PaginationServices());
+        var get = new GetEntityByIdQueryHandler<Customer, CustomerDto>(repository, new QueryExecutor());
+        var list = new GetEntitiesQueryHandler<Customer, CustomerDto>(repository, new PaginationServices(), new DataAnnotationsEntityValidator<PaginationQuery>(), new TypeAdapterConfig());
         var delete = new DeleteEntityCommandHandler<Customer, CustomerDto>(repository, new UnitOfWork(f.Db));
         await Assert.ThrowsAsync<AppValidationException>(() => create.Handle(new(new CustomerInputDto { Name = "No tag" }), default));
         var customer = await create.Handle(new(new CustomerInputDto { Name = "Customer", TagId = tag.Id }), default);
         var entity = await f.Db.Customers.SingleAsync(); entity.CurrentBalance = 99;
         await f.Db.SaveChangesAsync();
-        await update.Handle(new(customer.Id, new CustomerInputDto { Name = "Updated", TagId = tag.Id }), default);
+        await update.Handle(new(customer.Id, new CustomerInputDto { Name = "Updated", TagId = tag.Id }, entity.RowVersion.ToArray()), default);
         Assert.Equal(99, (await get.Handle(new(customer.Id), default))!.CurrentBalance);
         Assert.Equal(1, (await list.Handle(new(new()), default)).TotalCount);
         var parent = new Category { Name = "Parent" }; f.Db.Categories.Add(parent); await f.Db.SaveChangesAsync();
@@ -226,12 +227,13 @@ public sealed class PostgresInventoryTests
         Assert.True((await users.CreateAsync(victim, "Test-only!2026")).Succeeded);
         Assert.True((await users.AddToRoleAsync(admin, "Admin")).Succeeded);
         var mediator = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
-        await Assert.ThrowsAsync<UnprocessableEntityException>(() => mediator.Send(new NEXT.Application.Features.ApplicationUsers.Commands.DeleteApplicationUserCommand(admin.Id)));
+        await Assert.ThrowsAsync<UnprocessableEntityException>(() => mediator.Send(new NEXT.Application.Features.ApplicationUsers.Commands.DeleteApplicationUserCommand(admin.Id, "Administrator protection test")));
         var selfHandler = new NEXT.Application.Features.ApplicationUsers.Commands.DeleteApplicationUserHandler(
-            scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Identity.IUserQueryService>(),
+            scope.ServiceProvider.GetRequiredService<NEXT.Application.Features.ApplicationUsers.UserDtoReader>(),
             scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Identity.IUserCommandService>(), new CurrentUser(victim.Id),
             scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Identity.IUserDeletionPolicy>(),
-            scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Persistence.IUnitOfWork>());
+            scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Persistence.IUnitOfWork>(),
+            scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Context.IDeletionAuditContext>());
         await Assert.ThrowsAsync<UnprocessableEntityException>(() => selfHandler.Handle(new(victim.Id), default));
         Assert.True((await mediator.Send(new NEXT.Application.Features.ApplicationUsers.Commands.DeleteApplicationUserCommand(victim.Id, "Inactive account"))).Succeeded);
         Assert.NotNull((await users.FindByIdAsync(victim.Id.ToString()))?.DeletedAt);
@@ -313,7 +315,7 @@ public sealed class PostgresInventoryTests
     {
         await using var f = await Database.Create();
         await f.Db.Database.ExecuteSqlRawAsync("ALTER TABLE \"Customers\" DROP COLUMN \"AvatarUrl\"; ALTER TABLE \"Suppliers\" DROP COLUMN \"AvatarUrl\";");
-        var query = new GetEntitiesQueryHandler<Customer, CustomerDto>(new CustomerRepository(f.Db), new PaginationServices());
+        var query = new GetEntitiesQueryHandler<Customer, CustomerDto>(new CustomerRepository(f.Db), new PaginationServices(), new DataAnnotationsEntityValidator<PaginationQuery>(), new TypeAdapterConfig());
         var error = await Assert.ThrowsAsync<PostgresException>(() => query.Handle(new(new()), default));
         Assert.Equal("42703", error.SqlState);
         var sql = await File.ReadAllTextAsync(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../docs/sql/20261028_partner_profiles.sql")));
@@ -374,7 +376,7 @@ public sealed class PostgresInventoryTests
         public Microsoft.Extensions.FileProviders.IFileProvider WebRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
     }
 
-    private sealed class Database : IAsyncDisposable
+    internal sealed class Database : IAsyncDisposable
     {
         private readonly string name = "next_tests_" + Guid.NewGuid().ToString("N");
         private readonly string adminConnection;
@@ -411,10 +413,10 @@ public sealed class PostgresInventoryTests
             }
             catch { await database.DisposeAsync(); throw; }
         }
-        public NEXTDbContext NewContext()
+        public NEXTDbContext NewContext(params Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor[] interceptors)
         {
             var context = new TestContext(); var serializer = new AuditValueSerializer();
-            return new NEXTDbContext(new DbContextOptionsBuilder<NEXTDbContext>().UseNpgsql(Connection).Options,
+            return new NEXTDbContext(new DbContextOptionsBuilder<NEXTDbContext>().UseNpgsql(Connection).AddInterceptors(interceptors).Options,
                 new TrackedChangesProcessor(context, serializer, new SoftDeleteHandler(serializer), new AuditFieldsHandler()),
                 new AuditEntryFactory(context, context, serializer));
         }

@@ -1,3 +1,4 @@
+using NEXT.Application.Exceptions;
 using NEXT.Application.Common.QueryModels;
 using NEXT.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -152,13 +153,21 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     }
 
 
-    public void SetRowVersion<Entity>(Entity entity, byte[] rowVersion) where Entity : class, IRowVersionProperty
+    public void SetRowVersion(TEntity entity, byte[]? rowVersion)
     {
-        Context.Entry(entity).Property(e => e.RowVersion).OriginalValue = rowVersion;
+        var entry = Context.Entry(entity);
+        var property = entry.Metadata.FindProperty("RowVersion");
+        if (property is not { IsConcurrencyToken: true }) return;
+        if (rowVersion is not { Length: > 0 })
+            throw new AppValidationException(new Dictionary<string, string[]> { ["RowVersion"] = ["Reload the record before editing it."] });
+        var version = entry.Property<byte[]>("RowVersion");
+        if (!version.CurrentValue!.SequenceEqual(rowVersion))
+            throw new ConflictException("The record changed after it was opened. Reload and retry.");
+        version.OriginalValue = rowVersion.ToArray();
     }
 
 
-    public virtual async Task<bool> HasActiveRelationsAsync(TEntity entity)
+    public virtual async Task<bool> HasActiveRelationsAsync(TEntity entity, CancellationToken ct = default)
     {
         var entityType = Context.Model.FindEntityType(typeof(TEntity));
         if (entityType == null)
@@ -175,7 +184,7 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
                 continue;
             var dependentType = fk.DeclaringEntityType.ClrType;
             var task = (Task<bool>)method.MakeGenericMethod(dependentType)
-                .Invoke(this, new object[] { fk.Properties, values })!;
+                .Invoke(this, new object[] { fk.Properties, values, ct })!;
 
             if (await task)
                 return true;
@@ -184,7 +193,7 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         return false;
     }
 
-    private Task<bool> AnyDependentAsync<TDependent>(IReadOnlyList<IProperty> foreignKeys, object[] values)
+    private Task<bool> AnyDependentAsync<TDependent>(IReadOnlyList<IProperty> foreignKeys, object[] values, CancellationToken ct)
         where TDependent : class
     {
         var parameter = Expression.Parameter(typeof(TDependent), "entity");
@@ -199,6 +208,6 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         }
         // Global query filters already exclude soft-deleted dependents, including DeletedAt.
         var predicate = Expression.Lambda<Func<TDependent, bool>>(body, parameter);
-        return Context.Set<TDependent>().AnyAsync(predicate);
+        return Context.Set<TDependent>().AnyAsync(predicate, ct);
     }
 }
