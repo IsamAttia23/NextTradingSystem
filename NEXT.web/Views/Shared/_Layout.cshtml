@@ -29,10 +29,9 @@
     <aside class="sidebar" id="sidebar">
         <header class="sidebar-header">
         <a class="brand" asp-controller="Home" asp-action="Index"><img class="brand-logo" src="~/logo.svg" alt="" /><span>NEXT<small>@L["TradingSystem"]</small></span></a>
-        @if (signedIn) { <div class="sidebar-profile">@await Component.InvokeAsync("HeaderProfile")<small>@L["Administration"]</small></div> }
         </header>
         <div class="sidebar-scroll"><partial name="_Navigation" /></div>
-        <footer class="sidebar-footer"><span class="live-dot" aria-hidden="true"></span><span>@L["Workspace"]</span><small>NEXT</small></footer>
+        <footer class="sidebar-footer"><partial name="_SidebarFooter" /></footer>
     </aside>
     }
     <div class="main-shell">
@@ -56,9 +55,9 @@
 @if (!authenticationPage)
 {
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNavigation" aria-labelledby="mobileTitle">
-    <div class="offcanvas-header"><div><h2 id="mobileTitle">NEXT</h2>@if (signedIn) { <div class="sidebar-profile">@await Component.InvokeAsync("HeaderProfile")</div> }</div><button class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Close"]"></button></div>
+    <div class="offcanvas-header"><h2 id="mobileTitle">NEXT</h2><button class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Close"]"></button></div>
     <div class="offcanvas-body"><partial name="_Navigation" /></div>
-    <div class="sidebar-footer"><span class="live-dot" aria-hidden="true"></span><span>@L["Workspace"]</span><small>NEXT</small></div>
+    <div class="sidebar-footer"><partial name="_SidebarFooter" /></div>
 </div>
 }
 <partial name="_Modal" />
@@ -69,6 +68,7 @@
 <script src="~/js/profile-image-picker.js" asp-append-version="true" defer></script>
 <script src="~/js/pwa.js" asp-append-version="true" defer></script>
 <script src="~/js/navigation.js" asp-append-version="true" defer></script>
+<script src="~/js/filters.js" asp-append-version="true" defer></script>
 <script src="~/js/site.js" asp-append-version="true" defer></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.ApplicationUsers;
 using NEXT.Domain.Entities;
+using Mapster;
 namespace NEXT.Infrastructure.Persistence.UsersManagement;
-public sealed class UserQueryService(UserManager<ApplicationUser> users) : IUserQueryService
+public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAdapterConfig mapping) : IUserQueryService
 {
     public Task<ApplicationUser?> FindUserAsync(string userId, CancellationToken ct = default) =>
         Guid.TryParse(userId, out var id) ? StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, ct))
@@ -27,6 +28,22 @@ public sealed class UserQueryService(UserManager<ApplicationUser> users) : IUser
         return StorageErrors.ExecuteAsync(() => users.Users.IgnoreQueryFilters().AnyAsync(user =>
             user.NormalizedUserName == normalized && (!excluded.HasValue || user.Id != excluded.Value), ct));
     }
+    public Task<TDto?> FindUserAsync<TDto>(string userId, CancellationToken ct = default) where TDto : class =>
+        Guid.TryParse(userId, out var id) ? StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking()
+            .Where(x => x.Id == id && x.DeletedAt == null).ProjectToType<TDto>(mapping).FirstOrDefaultAsync(ct))
+            : Task.FromResult<TDto?>(null);
+    public Task<TDto?> FindUserByEmailAsync<TDto>(string email, CancellationToken ct = default) where TDto : class
+    {
+        var normalized = users.NormalizeEmail(email);
+        return StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().Where(x => x.NormalizedEmail == normalized)
+            .ProjectToType<TDto>(mapping).FirstOrDefaultAsync(ct));
+    }
+    public Task<TDto?> FindUserByNameAsync<TDto>(string userName, CancellationToken ct = default) where TDto : class
+    {
+        var normalized = users.NormalizeName(userName);
+        return StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().Where(x => x.NormalizedUserName == normalized)
+            .ProjectToType<TDto>(mapping).FirstOrDefaultAsync(ct));
+    }
     public Task<bool> IsEmailTakenAsync(string email, string? excludingUserId = null, CancellationToken ct = default)
     {
         var normalized = users.NormalizeEmail(email.Trim());
@@ -35,7 +52,7 @@ public sealed class UserQueryService(UserManager<ApplicationUser> users) : IUser
             user.NormalizedEmail == normalized && (!excluded.HasValue || user.Id != excluded.Value), ct));
     }
     public async Task<IReadOnlyList<UserResponseDto>> GetUsersAsync(CancellationToken cancellationToken = default) =>
-        await StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().Select(x => new UserResponseDto(x.Id, x.FullName, x.UserName, x.Email, x.IsActive, x.BranchId, x.UserRoles.Any()))
+        await StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().ProjectToType<UserResponseDto>(mapping)
             .ToListAsync(cancellationToken));
     public Task<bool> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken ct = default) =>
         IdentityCall.CompleteAsync(() => users.CheckPasswordAsync(user, password), ct);

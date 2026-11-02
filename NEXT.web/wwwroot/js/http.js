@@ -13,7 +13,8 @@
     async function problemMessage(response, messages) {
         const problem = await response.json().catch(() => null);
         const guidance = messageFor(response.status, messages);
-        return problem?.errors ? guidance + "\n" + Object.values(problem.errors).flat().join("\n") : guidance;
+        if (problem?.errors) return guidance + "\n" + Object.values(problem.errors).flat().join("\n");
+        return typeof problem?.userMessage === "string" ? problem.userMessage : guidance;
     }
     function setBusy(form, busy, buttons = form.querySelectorAll('button[type="submit"],button:not([type])')) {
         if (busy) {

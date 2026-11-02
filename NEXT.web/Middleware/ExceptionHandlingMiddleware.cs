@@ -3,6 +3,8 @@ using Microsoft.Extensions.Localization;
 using NEXT.web.Localization;
 using Microsoft.AspNetCore.Mvc;
 using NEXT.Application.Exceptions;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 namespace NEXT.web.Middleware;
 
@@ -14,6 +16,9 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
         catch (Exception exception) when (!context.Response.HasStarted)
         {
+            // Localization runs downstream; its async culture does not flow back when an error bubbles out.
+            if (context.Features.Get<IRequestCultureFeature>() is { } culture)
+                CultureInfo.CurrentUICulture = culture.RequestCulture.UICulture;
             var status = exception is AppException appException ? StatusFor(appException.Code) : 500;
             if (status >= 500)
                 logger.LogError(exception, "Request {TraceIdentifier} failed", context.TraceIdentifier);
@@ -22,6 +27,15 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                 : new ProblemDetails();
             problem.Status = status;
             problem.Title = status >= 500 ? "An unexpected error occurred." : exception.Message;
+            if (exception is RecordRelationshipException)
+            {
+                var deleting = context.GetRouteValue("action")?.ToString() is "Delete" or "Purge";
+                var key = deleting ? "DeleteLinkedRecord" : "RecordRelationshipBlocked";
+                problem.Title = text?[key].Value ?? (deleting
+                    ? "This item cannot be deleted because other records depend on it. Remove the relationships first, then try again."
+                    : "This operation is blocked because this item is linked to other records.");
+                problem.Extensions["userMessage"] = problem.Title;
+            }
             problem.Extensions["traceId"] = context.TraceIdentifier;
             context.Response.Clear();
             context.Response.StatusCode = status;

@@ -7,9 +7,10 @@ using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
+using Mapster;
 namespace NEXT.Infrastructure.Persistence;
 /// <summary>Read-only related-record graph, including invoice/payment ledger references without physical foreign keys.</summary>
-public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsReader
+public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig mapping) : IRelatedRecordsReader
 {
     public async Task<ActivityPageDto> ReadAsync<TEntity>(Guid id, string? kind, int page, CancellationToken ct) where TEntity : class
     {
@@ -138,18 +139,13 @@ public sealed class RelatedRecordsReader(NEXTDbContext db) : IRelatedRecordsRead
     private static Task<int> Count(IQueryable query, CancellationToken ct) =>
         (Task<int>)typeof(RelatedRecordsReader).GetMethod(nameof(CountOf), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(query.ElementType).Invoke(null, [query, ct])!;
     private static Task<int> CountOf<T>(IQueryable<T> query, CancellationToken ct) => StorageErrors.ExecuteAsync(() => query.CountAsync(ct));
-    private static Task<IReadOnlyList<RelatedRecordDto>> Fetch(IQueryable query, int page, CancellationToken ct) =>
-        (Task<IReadOnlyList<RelatedRecordDto>>)typeof(RelatedRecordsReader).GetMethod(nameof(FetchOf), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(query.ElementType).Invoke(null, [query, page, ct])!;
-    private static async Task<IReadOnlyList<RelatedRecordDto>> FetchOf<T>(IQueryable<T> query, int page, CancellationToken ct)
+    private Task<IReadOnlyList<RelatedRecordDto>> Fetch(IQueryable query, int page, CancellationToken ct) =>
+        (Task<IReadOnlyList<RelatedRecordDto>>)typeof(RelatedRecordsReader).GetMethod(nameof(FetchOf), BindingFlags.NonPublic | BindingFlags.Instance)!.MakeGenericMethod(query.ElementType).Invoke(this, [query, page, ct])!;
+    private async Task<IReadOnlyList<RelatedRecordDto>> FetchOf<T>(IQueryable<T> query, int page, CancellationToken ct)
     {
         var parameter = Expression.Parameter(typeof(T), "record");
         var selector = Expression.Lambda<Func<T, Guid>>(Expression.Property(parameter, "Id"), parameter);
-        var properties = typeof(T).GetProperties().Where(x => RelatedRecordDto.FieldNames.Contains(x.Name)).ToArray();
-        var columns = new[] { typeof(T).GetProperty("Id")! }.Concat(properties).ToArray();
-        var projection = Expression.Lambda<Func<T, object[]>>(Expression.NewArrayInit(typeof(object), columns
-            .Select(property => Expression.Convert(Expression.Property(parameter, property), typeof(object)))), parameter);
-        var records = await StorageErrors.ExecuteAsync(() => query.OrderBy(selector).Skip((page - 1) * 10).Take(10).Select(projection).ToListAsync(ct));
-        return records.Select(row => new RelatedRecordDto((Guid)row[0], properties.Select((property, index) =>
-            new KeyValuePair<string, object?>(property.Name, row[index + 1])).ToDictionary())).ToArray();
+        return await StorageErrors.ExecuteAsync(() => query.OrderBy(selector).Skip((page - 1) * 10).Take(10)
+            .ProjectToType<RelatedRecordDto>(mapping).ToListAsync(ct));
     }
 }

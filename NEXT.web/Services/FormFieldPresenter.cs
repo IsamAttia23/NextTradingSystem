@@ -82,7 +82,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
             if (ReferenceKey(property.Name) is { } key && value is Guid selected)
                 fields.Add(new(property.Name, (await OptionsAsync(key, ct)).SingleOrDefault(x => x.Value == selected.ToString())?.Label ?? "—"));
             else
-                fields.Add(new(property.Name, value is decimal number ? number.ToString("N2") : Display(value),
+                fields.Add(new(property.Name, value is decimal number ? DisplayNumber(property.Name, number) : Display(value),
                     (Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType).IsEnum || property.PropertyType == typeof(bool)));
         }
         return fields;
@@ -92,6 +92,13 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
 
     public static string? Avatar(byte[]? data) => data is { Length: > 0 } bytes
         ? "data:image/png;base64," + Convert.ToBase64String(bytes) : null;
+
+    public static string Quantity(decimal value) =>
+        value.ToString("0.############################", CultureInfo.InvariantCulture);
+
+    public static string DisplayNumber(string name, decimal value) =>
+        name is "Quantity" or "ReservedQuantity" or "AvailableQuantity" or "MinStock" or "MaxStock"
+            ? Quantity(value) : value.ToString("N2", CultureInfo.CurrentCulture);
 
     public static string Display(object? value)
     {
@@ -103,6 +110,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
     public static string? Format(object? value) => value switch
     {
         bool flag => flag.ToString().ToLowerInvariant(),
+        decimal number => Quantity(number),
         DateOnly date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         DateTimeOffset date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         _ => Convert.ToString(value, CultureInfo.InvariantCulture)

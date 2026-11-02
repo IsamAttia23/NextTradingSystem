@@ -1,0 +1,12 @@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="sidebar-profile">
+        @await Component.InvokeAsync("HeaderProfile")
+        <small>@L["Administration"]</small>
+    </div>
+}
+<div class="sidebar-footer-status">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span>@L["Workspace"]</span>
+    <small>NEXT</small>
+</div>

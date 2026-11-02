@@ -493,4 +493,6 @@
 <data name="ProfilePasswordPairRequired" xml:space="preserve"><value>To change your password, enter both the current and new passwords from your profile.</value></data>
 <data name="ProfilePasswordHint" xml:space="preserve"><value>Leave the password fields blank to keep your password. Changing your email, phone number, or password requires signing in again.</value></data>
 <data name="ProfileSavedSignInAgain" xml:space="preserve"><value>Your changes were saved. Please sign in again.</value></data>
+<data name="DeleteLinkedRecord" xml:space="preserve"><value>This item cannot be deleted because other records depend on it. Remove the relationships first, then try again.</value></data>
+<data name="RecordRelationshipBlocked" xml:space="preserve"><value>This operation is blocked because this item is linked to other records.</value></data>
 </root>

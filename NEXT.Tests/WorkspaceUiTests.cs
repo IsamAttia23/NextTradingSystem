@@ -236,7 +236,14 @@ public sealed class WorkspaceUiTests
             customerId = customer.Id; Assert.Equal(12.25m, customer.CreditLimit);
         }
         var deleteTag = "/Tags/Delete/" + tagId;
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await Post(client, deleteTag, Token(await client.GetStringAsync(deleteTag)))).StatusCode);
+        var blockedDelete = await Post(client, deleteTag, Token(await client.GetStringAsync(deleteTag)));
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, blockedDelete.StatusCode);
+        using (var problem = System.Text.Json.JsonDocument.Parse(await blockedDelete.Content.ReadAsStringAsync()))
+        {
+            var message = problem.RootElement.GetProperty("userMessage").GetString();
+            Assert.Equal("لا يمكن حذف هذا العنصر لارتباطه بعناصر أخرى. أزل الارتباطات أولًا ثم أعد المحاولة.", message);
+            Assert.Equal(message, problem.RootElement.GetProperty("title").GetString());
+        }
         var edit = "/Customers/Edit/" + customerId;
         Assert.Equal(HttpStatusCode.OK, (await Post(client, edit, Token(await client.GetStringAsync(edit)), ("Name", "Updated customer"), ("TagId", tagId.ToString()))).StatusCode);
         var delete = "/Customers/Delete/" + customerId;
@@ -276,7 +283,14 @@ public sealed class WorkspaceUiTests
         Assert.Contains("initial-avatar", html); Assert.DoesNotContain("Inactive sentinel", html);
         Assert.Contains("PageNumber=2", html); Assert.Contains("TagId=" + tagId, html);
         Assert.Contains("Alpha customer", html);
+        Assert.Contains("<th scope=\"col\" class=\"row-number\">#</th>", html);
+        Assert.Equal(Enumerable.Range(1, 10), Regex.Matches(html, "<td class=\"row-number\"><bdi>([0-9]+)</bdi></td>")
+            .Select(match => int.Parse(match.Groups[1].Value)));
+        Assert.True(html.IndexOf("class=\"list-navigation\"", StringComparison.Ordinal) >
+            html.IndexOf("</table>", StringComparison.Ordinal));
         var second = await client.GetStringAsync(url + "&PageNumber=2"); Assert.DoesNotContain("Alpha customer", second);
+        Assert.Equal(Enumerable.Range(11, 10), Regex.Matches(second, "<td class=\"row-number\"><bdi>([0-9]+)</bdi></td>")
+            .Select(match => int.Parse(match.Groups[1].Value)));
         var search = await client.GetStringAsync("/Customers?SearchTerm=Alpha&PageSize=10");
         Assert.Contains("Alpha customer", search); Assert.DoesNotContain("Partner 01", search);
         var byPhone = await client.GetStringAsync("/Customers?SearchTerm=111"); Assert.Contains("Alpha customer", byPhone);
@@ -289,9 +303,16 @@ public sealed class WorkspaceUiTests
         Assert.Contains("PAY-CUSTOMER", payments); Assert.DoesNotContain("PasswordHash", details);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"/Customers/Details/{targetId}?activityKind=NotASection")).StatusCode);
         var layout = await client.GetStringAsync("/Customers");
-        Assert.Contains("nav-group-title", layout); Assert.True(layout.IndexOf("sidebar-profile") < layout.IndexOf("grouped-navigation"));
+        Assert.Contains("nav-group-title", layout);
+        var sidebar = Regex.Match(layout, "<aside[^>]*id=\"sidebar\"[\\s\\S]*?</aside>").Value;
+        Assert.True(sidebar.IndexOf("sidebar-profile", StringComparison.Ordinal) > sidebar.IndexOf("grouped-navigation", StringComparison.Ordinal));
+        Assert.Contains("sidebar-profile", Regex.Match(sidebar, "<footer[\\s\\S]*?</footer>").Value);
+        var mobile = layout[layout.IndexOf("id=\"mobileNavigation\"", StringComparison.Ordinal)..];
+        Assert.True(mobile.IndexOf("sidebar-profile", StringComparison.Ordinal) > mobile.IndexOf("grouped-navigation", StringComparison.Ordinal));
         Assert.DoesNotContain("sidebar-bottom", layout);
         var tagDetails = await client.GetStringAsync("/Tags/Details/" + tagId); Assert.Contains("record-card", tagDetails);
+        var tags = await client.GetStringAsync("/Tags");
+        Assert.Contains("class=\"color-badge\" style=\"background-color:#ffcc00", tags);
     }
 
     [Fact]

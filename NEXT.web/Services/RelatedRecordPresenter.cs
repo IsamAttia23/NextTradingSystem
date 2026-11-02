@@ -10,7 +10,7 @@ public static class RelatedRecordPresenter
         null => "—",
         DateTimeOffset date => date.ToLocalTime().ToString("g", CultureInfo.CurrentCulture),
         DateOnly date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-        decimal number => number.ToString(name.Contains("Quantity") ? "N3" : "N2", CultureInfo.CurrentCulture),
+        decimal number => FormFieldPresenter.DisplayNumber(name, number),
         bool flag => flag ? "Active" : "Inactive",
         _ => Convert.ToString(value, CultureInfo.CurrentCulture) ?? "—"
     };

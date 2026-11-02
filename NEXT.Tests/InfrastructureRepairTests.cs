@@ -76,9 +76,10 @@ public sealed class InfrastructureRepairTests
     }
 
     [Fact]
-    public void RelatedRecordValuesRemainRawAndWebFormatsByCulture()
+    public void RelatedRecordValuesRemainRawAndQuantitiesKeepPlainFormatAcrossCultures()
     {
-        var record = new RelatedRecordDto(Guid.NewGuid(), new Dictionary<string, object?> { ["Quantity"] = 1234.5m, ["IsActive"] = false });
+        var record = new RelatedRecordDto(Guid.NewGuid(), new Dictionary<string, object?>
+        { ["Quantity"] = 1234.5m, ["IsActive"] = false, ["Amount"] = 1234.5m });
         var before = CultureInfo.CurrentCulture;
         try
         {
@@ -86,7 +87,9 @@ public sealed class InfrastructureRepairTests
             var english = RelatedRecordPresenter.Fields(record);
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
             var german = RelatedRecordPresenter.Fields(record);
-            Assert.NotEqual(english[0].Value, german[0].Value);
+            Assert.Equal("1234.5", english[0].Value);
+            Assert.Equal(english[0].Value, german[0].Value);
+            Assert.NotEqual(english[2].Value, german[2].Value);
             Assert.IsType<decimal>(record.Values["Quantity"]);
             Assert.Equal("Inactive", german[1].Value);
             Assert.True(german[1].TranslateValue);
@@ -252,7 +255,7 @@ public sealed class InfrastructureRepairTests
         await using var db = fixture.NewContext(counter);
         var store = new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserStore<ApplicationUser, Role, NEXTDbContext, Guid, IdentityUserClaim<Guid>, UserRole, IdentityUserLogin<Guid>, IdentityUserToken<Guid>, IdentityRoleClaim<Guid>>(db);
         var manager = new UserManager<ApplicationUser>(store, Microsoft.Extensions.Options.Options.Create(new IdentityOptions()), new PasswordHasher<ApplicationUser>(), [], [], new UpperInvariantLookupNormalizer(), new IdentityErrorDescriber(), app.Services, Microsoft.Extensions.Logging.Abstractions.NullLogger<UserManager<ApplicationUser>>.Instance);
-        var queries = new UserQueryService(manager);
+        var queries = new UserQueryService(manager, new Mapster.TypeAdapterConfig());
         Assert.True(await queries.IsUserNameTakenAsync("ui-admin"));
         Assert.True(await queries.IsEmailTakenAsync("ui-admin@example.test"));
         Assert.Equal(2, counter.Sql.Count);
@@ -275,7 +278,9 @@ public sealed class InfrastructureRepairTests
         await fixture.Db.SaveChangesAsync();
         var counter = new Commands();
         await using var db = fixture.NewContext(counter);
-        var result = await new RelatedRecordsReader(db).ReadAsync<Category>(ids[0], nameof(Category), 1, default);
+        var mapping = new Mapster.TypeAdapterConfig();
+        mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
+        var result = await new RelatedRecordsReader(db, mapping).ReadAsync<Category>(ids[0], nameof(Category), 1, default);
         Assert.Equal(59, result.TotalCount);
         Assert.Equal(10, result.Records.Count);
         Assert.Contains(counter.Sql, sql => sql.Contains("WITH RECURSIVE"));
@@ -292,7 +297,9 @@ public sealed class InfrastructureRepairTests
         await fixture.Db.SaveChangesAsync();
         fixture.Db.Remove(tag);
         await fixture.Db.SaveChangesAsync();
-        var service = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(fixture.Db, new PaginationServices()),
+        var mapping = new Mapster.TypeAdapterConfig();
+        mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
+        var service = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(fixture.Db, new PaginationServices(), mapping),
             new UnitOfWork(fixture.Db), [new FailedRestore(fixture.Db)]);
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.Restore(tag.Id));
         await using var verification = fixture.NewContext();

@@ -87,6 +87,8 @@ test('ProblemDetails retain localized guidance and validation descriptions', asy
     const messages = {validation: 'Invalid', expired: 'Expired', forbidden: 'Forbidden', conflict: 'Conflict', error: 'Error'};
     assert.equal(await window.NextHttp.problemMessage({status: 422, json: async () => ({errors: {Name: ['Required'], Code: ['Duplicate']}})}, messages), 'Invalid\nRequired\nDuplicate');
     assert.equal(await window.NextHttp.problemMessage({status: 401, json: async () => {throw new Error();}}, messages), 'Expired');
+    assert.equal(await window.NextHttp.problemMessage({status: 422, json: async () => ({userMessage: 'Linked records prevent deletion'})}, messages), 'Linked records prevent deletion');
+    assert.equal(await window.NextHttp.problemMessage({status: 500, json: async () => ({title: 'private database details'})}, messages), 'Error');
     assert.equal(window.NextHttp.messageFor(403, messages), 'Forbidden');
     assert.equal(window.NextHttp.messageFor(409, messages), 'Conflict');
 });

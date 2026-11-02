@@ -493,4 +493,6 @@
 <data name="ProfilePasswordPairRequired" xml:space="preserve"><value>لتغيير كلمة المرور، أدخل كلمة المرور الحالية والجديدة من صفحة ملفك الشخصي.</value></data>
 <data name="ProfilePasswordHint" xml:space="preserve"><value>اترك حقول كلمة المرور فارغة للاحتفاظ بها. عند تغيير البريد أو الهاتف أو كلمة المرور ستحتاج إلى تسجيل الدخول مجددًا.</value></data>
 <data name="ProfileSavedSignInAgain" xml:space="preserve"><value>تم حفظ التعديلات. يرجى تسجيل الدخول مجددًا.</value></data>
+<data name="DeleteLinkedRecord" xml:space="preserve"><value>لا يمكن حذف هذا العنصر لارتباطه بعناصر أخرى. أزل الارتباطات أولًا ثم أعد المحاولة.</value></data>
+<data name="RecordRelationshipBlocked" xml:space="preserve"><value>لا يمكن تنفيذ العملية بسبب ارتباط هذا العنصر بعناصر أخرى.</value></data>
 </root>

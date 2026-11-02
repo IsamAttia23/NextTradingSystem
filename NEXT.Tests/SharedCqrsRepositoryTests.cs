@@ -13,6 +13,9 @@ using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using Xunit;
 using NEXT.Application.DTOs.Suppliers;
+using Mapster;
+using NEXT.Application.DTOs.Inventory;
+using NEXT.Application.Features.Common.Mapping;
 using NEXT.Application.Services.Inventory;
 using NEXT.Infrastructure.Persistence;
 using NEXT.Infrastructure.Persistence.Repositories;
@@ -75,21 +78,54 @@ public sealed class SharedCqrsRepositoryTests
         var services = scope.ServiceProvider;
         var db = services.GetRequiredService<NEXTDbContext>();
         var warehouse = new Warehouse { Name = "Needle warehouse", Code = "QUERY-W" };
-        var product = new Product { Name = "Needle product" };
+        var product = new Product { Name = "Needle product", CostPrice = 25 };
         db.AddRange(warehouse, product);
         await db.SaveChangesAsync();
         db.AddRange(
-            new Stock { ProductId = product.Id, WarehouseId = warehouse.Id, Quantity = 8 },
+            new Stock { ProductId = product.Id, WarehouseId = warehouse.Id, Quantity = 8, ReservedQuantity = 2, AverageCost = 7 },
             new ProductBatch { ProductId = product.Id, WarehouseId = warehouse.Id, BatchNumber = "Batch", Quantity = 3 },
             new StockMovement { ProductId = product.Id, WarehouseId = warehouse.Id, Quantity = 2, UnitCost = 1 });
         await db.SaveChangesAsync();
         var service = new InventoryQueryService(services.GetRequiredService<IStockRepository>(),
             services.GetRequiredService<IStockMovementRepository>(), services.GetRequiredService<IProductBatchRepository>(),
-            new PaginationServices(), new NEXT.Application.Validation.DataAnnotationsEntityValidator<PaginationQuery>());
-        Assert.Single((await service.StocksAsync(new PaginationQuery { SearchTerm = "warehouse", PageSize = 1 })).Data);
-        Assert.Single((await service.BatchesAsync(new PaginationQuery { SearchTerm = "product", PageSize = 1 })).Data);
-        Assert.Single((await service.MovementsAsync(new StockMovementQueryModel { ProductId = product.Id, SearchTerm = "Needle", PageSize = 1 })).Data);
+            new PaginationServices(), new NEXT.Application.Validation.DataAnnotationsEntityValidator<PaginationQuery>(),
+            services.GetRequiredService<Mapster.TypeAdapterConfig>());
+        var stock = Assert.Single((await service.StocksAsync(new PaginationQuery { SearchTerm = "warehouse", PageSize = 1 })).Data);
+        Assert.Equal(product.Name, stock.ProductName);
+        Assert.Equal(warehouse.Name, stock.WarehouseName);
+        Assert.Equal(25m, stock.CostPrice);
+        Assert.Equal(7m, stock.AverageCost);
+        Assert.Equal(6m, stock.AvailableQuantity);
+        var batch = Assert.Single((await service.BatchesAsync(new PaginationQuery { SearchTerm = "product", PageSize = 1 })).Data);
+        Assert.Equal(product.Name, batch.ProductName);
+        Assert.Equal(warehouse.Name, batch.WarehouseName);
+        var movement = Assert.Single((await service.MovementsAsync(new StockMovementQueryModel { ProductId = product.Id, SearchTerm = "Needle", PageSize = 1 })).Data);
+        Assert.Equal(product.Name, movement.ProductName);
+        Assert.Equal(warehouse.Name, movement.WarehouseName);
+        Assert.Equal(default(StockMovementType).ToString(), movement.Type);
         Assert.Empty((await service.MovementsAsync(new StockMovementQueryModel { ProductId = Guid.NewGuid(), SearchTerm = "Needle" })).Data);
+    }
+
+    [Fact]
+    public void InventoryDtoProjectionsTranslateToPostgresAfterPaging()
+    {
+        using var db = new NEXTDbContext(new DbContextOptionsBuilder<NEXTDbContext>()
+            .UseNpgsql("Host=localhost;Database=translation_only;Username=unused;Password=unused").Options, null!, null!);
+        var mapping = new TypeAdapterConfig();
+        new RecordMappingRegister().Register(mapping);
+        var stockSql = db.Stocks.OrderBy(x => x.Id).Skip(1).Take(1).ProjectToType<StockDto>(mapping).ToQueryString();
+        var movementSql = db.StockMovements.OrderBy(x => x.Id).Skip(1).Take(1).ProjectToType<StockMovementDto>(mapping).ToQueryString();
+        var batchSql = db.Set<ProductBatch>().OrderBy(x => x.Id).Skip(1).Take(1).ProjectToType<ProductBatchDto>(mapping).ToQueryString();
+        foreach (var sql in new[] { stockSql, movementSql, batchSql })
+        {
+            Assert.Contains("LIMIT", sql);
+            Assert.Contains("OFFSET", sql);
+            Assert.Contains("JOIN", sql);
+            Assert.Contains("\"Products\"", sql);
+            Assert.Contains("\"Warehouses\"", sql);
+        }
+        Assert.Contains("\"CostPrice\"", stockSql);
+        Assert.Contains("\"AverageCost\"", stockSql);
     }
 
     [Fact]

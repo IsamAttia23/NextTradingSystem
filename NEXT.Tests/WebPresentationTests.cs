@@ -18,6 +18,56 @@ namespace NEXT.Tests;
 
 public sealed class WebPresentationTests
 {
+    [Theory]
+    [InlineData("500.000", "500")]
+    [InlineData("500.250", "500.25")]
+    [InlineData("0.000", "0")]
+    [InlineData("0.001", "0.001")]
+    [InlineData("999999999999.999", "999999999999.999")]
+    public void QuantitiesKeepTheirValueWithoutCurrencyGroupingOrTrailingZeros(string input, string expected)
+    {
+        var number = decimal.Parse(input, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(expected, FormFieldPresenter.Quantity(number));
+        Assert.Equal(expected, FormFieldPresenter.Format(number));
+        foreach (var name in new[] { "Quantity", "ReservedQuantity", "AvailableQuantity", "MinStock", "MaxStock" })
+            Assert.Equal(expected, FormFieldPresenter.DisplayNumber(name, number));
+        var related = RelatedRecordPresenter.Fields(new(Guid.NewGuid(), new Dictionary<string, object?> { ["Quantity"] = number }));
+        Assert.Equal(expected, Assert.Single(related).Value);
+    }
+
+    [Fact]
+    public async Task StockGridDisplaysPlainQuantitiesAndTheCurrentProductCostWithoutChangingValuation()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var product = new Product { Name = "Quantity display", CostPrice = 25 };
+            var warehouse = new Warehouse { Name = "Display warehouse", Code = "DISPLAY" };
+            db.AddRange(product, warehouse);
+            db.Add(new Stock { Product = product, Warehouse = warehouse, Quantity = 500.000m, ReservedQuantity = 12.250m, AverageCost = 7 });
+            await db.SaveChangesAsync();
+        }
+        var html = await client.GetStringAsync("/Inventory?culture=en");
+        Assert.Contains("<bdi>500</bdi>", html);
+        Assert.Contains("<bdi>12.25</bdi>", html);
+        Assert.Contains("<bdi>487.75</bdi>", html);
+        Assert.DoesNotContain("500.000", html);
+        Assert.Contains("<bdi>25.00</bdi>", html);
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            (await db.Products.SingleAsync()).CostPrice = 30;
+            await db.SaveChangesAsync();
+            Assert.Equal(7m, (await db.Stocks.SingleAsync()).AverageCost);
+        }
+        html = await client.GetStringAsync("/Inventory?culture=en");
+        Assert.Contains("<bdi>30.00</bdi>", html);
+        Assert.DoesNotContain("<bdi>25.00</bdi>", html);
+    }
+
     [Fact]
     public async Task HeaderProfileIsLoadedOncePerRequestAndNeverSharedAcrossRequests()
     {

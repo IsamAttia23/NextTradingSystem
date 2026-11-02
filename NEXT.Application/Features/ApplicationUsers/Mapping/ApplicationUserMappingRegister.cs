@@ -8,10 +8,11 @@ public sealed class ApplicationUserMappingRegister : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<ApplicationUser, UserResponseDto>();
+        config.NewConfig<ApplicationUser, UserResponseDto>()
+            .Map(destination => destination.HasRole, source => source.UserRoles.Any());
 
         config.NewConfig<ApplicationUser, UserDto>()
-            .Map(destination => destination.Roles, _ => Array.Empty<string>());
+            .Map(destination => destination.Roles, source => source.UserRoles.Select(role => role.Role.Name!).ToArray());
 
         config.NewConfig<UserCreationDto, ApplicationUser>()
             .Map(destination => destination.FullName, source => source.FullName.Trim())

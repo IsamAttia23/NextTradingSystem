@@ -1,5 +1,5 @@
 @model HeaderProfile
 <a class="header-profile" asp-controller="Account" asp-action="Profile">
-    <img class="profile-avatar" src="@(Model.HasAvatar ? Url.Action("Avatar", "Account") : Url.Content("~/logo.svg"))" alt="@L["ProfileImage"]" />
+    <img class="profile-avatar avatar-image" src="@(Model.HasAvatar ? Url.Action("Avatar", "Account") : Url.Content("~/images/avatar-placeholder.svg"))" alt="@L["ProfileImage"]" />
     <span>@L["Hello"] <strong>@Model.FullName</strong></span>
 </a>

@@ -9,22 +9,22 @@ namespace NEXT.web.Services;
 public sealed class InventoryPresenter(IInventoryQueryService queries, TablePresenter tables, FormFieldPresenter fields)
 {
     public async Task<TableModel> StocksAsync(PaginationQuery query, CancellationToken ct) =>
-        await tables.BuildAsync("Stocks", ["Product", "Warehouse", "Quantity", "ReservedQuantity", "AvailableQuantity", "AverageCost"],
+        await tables.BuildAsync("Stocks", ["Product", "Warehouse", "Quantity", "ReservedQuantity", "AvailableQuantity", "CostPrice"],
             await queries.StocksAsync(query, ct), query,
-            x => new TableRow([x.ProductName, x.WarehouseName, x.Quantity.ToString("N3"), x.ReservedQuantity.ToString("N3"), x.AvailableQuantity.ToString("N3"), x.AverageCost.ToString("N2")],
+            x => new TableRow([x.ProductName, x.WarehouseName, FormFieldPresenter.Quantity(x.Quantity), FormFieldPresenter.Quantity(x.ReservedQuantity), FormFieldPresenter.Quantity(x.AvailableQuantity), x.CostPrice.ToString("N2")],
                 [new("Transfer", "/Inventory/Transfer?productId=" + x.ProductId + "&sourceWarehouseId=" + x.WarehouseId)]),
-            [new("Quantity", "Quantity"), new("ReservedQuantity", "ReservedQuantity"), new("AverageCost", "AverageCost"), new("CreatedAt", "CreatedAt")], ct, new("Receive", "/Inventory/Receive"));
+            [new("Quantity", "Quantity"), new("ReservedQuantity", "ReservedQuantity"), new("CreatedAt", "CreatedAt")], ct, new("Receive", "/Inventory/Receive"));
 
     public async Task<TableModel> MovementsAsync(StockMovementQueryModel query, CancellationToken ct) =>
         await tables.BuildAsync("StockMovements", ["Product", "Warehouse", "MovementType", "Quantity", "UnitCost", "OperationId", "CreatedAt"],
             await queries.MovementsAsync(query, ct), query,
-            x => new TableRow([x.ProductName, x.WarehouseName, x.Type, x.Quantity.ToString("N3"), x.UnitCost.ToString("N2"), x.ReferenceId?.ToString() ?? "—", x.CreatedAt.ToLocalTime().ToString("g")], []),
+            x => new TableRow([x.ProductName, x.WarehouseName, x.Type, FormFieldPresenter.Quantity(x.Quantity), x.UnitCost.ToString("N2"), x.ReferenceId?.ToString() ?? "—", x.CreatedAt.ToLocalTime().ToString("g")], []),
             [new("CreatedAt", "CreatedAt")], ct);
 
     public async Task<TableModel> BatchesAsync(PaginationQuery query, CancellationToken ct) =>
         await tables.BuildAsync("ProductBatches", ["Product", "Warehouse", "BatchNumber", "ExpiryDate", "Quantity", "UnitCost"],
             await queries.BatchesAsync(query, ct), query,
-            x => new TableRow([x.ProductName, x.WarehouseName, x.BatchNumber, x.ExpiryDate?.ToString("yyyy-MM-dd") ?? "—", x.Quantity.ToString("N3"), x.CostPrice.ToString("N2")], []),
+            x => new TableRow([x.ProductName, x.WarehouseName, x.BatchNumber, x.ExpiryDate?.ToString("yyyy-MM-dd") ?? "—", FormFieldPresenter.Quantity(x.Quantity), x.CostPrice.ToString("N2")], []),
             [new("ExpiryDate", "ExpiryDate"), new("Quantity", "Quantity"), new("CostPrice", "UnitCost")], ct);
 
     public async Task<ModalForm> ReceiveFormAsync(string action, CancellationToken ct)

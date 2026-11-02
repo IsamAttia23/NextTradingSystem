@@ -4,17 +4,26 @@ using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
+using Mapster;
 
 namespace NEXT.Infrastructure.Identity;
 
 /// <summary>Infrastructure adapter for ASP.NET Core Identity role management.</summary>
-public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbContext context) : IRoleManagementService
+public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbContext context, TypeAdapterConfig mapping) : IRoleManagementService
 {
     public async Task<Role?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await StorageErrors.ExecuteAsync(() => roleManager.Roles.FirstOrDefaultAsync(role => role.Id == id, cancellationToken));
 
     public async Task<IReadOnlyList<Role>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await StorageErrors.ExecuteAsync(() => roleManager.Roles.AsNoTracking().OrderBy(role => role.Name).ToListAsync(cancellationToken));
+
+    public Task<TDto?> FindByIdAsync<TDto>(Guid id, CancellationToken cancellationToken = default) where TDto : class =>
+        StorageErrors.ExecuteAsync(() => roleManager.Roles.AsNoTracking().Where(role => role.Id == id)
+            .ProjectToType<TDto>(mapping).FirstOrDefaultAsync(cancellationToken));
+
+    public async Task<IReadOnlyList<TDto>> GetAllAsync<TDto>(CancellationToken cancellationToken = default) where TDto : class =>
+        await StorageErrors.ExecuteAsync(() => roleManager.Roles.AsNoTracking().OrderBy(role => role.Name)
+            .ProjectToType<TDto>(mapping).ToListAsync(cancellationToken));
 
     public async Task<IdentityOperationResult> CreateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.CreateAsync(role), ct));
     public async Task<IdentityOperationResult> UpdateAsync(Role role, CancellationToken ct = default) => Convert(await IdentityCall.CompleteAsync(() => roleManager.UpdateAsync(role), ct));

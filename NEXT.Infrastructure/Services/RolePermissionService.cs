@@ -4,22 +4,23 @@ using NEXT.Application.DTOs.Security;
 using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
+using Mapster;
 
 namespace NEXT.Infrastructure.Services;
 
 /// <summary>Persistence adapter for the RolePermission composite key.</summary>
-public sealed class RolePermissionService(NEXTDbContext context) : IRolePermissionService
+public sealed class RolePermissionService(NEXTDbContext context, TypeAdapterConfig mapping) : IRolePermissionService
 {
     public async Task<IReadOnlyList<RolePermissionDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await StorageErrors.ExecuteAsync(() => context.RolePermissions.AsNoTracking().OrderBy(x => x.Role.Name).ThenBy(x => x.Permission.Code)
-            .Select(Projection).ToListAsync(cancellationToken));
+            .ProjectToType<RolePermissionDto>(mapping).ToListAsync(cancellationToken));
 
     public async Task<IReadOnlyList<RolePermissionDto>> GetByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
     {
         if (!await StorageErrors.ExecuteAsync(() => context.Roles.AnyAsync(x => x.Id == roleId, cancellationToken)))
             throw new NotFoundException($"Role '{roleId}' was not found.");
         return await StorageErrors.ExecuteAsync(() => context.RolePermissions.AsNoTracking().Where(x => x.RoleId == roleId)
-            .OrderBy(x => x.Permission.Code).Select(Projection).ToListAsync(cancellationToken));
+            .OrderBy(x => x.Permission.Code).ProjectToType<RolePermissionDto>(mapping).ToListAsync(cancellationToken));
     }
 
     public async Task AddAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default)
@@ -45,6 +46,4 @@ public sealed class RolePermissionService(NEXTDbContext context) : IRolePermissi
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private static readonly System.Linq.Expressions.Expression<Func<RolePermission, RolePermissionDto>> Projection =
-        x => new RolePermissionDto(x.RoleId, x.PermissionId, x.Role.Name, x.Permission.Code, x.Permission.Module);
 }

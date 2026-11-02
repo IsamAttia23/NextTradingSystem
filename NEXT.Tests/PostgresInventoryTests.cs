@@ -298,7 +298,9 @@ public sealed class PostgresInventoryTests
         f.Db.AddRange(new JournalEntry { EntryNumber = "JOURNAL-PAYMENT", ReferenceType = JournalReferenceType.Payment, ReferenceId = payment.Id },
             new StockMovement { ProductId = f.Product, WarehouseId = f.Source, Quantity = 1, UnitCost = 10, ReferenceType = "SalesInvoice", ReferenceId = sale.Id });
         await f.Db.SaveChangesAsync();
-        var reader = new RelatedRecordsReader(f.Db);
+        var mapping = new Mapster.TypeAdapterConfig();
+        mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
+        var reader = new RelatedRecordsReader(f.Db, mapping);
         var result = await reader.ReadAsync<Customer>(customer.Id, "Payment", 1, default);
         Assert.Single(result.Records); Assert.Contains(result.Records[0].Values, x => Equals(x.Value, "PAY-LINKED"));
         Assert.Equal(2, result.Sections.Single(x => x.Key == "SalesInvoice").Count);

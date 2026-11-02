@@ -6,6 +6,7 @@ using NEXT.Application.DTOs.Common;
 using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
+using NEXT.Application.DTOs.Tags;
 
 namespace NEXT.web.Services;
 
@@ -30,7 +31,7 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
         new(columns.Select(p => FormFieldPresenter.Display(p.GetValue(item))).Concat(tagged ? [""] : Array.Empty<string>()).ToArray(),
             [new("Details", route("Details", new { id = item.Id, returnUrl = route("Index", query) }), Modal: false),
              new("Edit", route("Edit", new { id = item.Id })), new("Delete", route("Delete", new { id = item.Id }), true)],
-            Badge(item), Identity(item, route));
+            Badge(item), Identity(item, route), BadgeColumn: item is TagDto ? "Name" : "TagId");
 
     public async Task<RecordDetailsDto> DetailsAsync(string section, Guid id, string? kind, int page,
         Func<string, object?, string> route, CancellationToken ct)
@@ -62,6 +63,10 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
     private static string Name(TDto item) => typeof(TInput).GetProperty("Name")?.GetValue(item)?.ToString() ?? typeof(TDto).Name;
     private static RecordIdentityDto Identity(TDto item, Func<string, object?, string> route) =>
         new(Name(item), item is IProfileImageInput { AvatarUrl.Length: > 0 } ? route("Avatar", new { id = item.Id }) : null);
-    private static ColorBadgeDto? Badge(TDto item) => item is ITaggedRecordDto { TagName: { } name } tag
-        ? new(name, tag.TagColor ?? "#778195") : null;
+    private static ColorBadgeDto? Badge(TDto item) => item switch
+    {
+        TagDto tag => new(tag.Name, tag.Color),
+        ITaggedRecordDto { TagName: { } name } tag => new(name, tag.TagColor ?? "#778195"),
+        _ => null
+    };
 }

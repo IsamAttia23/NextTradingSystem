@@ -52,9 +52,13 @@ public class PersistenceRegressionTests
         Assert.Empty(await db.Tags().ToListAsync());
         Assert.Single(await db.RecycleBinEntries.ToListAsync());
         Assert.True(await db.AuditLogs.AnyAsync(x => x.Action == AuditAction.Delete));
-        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices()), new UnitOfWork(db), []);
+        var mapping = new Mapster.TypeAdapterConfig();
+        mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
+        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices(), mapping), new UnitOfWork(db), []);
         var page = await recycle.List(new());
         Assert.Equal(tag.Id, Assert.Single(page.Data).EntityId);
+        Assert.Equal(nameof(Tag), Assert.Single(page.Data).EntityType);
+        Assert.Equal(tag.DeletedAt!.Value, Assert.Single(page.Data).DeletedOn);
         await recycle.Restore(tag.Id);
         Assert.Null(tag.DeletedBy);
         Assert.Single(await db.Tags().ToListAsync());
@@ -91,7 +95,9 @@ public class PersistenceRegressionTests
         var tag = new Tag { Name = "Active", Color = "blue" };
         db.Add(tag);
         await db.SaveChangesAsync();
-        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices()), new UnitOfWork(db), []);
+        var mapping = new Mapster.TypeAdapterConfig();
+        mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
+        var recycle = new RecycleBinService<Tag, Guid>(new RecycleBinStore<Tag, Guid>(db, new PaginationServices(), mapping), new UnitOfWork(db), []);
         await Assert.ThrowsAsync<NEXT.Application.Exceptions.NotFoundException>(() => recycle.HardDelete(tag.Id));
         Assert.Single(await db.Set<Tag>().ToListAsync());
     }

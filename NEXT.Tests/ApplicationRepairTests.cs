@@ -223,8 +223,9 @@ public sealed class ApplicationRepairTests
         Assert.Equal(database.Product, (await handler.Handle(new(database.Product), default)).Id);
         Assert.Equal(1, counter.Reads);
         counter.Reads = 0;
-        var source = new ReferenceSource<Product>("Products", products, executor,
-            x => new ReferenceOptionDto(x.Id.ToString(), x.Name));
+        var mapping = new TypeAdapterConfig();
+        mapping.Scan(typeof(ApplicationRegistrationExtensions).Assembly);
+        var source = new ReferenceSource<Product>("Products", products, executor, mapping);
         Assert.Single(await source.GetAsync(default));
         Assert.Equal(1, counter.Reads);
         counter.Reads = 0;
