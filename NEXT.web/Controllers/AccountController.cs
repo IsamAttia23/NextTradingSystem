@@ -7,12 +7,29 @@ using Microsoft.Extensions.Localization;
 
 using NEXT.web.Localization;
 using NEXT.Application.DTOs.Authentication;
+using System.Security.Claims;
+using MediatR;
+using NEXT.Application.DTOs.ApplicationUsers;
+using NEXT.Application.Features.ApplicationUsers.Commands;
+using NEXT.Application.Features.ApplicationUsers.Queries;
+using NEXT.web.Services;
 
 namespace NEXT.web.Controllers;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class AccountController(IAccountAccess access, IStringLocalizer<UiText> text) : Controller
+public sealed class AccountController(IAccountAccess access, IStringLocalizer<UiText> text,
+    ISender sender, UsersPresenter presenter) : Controller
 {
+    [Authorize, HttpGet]
+    public async Task<IActionResult> Profile(CancellationToken ct) => View(
+        await presenter.FormAsync(
+            await sender.Send(new GetApplicationUserByIdQuery(User.FindFirstValue(ClaimTypes.NameIdentifier)!), ct),
+            (_, _) => Url.Action(nameof(Profile))!, ct, profileOnly: true));
+
+    [Authorize, HttpPost]
+    public Task<UserOperationResult> Profile([FromForm] UserUpdateDto input, CancellationToken ct) =>
+        sender.Send(new UpdateApplicationUserCommand("", input, ProfileOnly: true), ct);
+
     [AllowAnonymous, HttpGet]
     public IActionResult Login(string? returnUrl = null) => View(new LoginDto { ReturnUrl = returnUrl });
     [AllowAnonymous, HttpPost]

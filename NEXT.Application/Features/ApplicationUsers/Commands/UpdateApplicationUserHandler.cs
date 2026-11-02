@@ -12,20 +12,52 @@ using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed class UpdateApplicationUserHandler(IUserCommandService commands, UserDtoReader reader, UserIdentityRules rules,
-    IProfileImageProcessor images, IEntityValidator<UserUpdateDto> validator, IMapper mapper)
+public sealed class UpdateApplicationUserHandler(IUserCommandService commands, ICurrentUserService currentUser,
+    UserDtoReader reader, UserIdentityRules rules, IProfileImageProcessor images,
+    IEntityValidator<UserUpdateDto> validator, IMapper mapper, IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateApplicationUserCommand, UserOperationResult>
 {
     public async Task<UserOperationResult> Handle(UpdateApplicationUserCommand request, CancellationToken ct)
     {
-        validator.Validate(request.User);
-        var userId = RequestValidation.Identifier(request.UserId);
+        var userId = request.ProfileOnly
+            ? currentUser.UserId ?? throw new NotFoundException("Current user was not found.")
+            : RequestValidation.Identifier(request.UserId);
         var user = await reader.RequireAsync(userId, ct);
-        await rules.BranchAsync(request.User.BranchId, user.BranchId, ct);
-        await rules.UniqueAsync(request.User.UserName, request.User.Email, userId, ct);
-        var avatar = request.User.AvatarUrl is null ? user.AvatarUrl : await images.NormalizeAsync(request.User.AvatarUrl, ct);
-        mapper.Map(request.User, user);
-        user.AvatarUrl = avatar;
-        return await commands.UpdateUserAsync(user, ct);
+        // Profile requests cannot choose another account, branch, status, or role.
+        var input = request.ProfileOnly
+            ? request.User with { BranchId = user.BranchId, IsActive = user.IsActive }
+            : request.User;
+        validator.Validate(input);
+
+        var changePassword = input.NewPassword is not null;
+        if ((changePassword && (!request.ProfileOnly || string.IsNullOrEmpty(input.CurrentPassword))) ||
+            (!changePassword && !string.IsNullOrEmpty(input.CurrentPassword)))
+            RequestValidation.Fail("CurrentPassword", "ProfilePasswordPairRequired");
+
+        if (!request.ProfileOnly)
+            await rules.BranchAsync(input.BranchId, user.BranchId, ct);
+        var email = input.Email.Trim();
+        var phone = input.PhoneNumber?.Trim() ?? "";
+        await rules.UniqueAsync(input.UserName.Trim(), email, user.Id, ct);
+        var emailChanged = !string.Equals(user.Email, email, StringComparison.Ordinal);
+        var phoneChanged = !string.Equals(user.PhoneNumber ?? "", phone, StringComparison.Ordinal);
+        var avatar = input.AvatarUrl is null ? null : await images.NormalizeAsync(input.AvatarUrl, ct);
+
+        return await UserOperationTransaction.ExecuteAsync(unitOfWork, async token =>
+        {
+            mapper.Map(input with { AvatarUrl = avatar }, user);
+            var result = await commands.UpdateUserAsync(user, token);
+            if (result.Succeeded && emailChanged)
+                result = await commands.SetUserEmailAsync(user, email, token);
+            if (result.Succeeded && phoneChanged)
+                result = await commands.SetPhoneNumberAsync(user, phone, token);
+            if (result.Succeeded && changePassword)
+                result = await commands.ChangePasswordAsync(user, input.CurrentPassword!, input.NewPassword!, token);
+            return result with
+            {
+                RequiresSignIn = result.Succeeded && request.ProfileOnly &&
+                    (emailChanged || phoneChanged || changePassword)
+            };
+        }, ct);
     }
 }

@@ -38,6 +38,9 @@
     document.addEventListener("hidden.bs.modal", () => {
         for (const input of previews.keys()) release(input);
     });
+    document.addEventListener("next:navigated", () => {
+        for (const input of previews.keys()) if (!input.isConnected) release(input);
+    });
     window.addEventListener("pagehide", () => {
         for (const input of previews.keys()) release(input);
     });

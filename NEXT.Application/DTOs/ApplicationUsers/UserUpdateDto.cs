@@ -23,4 +23,13 @@ public sealed record UserUpdateDto
 
     [Required]
     public Guid BranchId { get; init; }
+
+    [StringLength(128)]
+    public string? CurrentPassword { get; init; }
+
+    [StringLength(128, MinimumLength = 10)]
+    public string? NewPassword { get; init; }
+
+    [Compare(nameof(NewPassword), ErrorMessage = "PasswordConfirmationMismatch")]
+    public string? ConfirmPassword { get; init; }
 }

@@ -5,4 +5,4 @@ using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Features.ApplicationUsers.Commands;
 
-public sealed record UpdateApplicationUserCommand(string UserId, UserUpdateDto User) : IRequest<UserOperationResult>;
+public sealed record UpdateApplicationUserCommand(string UserId, UserUpdateDto User, bool ProfileOnly = false) : IRequest<UserOperationResult>;

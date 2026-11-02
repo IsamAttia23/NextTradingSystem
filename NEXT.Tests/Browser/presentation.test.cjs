@@ -5,6 +5,71 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = name => fs.readFileSync(path.join(__dirname, '../../NEXT.web/wwwroot/js', name), 'utf8');
 
+test('Inline profile saves clear passwords and follow the sign-in redirect without opening a modal', async () => {
+    const handlers = new Map(), notices = [], navigation = [], busy = [];
+    const passwords = [{value: 'old-secret'}, {value: 'new-secret'}, {value: 'new-secret'}];
+    const form = {
+        action: '/Account/Profile', matches: () => true, reportValidity: () => true,
+        querySelectorAll: selector => selector.includes('password') ? passwords : []
+    };
+    const modalElement = {dataset: {}, addEventListener() {}};
+    const document = {
+        getElementById: id => id === 'workspaceModal' ? modalElement : {},
+        addEventListener: (event, handler) => handlers.set(event, handler)
+    };
+    vm.runInNewContext(source('site.js'), {
+        document, FormData: class {},
+        bootstrap: {Modal: {getOrCreateInstance: () => ({hide() {throw new Error('Unexpected modal');}})}},
+        window: {
+            NextHttp: {
+                setBusy: (_, value) => busy.push(value),
+                request: async () => ({ok: true, json: async () => ({
+                    notification: {message: 'Saved', kind: 'success'}, redirectUrl: '/Account/Login'
+                })})
+            },
+            NextNavigation: {navigate: async url => {navigation.push(url); return true;}},
+            NextNotifications: {show: (...args) => notices.push(args)}
+        }
+    });
+    let prevented = false;
+    await handlers.get('submit')({target: {closest: () => form}, preventDefault() {prevented = true;}});
+    assert.ok(prevented);
+    assert.deepEqual(passwords.map(input => input.value), ['', '', '']);
+    assert.deepEqual(navigation, ['/Account/Login']);
+    assert.deepEqual(notices, [['Saved', 'success']]);
+    assert.deepEqual(busy, [true, false]);
+});
+
+test('Inline profile errors stay in the form and do not refresh the page', async () => {
+    const handlers = new Map(), notices = [], busy = [];
+    const panel = {hidden: true, focus() {this.focused = true;}};
+    const form = {
+        action: '/Account/Profile', matches: () => true, reportValidity: () => true,
+        querySelectorAll: () => [], querySelector: () => panel
+    };
+    const document = {
+        getElementById: id => id === 'workspaceModal' ? {dataset: {}, addEventListener() {}} : {},
+        addEventListener: (event, handler) => handlers.set(event, handler)
+    };
+    vm.runInNewContext(source('site.js'), {
+        document, FormData: class {}, bootstrap: {Modal: {getOrCreateInstance: () => ({})}},
+        window: {
+            NextHttp: {
+                setBusy: (_, value) => busy.push(value), request: async () => ({ok: false}),
+                problemMessage: async () => 'Password mismatch'
+            },
+            NextNavigation: {refresh() {throw new Error('Unexpected refresh');}},
+            NextNotifications: {show: (...args) => notices.push(args)}
+        }
+    });
+    await handlers.get('submit')({target: {closest: () => form}, preventDefault() {}});
+    assert.equal(panel.hidden, false);
+    assert.equal(panel.focused, true);
+    assert.equal(panel.textContent, 'Password mismatch');
+    assert.deepEqual(notices, [['Password mismatch', 'error']]);
+    assert.deepEqual(busy, [true, false]);
+});
+
 test('HTTP requests keep caller headers and include the Ajax contract', async () => {
     let actual;
     const window = {};

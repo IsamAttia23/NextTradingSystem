@@ -483,4 +483,14 @@
 <data name="ExpiryThrough" xml:space="preserve"><value>الصلاحية إلى تاريخ</value></data>
   <data name="RoleAssignmentFailed" xml:space="preserve"><value>تم حفظ المستخدم، لكن فشل إسناد الدور. يمكنك إسناده من قائمة المستخدمين.</value></data>
   <data name="UserHasNoRole" xml:space="preserve"><value>هذا المستخدم ليس لديه دور.</value></data>
+<data name="MyProfile" xml:space="preserve"><value>ملفي الشخصي</value></data>
+<data name="AccountSettings" xml:space="preserve"><value>إعدادات الحساب</value></data>
+<data name="ProfileDescription" xml:space="preserve"><value>حدّث بيانات حسابك وصورتك الشخصية من نموذج واحد.</value></data>
+<data name="CurrentPassword" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
+<data name="NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+<data name="ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+<data name="PasswordConfirmationMismatch" xml:space="preserve"><value>تأكيد كلمة المرور لا يطابق كلمة المرور الجديدة.</value></data>
+<data name="ProfilePasswordPairRequired" xml:space="preserve"><value>لتغيير كلمة المرور، أدخل كلمة المرور الحالية والجديدة من صفحة ملفك الشخصي.</value></data>
+<data name="ProfilePasswordHint" xml:space="preserve"><value>اترك حقول كلمة المرور فارغة للاحتفاظ بها. عند تغيير البريد أو الهاتف أو كلمة المرور ستحتاج إلى تسجيل الدخول مجددًا.</value></data>
+<data name="ProfileSavedSignInAgain" xml:space="preserve"><value>تم حفظ التعديلات. يرجى تسجيل الدخول مجددًا.</value></data>
 </root>

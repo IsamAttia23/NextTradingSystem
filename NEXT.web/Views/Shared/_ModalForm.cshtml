@@ -1,5 +1,8 @@
 @model ModalForm
-<form action="@Model.Action" method="post" enctype="multipart/form-data" data-modal-form data-title="@L[Model.Title]">
+<form action="@Model.Action" method="post" enctype="multipart/form-data"
+      data-modal-form="@(Model.Inline ? null : "true")"
+      data-profile-form="@(Model.Inline ? "true" : null)"
+      data-native-navigation="@(Model.Inline ? "true" : null)" data-title="@L[Model.Title]">
     @Html.AntiForgeryToken()
     @if (Model.Message is not null) { <p class="form-hint @(Model.Dangerous ? "danger-note" : "")">@L[Model.Message]</p> }
     <div class="alert alert-danger" data-form-errors role="alert" tabindex="-1" hidden></div>
@@ -30,5 +33,5 @@
         }
         </div>
     }
-    <div class="modal-form-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button><button type="submit" class="btn @(Model.Dangerous ? "btn-danger" : "btn-primary")">@L[Model.Submit]</button></div>
+    <div class="modal-form-footer">@if (!Model.Inline) { <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button> }<button type="submit" class="btn @(Model.Dangerous ? "btn-danger" : "btn-primary")">@L[Model.Submit]</button></div>
 </form>
