@@ -40,10 +40,12 @@ public sealed class InfrastructureRepairTests
         var form = await client.GetStringAsync("/Users/Create");
         Guid branch;
         await using (var scope = app.Services.CreateAsyncScope())
+        {
             branch = await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Branches.Select(x => x.Id).FirstAsync();
+        }
         var response = await WorkspaceUiTests.Post(client, "/Users/Create", WorkspaceUiTests.Token(form),
-            ("FullName", "Role warning user"), ("UserName", "no-role-user"), ("Email", "role-warning@example.test"),
-            ("Password", "Test-only!2026"), ("BranchId", branch.ToString()), ("Role", "MissingRole"), ("IsActive", "true"));
+                    ("FullName", "Role warning user"), ("UserName", "no-role-user"), ("Email", "role-warning@example.test"),
+                    ("Password", "Test-only!2026"), ("BranchId", branch.ToString()), ("Role", "MissingRole"), ("IsActive", "true"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("warning", await response.Content.ReadAsStringAsync());
         var html = await client.GetStringAsync("/Users");
@@ -72,14 +74,21 @@ public sealed class InfrastructureRepairTests
         canceled.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processor.NormalizeAsync(input, canceled.Token));
         var outputs = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => processor.NormalizeAsync(input)));
-        Assert.All(outputs, output => { using var decoded = new MagickImage(output); Assert.Equal(48U, decoded.Width); });
+        Assert.All(outputs, output => {
+            using var decoded = new MagickImage(output);
+            Assert.Equal(48U, decoded.Width);
+        });
     }
 
     [Fact]
     public void RelatedRecordValuesRemainRawAndQuantitiesKeepPlainFormatAcrossCultures()
     {
         var record = new RelatedRecordDto(Guid.NewGuid(), new Dictionary<string, object?>
-        { ["Quantity"] = 1234.5m, ["IsActive"] = false, ["Amount"] = 1234.5m });
+        {
+            ["Quantity"] = 1234.5m,
+            ["IsActive"] = false,
+            ["Amount"] = 1234.5m
+        });
         var before = CultureInfo.CurrentCulture;
         try
         {
@@ -94,7 +103,10 @@ public sealed class InfrastructureRepairTests
             Assert.Equal("Inactive", german[1].Value);
             Assert.True(german[1].TranslateValue);
         }
-        finally { CultureInfo.CurrentCulture = before; }
+        finally
+        {
+            CultureInfo.CurrentCulture = before;
+        }
     }
 
     [PostgresFact]
@@ -107,23 +119,39 @@ public sealed class InfrastructureRepairTests
             CREATE TRIGGER reject_audit BEFORE INSERT ON "AuditLogs" FOR EACH ROW EXECUTE FUNCTION reject_audit();
             """);
         foreach (var external in new[] { false, true })
+        {
             foreach (var sync in new[] { false, true })
+            {
                 foreach (var accept in new[] { false, true })
                 {
                     await using var db = fixture.NewContext();
                     await using var transaction = external ? await db.Database.BeginTransactionAsync() : null;
-                    var product = new Product { Name = $"Rejected-{external}-{sync}-{accept}" };
+                    var product = new Product
+                    {
+                        Name = $"Rejected-{external}-{sync}-{accept}"
+                    };
                     db.Add(product);
-                    if (sync) Assert.Throws<DbUpdateException>(() => db.SaveChanges(accept));
-                    else await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(accept));
+                    if (sync)
+                    {
+                        Assert.Throws<DbUpdateException>(() => db.SaveChanges(accept));
+                    }
+                    else
+                    {
+                        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(accept));
+                    }
                     Assert.Equal(EntityState.Added, db.Entry(product).State);
                     Assert.Empty(product.RowVersion);
                     Assert.Empty(db.ChangeTracker.Entries<AuditLog>());
-                    if (transaction is not null) await transaction.CommitAsync(); // A handled failure cannot leave half the save committed.
+                    if (transaction is not null)
+                    {
+                        await transaction.CommitAsync(); // A handled failure cannot leave half the save committed.
+                    }
                     await using var verification = fixture.NewContext();
                     Assert.False(await verification.Products.AnyAsync(x => x.Id == product.Id));
                     Assert.False(await verification.AuditLogs.AnyAsync(x => x.EntityId == product.Id));
                 }
+            }
+        }
     }
 
     [PostgresFact]
@@ -133,7 +161,10 @@ public sealed class InfrastructureRepairTests
         foreach (var sync in new[] { false, true })
         {
             await using var db = fixture.NewContext();
-            var product = new Product { Name = "Save false " + sync };
+            var product = new Product
+            {
+                Name = "Save false " + sync
+            };
             db.Add(product);
             var affected = sync ? db.SaveChanges(false) : await db.SaveChangesAsync(false);
             Assert.Equal(2, affected);
@@ -158,7 +189,11 @@ public sealed class InfrastructureRepairTests
             branch.Name = "Outer survives";
             await Assert.ThrowsAsync<InvalidOperationException>(() => unit.ExecuteInTransactionAsync(async token =>
             {
-                fixture.Db.Add(new Tag { Name = "Nested rollback", Color = "red" });
+                fixture.Db.Add(new Tag
+                {
+                    Name = "Nested rollback",
+                    Color = "red"
+                });
                 await fixture.Db.SaveChangesAsync(token);
                 throw new InvalidOperationException("Inner failure");
             }, ct));
@@ -192,13 +227,29 @@ public sealed class InfrastructureRepairTests
         var services = scope.ServiceProvider;
         var manager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var db = services.GetRequiredService<NEXTDbContext>();
-        var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = "reserved", Email = "reserved@example.test", FullName = "Reserved", IsActive = true, BranchId = fixture.Branch };
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "reserved",
+            Email = "reserved@example.test",
+            FullName = "Reserved",
+            IsActive = true,
+            BranchId = fixture.Branch
+        };
         Assert.True((await manager.CreateAsync(user, "Test-only!2026")).Succeeded);
         var reader = services.GetRequiredService<IUserQueryService>();
         var commands = services.GetRequiredService<IUserCommandService>();
         Assert.True((await commands.DeleteUserAsync(user)).Succeeded);
         Assert.True(await reader.IsEmailTakenAsync("reserved@example.test"));
-        var duplicate = new ApplicationUser { Id = Guid.NewGuid(), UserName = "different", Email = user.Email, FullName = "Duplicate", IsActive = true, BranchId = fixture.Branch };
+        var duplicate = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "different",
+            Email = user.Email,
+            FullName = "Duplicate",
+            IsActive = true,
+            BranchId = fixture.Branch
+        };
         await Assert.ThrowsAsync<ConflictException>(() => manager.CreateAsync(duplicate, "Test-only!2026"));
         db.ChangeTracker.Clear();
         // This is a fixture-owned database; verify release after actual row removal without changing production deletion policy.
@@ -211,7 +262,16 @@ public sealed class InfrastructureRepairTests
     public async Task ConcurrentEmailChangesCannotCreateDuplicates()
     {
         await using var fixture = await PostgresInventoryTests.Database.Create();
-        var users = Enumerable.Range(0, 2).Select(i => new ApplicationUser { Id = Guid.NewGuid(), UserName = "race" + i, NormalizedUserName = "RACE" + i, Email = $"race{i}@example.test", NormalizedEmail = $"RACE{i}@EXAMPLE.TEST", FullName = "Race", BranchId = fixture.Branch }).ToArray();
+        var users = Enumerable.Range(0, 2).Select(i => new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "race" + i,
+            NormalizedUserName = "RACE" + i,
+            Email = $"race{i}@example.test",
+            NormalizedEmail = $"RACE{i}@EXAMPLE.TEST",
+            FullName = "Race",
+            BranchId = fixture.Branch
+        }).ToArray();
         fixture.Db.AddRange(users);
         await fixture.Db.SaveChangesAsync();
         async Task<bool> Change(Guid id)
@@ -220,8 +280,15 @@ public sealed class InfrastructureRepairTests
             var user = await db.Users.SingleAsync(x => x.Id == id);
             user.Email = "shared@example.test";
             user.NormalizedEmail = "SHARED@EXAMPLE.TEST";
-            try { await db.SaveChangesAsync(); return true; }
-            catch (ConflictException) { return false; }
+            try
+            {
+                await db.SaveChangesAsync();
+                return true;
+            }
+            catch (ConflictException)
+            {
+                return false;
+            }
         }
         var results = await Task.WhenAll(users.Select(x => Change(x.Id)));
         Assert.Single(results, x => x);
@@ -237,9 +304,18 @@ public sealed class InfrastructureRepairTests
             Assert.False(fixture.Db.Database.HasPendingModelChanges());
             Assert.Empty(await fixture.Db.Database.GetPendingMigrationsAsync());
             Assert.True(await fixture.Db.Database.SqlQueryRaw<bool>("SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'EmailIndex' AND indexdef LIKE 'CREATE UNIQUE INDEX%') AS \"Value\"").SingleAsync());
-            var tag = new Tag { Name = "Migration tag", Color = "blue" };
+            var tag = new Tag
+            {
+                Name = "Migration tag",
+                Color = "blue"
+            };
             fixture.Db.Add(tag);
-            var supplier = new Supplier { Name = "Migrated supplier", AvatarUrl = [1, 2, 3], Tag = tag };
+            var supplier = new Supplier
+            {
+                Name = "Migrated supplier",
+                AvatarUrl = [1, 2, 3],
+                Tag = tag
+            };
             fixture.Db.Add(supplier);
             await fixture.Db.SaveChangesAsync();
             Assert.Equal(new byte[] { 1, 2, 3 }, (await fixture.Db.Suppliers.AsNoTracking().SingleAsync()).AvatarUrl);
@@ -259,7 +335,11 @@ public sealed class InfrastructureRepairTests
         Assert.True(await queries.IsUserNameTakenAsync("ui-admin"));
         Assert.True(await queries.IsEmailTakenAsync("ui-admin@example.test"));
         Assert.Equal(2, counter.Sql.Count);
-        Assert.All(counter.Sql, sql => { Assert.Contains("EXISTS", sql); Assert.DoesNotContain("AvatarUrl", sql); Assert.DoesNotContain("PasswordHash", sql); });
+        Assert.All(counter.Sql, sql => {
+            Assert.Contains("EXISTS", sql);
+            Assert.DoesNotContain("AvatarUrl", sql);
+            Assert.DoesNotContain("PasswordHash", sql);
+        });
     }
 
     [PostgresFact]
@@ -270,7 +350,12 @@ public sealed class InfrastructureRepairTests
         var ids = new List<Guid>();
         for (var index = 0; index < 60; index++)
         {
-            var category = new Category { Id = Guid.NewGuid(), Name = "Tree " + index, ParentId = parent };
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = "Tree " + index,
+                ParentId = parent
+            };
             parent = category.Id;
             ids.Add(category.Id);
             fixture.Db.Add(category);
@@ -292,7 +377,11 @@ public sealed class InfrastructureRepairTests
     public async Task RecycleHandlersShareOneTransactionAndRollBackTheirWrites()
     {
         await using var fixture = await PostgresInventoryTests.Database.Create();
-        var tag = new Tag { Name = "Deleted hook", Color = "red" };
+        var tag = new Tag
+        {
+            Name = "Deleted hook",
+            Color = "red"
+        };
         fixture.Db.Add(tag);
         await fixture.Db.SaveChangesAsync();
         fixture.Db.Remove(tag);
@@ -313,7 +402,10 @@ public sealed class InfrastructureRepairTests
         await using var fixture = await PostgresInventoryTests.Database.Create();
         using var cancellation = new CancellationTokenSource();
         await using var db = fixture.NewContext(new CancelAudit(cancellation));
-        var product = new Product { Name = "Canceled audit" };
+        var product = new Product
+        {
+            Name = "Canceled audit"
+        };
         db.Add(product);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => db.SaveChangesAsync(cancellation.Token));
         Assert.Equal(EntityState.Added, db.Entry(product).State);
@@ -330,7 +422,10 @@ public sealed class InfrastructureRepairTests
         var error = await Assert.ThrowsAsync<DependencyUnavailableException>(() => new QueryExecutor().FirstOrDefaultAsync(db.Products));
         Assert.NotNull(error.InnerException);
         var cause = error.InnerException;
-        while (cause.InnerException is not null) cause = cause.InnerException;
+        while (cause.InnerException is not null)
+        {
+            cause = cause.InnerException;
+        }
         Assert.IsType<TimeoutException>(cause);
         await Assert.ThrowsAsync<DependencyUnavailableException>(() => new ProductRepository(db).CountAsync());
     }
@@ -368,7 +463,13 @@ public sealed class InfrastructureRepairTests
     public async Task AuditFailureRestoresTemporaryGeneratedKeysAndCanBeRetriedExplicitly()
     {
         await using var fixture = await PostgresInventoryTests.Database.Create();
-        var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = "temporary-key", FullName = "Temporary key", BranchId = fixture.Branch };
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "temporary-key",
+            FullName = "Temporary key",
+            BranchId = fixture.Branch
+        };
         fixture.Db.Add(user);
         await fixture.Db.SaveChangesAsync();
         await fixture.Db.Database.ExecuteSqlRawAsync("""
@@ -376,8 +477,16 @@ public sealed class InfrastructureRepairTests
             BEGIN RAISE EXCEPTION 'Injected audit failure'; END $$;
             CREATE TRIGGER reject_audit BEFORE INSERT ON "AuditLogs" FOR EACH ROW EXECUTE FUNCTION reject_audit();
             """);
-        var claim = new IdentityUserClaim<Guid> { UserId = user.Id, ClaimType = "fixture", ClaimValue = "value" };
-        var product = new Product { Name = "Generated key rollback" };
+        var claim = new IdentityUserClaim<Guid>
+        {
+            UserId = user.Id,
+            ClaimType = "fixture",
+            ClaimValue = "value"
+        };
+        var product = new Product
+        {
+            Name = "Generated key rollback"
+        };
         fixture.Db.AddRange(claim, product);
         Assert.True(fixture.Db.Entry(claim).Property(x => x.Id).IsTemporary);
         await Assert.ThrowsAsync<DbUpdateException>(() => fixture.Db.SaveChangesAsync());
@@ -413,7 +522,10 @@ public sealed class InfrastructureRepairTests
         public string EntityKey => nameof(Tag);
         public async Task OnRestoreAsync(Tag entity, CancellationToken ct = default)
         {
-            db.Add(new Branch { Name = "Hook write" });
+            db.Add(new Branch
+            {
+                Name = "Hook write"
+            });
             await db.SaveChangesAsync(ct);
             throw new InvalidOperationException("Hook failure");
         }
@@ -435,6 +547,9 @@ public sealed class InfrastructureRepairTests
         public List<string> Sql { get; } = [];
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
             InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
-        { Sql.Add(command.CommandText); return ValueTask.FromResult(result); }
+        {
+            Sql.Add(command.CommandText);
+            return ValueTask.FromResult(result);
+        }
     }
 }

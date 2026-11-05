@@ -21,9 +21,14 @@ public sealed class DeleteEntityCommandHandler<TEntity, TDto>(
         var reason = DeletionReason.Require(request.Reason);
         var entity = await repository.GetByIdAsync(request.Id, ct) ?? throw new NotFoundException("Record was not found.");
         if (await repository.HasActiveRelationsAsync(entity, ct))
+        {
             throw new RecordRelationshipException();
+        }
         using var audit = deletionAudit?.Begin(reason);
-        if (entity is IIsDeletableEntity deleted) deleted.DeletionReason = reason;
+        if (entity is IIsDeletableEntity deleted)
+        {
+            deleted.DeletionReason = reason;
+        }
         await repository.DeleteAsync(entity);
         await unitOfWork.SaveChangesAsync(ct);
     }

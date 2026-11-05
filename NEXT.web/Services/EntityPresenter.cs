@@ -20,10 +20,13 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
             .Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "IsActive" or "Symbol" or "Color").Take(5).ToArray();
         var tagged = typeof(ITaggedRecordDto).IsAssignableFrom(typeof(TDto));
         var labels = columns.Select(x => x.Name == "IsActive" ? "Status" : x.Name).ToList();
-        if (tagged) labels.Add("TagId");
+        if (tagged)
+        {
+            labels.Add("TagId");
+        }
         return await tables.BuildAsync(title, labels, pagedList, query,
-            item => Row(item, columns, tagged, route, query),
-            SortFields(query).Select(name => new FieldOption(name, name)).ToArray(), ct, new("Create", route("Create", null)));
+                    item => Row(item, columns, tagged, route, query),
+                    SortFields(query).Select(name => new FieldOption(name, name)).ToArray(), ct, new("Create", route("Create", null)));
     }
 
     private static TableRow Row(TDto item, PropertyInfo[] columns, bool tagged,
@@ -40,7 +43,10 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
         var details = await fields.DetailsAsync(item, ct);
         var activity = await sender.Send(new GetEntityActivityQuery<TDto>(id, kind, page), ct);
         return new(section, Name(item), details, Identity(item, route), Badge(item), activity,
-            route("Edit", new { id }), route("Index", null));
+            route("Edit", new
+            {
+                id
+            }), route("Index", null));
     }
 
     public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct)
@@ -48,7 +54,9 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
         TInput input = id is { } key ? await FindAsync(key, ct) : new TInput();
         var formFields = (await fields.FormAsync(input, ct, id)).ToList();
         if (id.HasValue && input is IVersionedRecordDto versioned)
+        {
             formFields.Add(new("RowVersion", "RowVersion", Convert.ToBase64String(versioned.RowVersion), "hidden"));
+        }
         return new(title, action, formFields);
     }
 
@@ -62,7 +70,10 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
 
     private static string Name(TDto item) => typeof(TInput).GetProperty("Name")?.GetValue(item)?.ToString() ?? typeof(TDto).Name;
     private static RecordIdentityDto Identity(TDto item, Func<string, object?, string> route) =>
-        new(Name(item), item is IProfileImageInput { AvatarUrl.Length: > 0 } ? route("Avatar", new { id = item.Id }) : null);
+        new(Name(item), item is IProfileImageInput { AvatarUrl.Length: > 0 } ? route("Avatar", new
+        {
+            id = item.Id
+        }) : null);
     private static ColorBadgeDto? Badge(TDto item) => item switch
     {
         TagDto tag => new(tag.Name, tag.Color),

@@ -18,9 +18,15 @@ public sealed class SetApplicationUserEmailHandler(IUserCommandService users, IU
     public async Task<UserOperationResult> Handle(SetApplicationUserEmailCommand request, CancellationToken ct)
     {
         var email = RequestValidation.Text(request.Email, "Email");
-        if (!new EmailAddressAttribute().IsValid(email)) RequestValidation.Fail("Email", "Enter a valid email address.");
+        if (!new EmailAddressAttribute().IsValid(email))
+        {
+            RequestValidation.Fail("Email", "Enter a valid email address.");
+        }
         var user = await reader.RequireAsync(request.UserId, ct);
-        if (await queries.IsEmailTakenAsync(email, user.Id.ToString(), ct)) RequestValidation.Fail("Email", "This email address is already in use.");
+        if (await queries.IsEmailTakenAsync(email, user.Id.ToString(), ct))
+        {
+            RequestValidation.Fail("Email", "This email address is already in use.");
+        }
         return await users.SetUserEmailAsync(user, email, ct);
     }
 }

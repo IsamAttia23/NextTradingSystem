@@ -33,7 +33,9 @@ public sealed class PostgresFactAttribute : FactAttribute
     public PostgresFactAttribute()
     {
         if (Environment.GetEnvironmentVariable("NEXT_RUN_POSTGRES_TESTS") != "1")
+        {
             Skip = "Set NEXT_RUN_POSTGRES_TESTS=1 and provide a local PostgreSQL connection with CREATE DATABASE permission.";
+        }
     }
 }
 
@@ -63,7 +65,8 @@ public sealed class PostgresInventoryTests
         await using var f = await Database.Create();
         var service = f.Service();
         await service.ReceiveAsync(f.Receipt(10, 4));
-        var destination = f.Receipt(5, 10); destination.WarehouseId = f.Target;
+        var destination = f.Receipt(5, 10);
+        destination.WarehouseId = f.Target;
         await service.ReceiveAsync(destination);
         var transfer = f.Transfer(5);
         await service.TransferAsync(transfer);
@@ -87,12 +90,15 @@ public sealed class PostgresInventoryTests
         await using var f = await Database.Create();
         var service = f.Service();
         await service.ReceiveAsync(f.Receipt(10, 4));
-        var stock = await f.Db.Stocks.SingleAsync(); stock.ReservedQuantity = 8;
+        var stock = await f.Db.Stocks.SingleAsync();
+        stock.ReservedQuantity = 8;
         await f.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<AppValidationException>(() => service.TransferAsync(f.Transfer(3)));
-        var same = f.Transfer(1); same.DestinationWarehouseId = f.Source;
+        var same = f.Transfer(1);
+        same.DestinationWarehouseId = f.Source;
         await Assert.ThrowsAsync<AppValidationException>(() => service.TransferAsync(same));
-        var target = await f.Db.Warehouses.SingleAsync(x => x.Id == f.Target); target.IsActive = false;
+        var target = await f.Db.Warehouses.SingleAsync(x => x.Id == f.Target);
+        target.IsActive = false;
         await f.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<AppValidationException>(() => service.TransferAsync(f.Transfer(1)));
         Assert.Single(await f.Db.StockMovements.ToListAsync());
@@ -104,14 +110,19 @@ public sealed class PostgresInventoryTests
     {
         await using var f = await Database.Create(expiry: true);
         var service = f.Service();
-        var receipt = f.Receipt(10, 4); receipt.BatchNumber = "LOT-1"; receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
+        var receipt = f.Receipt(10, 4);
+        receipt.BatchNumber = "LOT-1";
+        receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
         await service.ReceiveAsync(receipt);
-        var transfer = f.Transfer(4); transfer.BatchNumber = "LOT-1";
+        var transfer = f.Transfer(4);
+        transfer.BatchNumber = "LOT-1";
         await service.TransferAsync(transfer);
         f.Db.ChangeTracker.Clear();
         Assert.Equal(6m, (await f.Db.Batches.SingleAsync(x => x.WarehouseId == f.Source)).Quantity);
         Assert.Equal(4m, (await f.Db.Batches.SingleAsync(x => x.WarehouseId == f.Target)).Quantity);
-        var mismatch = f.Receipt(1, 20); mismatch.BatchNumber = "LOT-1"; mismatch.ExpiryDate = receipt.ExpiryDate.Value.AddDays(1);
+        var mismatch = f.Receipt(1, 20);
+        mismatch.BatchNumber = "LOT-1";
+        mismatch.ExpiryDate = receipt.ExpiryDate.Value.AddDays(1);
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(mismatch));
         Assert.Equal(10m, await f.Db.Stocks.SumAsync(x => x.Quantity));
         Assert.Equal(10m, await f.Db.Batches.SumAsync(x => x.Quantity));
@@ -123,14 +134,17 @@ public sealed class PostgresInventoryTests
     {
         await using var f = await Database.Create(expiry: true);
         var service = f.Service();
-        var receipt = f.Receipt(10, 4); receipt.BatchNumber = "LOT-1"; receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
+        var receipt = f.Receipt(10, 4);
+        receipt.BatchNumber = "LOT-1";
+        receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
         await service.ReceiveAsync(receipt);
         await f.Db.Database.ExecuteSqlRawAsync("""
             CREATE FUNCTION reject_transfer() RETURNS trigger LANGUAGE plpgsql AS $$
             BEGIN IF NEW."ReferenceType" = 'Transfer' THEN RAISE EXCEPTION 'Test ledger failure'; END IF; RETURN NEW; END $$;
             CREATE TRIGGER reject_transfer BEFORE INSERT ON "StockMovements" FOR EACH ROW EXECUTE FUNCTION reject_transfer();
             """);
-        var transfer = f.Transfer(4); transfer.BatchNumber = "LOT-1";
+        var transfer = f.Transfer(4);
+        transfer.BatchNumber = "LOT-1";
         await Assert.ThrowsAsync<DbUpdateException>(() => service.TransferAsync(transfer));
         Assert.Equal(10m, (await f.Db.Stocks.SingleAsync()).Quantity);
         Assert.Equal(10m, (await f.Db.Batches.SingleAsync()).Quantity);
@@ -152,9 +166,19 @@ public sealed class PostgresInventoryTests
         Assert.Equal(3, await f.Db.StockMovements.CountAsync());
         static async Task<bool> Attempt(InventoryService service, TransferStockDto input)
         {
-            try { await service.TransferAsync(input); return true; }
-            catch (ConflictException) { return false; }
-            catch (AppValidationException) { return false; }
+            try
+            {
+                await service.TransferAsync(input);
+                return true;
+            }
+            catch (ConflictException)
+            {
+                return false;
+            }
+            catch (AppValidationException)
+            {
+                return false;
+            }
         }
     }
 
@@ -164,11 +188,15 @@ public sealed class PostgresInventoryTests
         await using var f = await Database.Create(expiry: true);
         var service = f.Service();
         foreach (var quantity in new[] { 0m, -1m, 1.0001m })
+        {
             await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(quantity, 4)));
+        }
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, -1)));
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, 1.001m)));
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, 4)));
-        var expired = f.Receipt(1, 4); expired.BatchNumber = "OLD"; expired.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+        var expired = f.Receipt(1, 4);
+        expired.BatchNumber = "OLD";
+        expired.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(expired));
         Assert.Empty(await f.Db.Stocks.ToListAsync());
         Assert.Empty(await f.Db.StockMovements.ToListAsync());
@@ -178,7 +206,13 @@ public sealed class PostgresInventoryTests
     public async Task SharedCqrsPersistsDtosValidatesReferencesAndProtectsBalancesAndHierarchy()
     {
         await using var f = await Database.Create();
-        var tag = new Tag { Name = "Retail", Color = "#ff0000" }; f.Db.Tags.Add(tag); await f.Db.SaveChangesAsync();
+        var tag = new Tag
+        {
+            Name = "Retail",
+            Color = "#ff0000"
+        };
+        f.Db.Tags.Add(tag);
+        await f.Db.SaveChangesAsync();
         var mapper = new Mapper(new TypeAdapterConfig());
         var repository = new CustomerRepository(f.Db);
         var create = new CreateEntityCommandHandler<Customer, CustomerDto, CustomerInputDto>(repository, mapper,
@@ -188,17 +222,44 @@ public sealed class PostgresInventoryTests
         var get = new GetEntityByIdQueryHandler<Customer, CustomerDto>(repository, new QueryExecutor());
         var list = new GetEntitiesQueryHandler<Customer, CustomerDto>(repository, new PaginationServices(), new DataAnnotationsEntityValidator<PaginationQuery>(), new TypeAdapterConfig());
         var delete = new DeleteEntityCommandHandler<Customer, CustomerDto>(repository, new UnitOfWork(f.Db));
-        await Assert.ThrowsAsync<AppValidationException>(() => create.Handle(new(new CustomerInputDto { Name = "No tag" }), default));
-        var customer = await create.Handle(new(new CustomerInputDto { Name = "Customer", TagId = tag.Id }), default);
-        var entity = await f.Db.Customers.SingleAsync(); entity.CurrentBalance = 99;
+        await Assert.ThrowsAsync<AppValidationException>(() => create.Handle(new(new CustomerInputDto
+        {
+            Name = "No tag"
+        }), default));
+        var customer = await create.Handle(new(new CustomerInputDto
+        {
+            Name = "Customer",
+            TagId = tag.Id
+        }), default);
+        var entity = await f.Db.Customers.SingleAsync();
+        entity.CurrentBalance = 99;
         await f.Db.SaveChangesAsync();
-        await update.Handle(new(customer.Id, new CustomerInputDto { Name = "Updated", TagId = tag.Id }, entity.RowVersion.ToArray()), default);
+        await update.Handle(new(customer.Id, new CustomerInputDto
+        {
+            Name = "Updated",
+            TagId = tag.Id
+        }, entity.RowVersion.ToArray()), default);
         Assert.Equal(99, (await get.Handle(new(customer.Id), default))!.CurrentBalance);
         Assert.Equal(1, (await list.Handle(new(new()), default)).TotalCount);
-        var parent = new Category { Name = "Parent" }; f.Db.Categories.Add(parent); await f.Db.SaveChangesAsync();
-        var child = new Category { Name = "Child", ParentId = parent.Id }; f.Db.Categories.Add(child); await f.Db.SaveChangesAsync();
+        var parent = new Category
+        {
+            Name = "Parent"
+        };
+        f.Db.Categories.Add(parent);
+        await f.Db.SaveChangesAsync();
+        var child = new Category
+        {
+            Name = "Child",
+            ParentId = parent.Id
+        };
+        f.Db.Categories.Add(child);
+        await f.Db.SaveChangesAsync();
         var rules = new CategoryRules(new KeyRepository<Category, Guid>(f.Db));
-        await Assert.ThrowsAsync<AppValidationException>(() => rules.ValidateAsync(parent.Id, new CategoryInputDto { Name = "Cycle", ParentId = child.Id }, default));
+        await Assert.ThrowsAsync<AppValidationException>(() => rules.ValidateAsync(parent.Id, new CategoryInputDto
+        {
+            Name = "Cycle",
+            ParentId = child.Id
+        }, default));
         await delete.Handle(new(customer.Id, "Test deletion reason"), default);
         await Assert.ThrowsAsync<NotFoundException>(() => get.Handle(new(customer.Id), default));
     }
@@ -223,9 +284,26 @@ public sealed class PostgresInventoryTests
         await using var scope = provider.CreateAsyncScope();
         var users = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
         var roles = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Role>>();
-        Assert.True((await roles.CreateAsync(new Role { Name = "Admin" })).Succeeded);
-        var admin = new ApplicationUser { UserName = "only-admin", Email = "admin@example.test", FullName = "Admin", IsActive = true, BranchId = f.Branch };
-        var victim = new ApplicationUser { UserName = "victim", Email = "victim@example.test", FullName = "Victim", IsActive = true, BranchId = f.Branch };
+        Assert.True((await roles.CreateAsync(new Role
+        {
+            Name = "Admin"
+        })).Succeeded);
+        var admin = new ApplicationUser
+        {
+            UserName = "only-admin",
+            Email = "admin@example.test",
+            FullName = "Admin",
+            IsActive = true,
+            BranchId = f.Branch
+        };
+        var victim = new ApplicationUser
+        {
+            UserName = "victim",
+            Email = "victim@example.test",
+            FullName = "Victim",
+            IsActive = true,
+            BranchId = f.Branch
+        };
         Assert.True((await users.CreateAsync(admin, "Test-only!2026")).Succeeded);
         Assert.True((await users.CreateAsync(victim, "Test-only!2026")).Succeeded);
         Assert.True((await users.AddToRoleAsync(admin, "Admin")).Succeeded);
@@ -244,7 +322,9 @@ public sealed class PostgresInventoryTests
         Assert.False(await scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Identity.ILoginAccessPolicy>().CanSignInAsync(victim.Id));
         f.Db.ChangeTracker.Clear();
         var deleted = await f.Db.Users.IgnoreQueryFilters().SingleAsync(x => x.Id == victim.Id);
-        Assert.NotNull(deleted.DeletedAt); Assert.False(deleted.IsActive); Assert.Equal("Inactive account", deleted.DeletionReason);
+        Assert.NotNull(deleted.DeletedAt);
+        Assert.False(deleted.IsActive);
+        Assert.Equal("Inactive account", deleted.DeletionReason);
     }
     [PostgresFact]
     public async Task ArabicHttpInventoryFormsPostDecimalsDatesAndReturnConflicts()
@@ -267,7 +347,9 @@ public sealed class PostgresInventoryTests
         f.Db.ChangeTracker.Clear();
         Assert.Equal(8m, (await f.Db.Stocks.SingleAsync(x => x.WarehouseId == f.Source)).Quantity);
         foreach (var route in new[] { "/Inventory", "/Inventory/Movements", "/Inventory/Batches" })
+        {
             Assert.Equal(System.Net.HttpStatusCode.OK, (await client.GetAsync(route)).StatusCode);
+        }
         var adminId = await f.Db.Users.Where(x => x.UserName == "ui-admin").Select(x => x.Id).SingleAsync();
         var selfDelete = "/Users/Delete/" + adminId;
         Assert.Equal(System.Net.HttpStatusCode.UnprocessableEntity, (await WorkspaceUiTests.Post(client, selfDelete, WorkspaceUiTests.Token(await client.GetStringAsync(selfDelete)))).StatusCode);
@@ -280,29 +362,107 @@ public sealed class PostgresInventoryTests
     public async Task RelatedGraphFindsInvoiceReturnsPaymentsJournalsAndStockWithoutDuplicates()
     {
         await using var f = await Database.Create();
-        var tag = new Tag { Name = "Tagged", Color = "#cc9900" }; f.Db.Add(tag); await f.Db.SaveChangesAsync();
-        var customer = new Customer { Name = "Customer", TagId = tag.Id }; var other = new Customer { Name = "Other", TagId = tag.Id };
-        var supplier = new Supplier { Name = "Supplier", TagId = tag.Id };
-        var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = "graph-user", FullName = "Graph", BranchId = f.Branch };
-        f.Db.AddRange(customer, other, supplier, user); await f.Db.SaveChangesAsync();
-        var sale = new SalesInvoice { CustomerId = customer.Id, InvoiceNumber = "SALE-LINKED", UserId = user.Id, WarehouseId = f.Source };
-        var order = new PurchaseOrder { SupplierId = supplier.Id, Number = "ORDER-LINKED", WarehouseId = f.Source };
-        f.Db.AddRange(sale, order); await f.Db.SaveChangesAsync();
-        var purchase = new PurchaseInvoice { SupplierId = supplier.Id, PurchaseOrderId = order.Id, InvoiceNumber = "BUY-LINKED", WarehouseId = f.Source };
+        var tag = new Tag
+        {
+            Name = "Tagged",
+            Color = "#cc9900"
+        };
+        f.Db.Add(tag);
+        await f.Db.SaveChangesAsync();
+        var customer = new Customer
+        {
+            Name = "Customer",
+            TagId = tag.Id
+        };
+        var other = new Customer
+        {
+            Name = "Other",
+            TagId = tag.Id
+        };
+        var supplier = new Supplier
+        {
+            Name = "Supplier",
+            TagId = tag.Id
+        };
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = "graph-user",
+            FullName = "Graph",
+            BranchId = f.Branch
+        };
+        f.Db.AddRange(customer, other, supplier, user);
+        await f.Db.SaveChangesAsync();
+        var sale = new SalesInvoice
+        {
+            CustomerId = customer.Id,
+            InvoiceNumber = "SALE-LINKED",
+            UserId = user.Id,
+            WarehouseId = f.Source
+        };
+        var order = new PurchaseOrder
+        {
+            SupplierId = supplier.Id,
+            Number = "ORDER-LINKED",
+            WarehouseId = f.Source
+        };
+        f.Db.AddRange(sale, order);
+        await f.Db.SaveChangesAsync();
+        var purchase = new PurchaseInvoice
+        {
+            SupplierId = supplier.Id,
+            PurchaseOrderId = order.Id,
+            InvoiceNumber = "BUY-LINKED",
+            WarehouseId = f.Source
+        };
         // A return with no CustomerId must still be reached through ParentInvoiceId.
-        var returned = new SalesInvoice { ParentInvoiceId = sale.Id, InvoiceNumber = "RETURN-LINKED", UserId = user.Id, WarehouseId = f.Source, InvoiceType = InvoiceType.Return };
-        f.Db.AddRange(purchase, returned); await f.Db.SaveChangesAsync();
-        var payment = new Payment { CustomerId = customer.Id, SalesInvoiceId = sale.Id, Amount = 50, PaymentNumber = "PAY-LINKED" };
-        var foreign = new Payment { CustomerId = other.Id, Amount = 99, PaymentNumber = "UNRELATED" };
-        f.Db.AddRange(payment, foreign); await f.Db.SaveChangesAsync();
-        f.Db.AddRange(new JournalEntry { EntryNumber = "JOURNAL-PAYMENT", ReferenceType = JournalReferenceType.Payment, ReferenceId = payment.Id },
-            new StockMovement { ProductId = f.Product, WarehouseId = f.Source, Quantity = 1, UnitCost = 10, ReferenceType = "SalesInvoice", ReferenceId = sale.Id });
+        var returned = new SalesInvoice
+        {
+            ParentInvoiceId = sale.Id,
+            InvoiceNumber = "RETURN-LINKED",
+            UserId = user.Id,
+            WarehouseId = f.Source,
+            InvoiceType = InvoiceType.Return
+        };
+        f.Db.AddRange(purchase, returned);
+        await f.Db.SaveChangesAsync();
+        var payment = new Payment
+        {
+            CustomerId = customer.Id,
+            SalesInvoiceId = sale.Id,
+            Amount = 50,
+            PaymentNumber = "PAY-LINKED"
+        };
+        var foreign = new Payment
+        {
+            CustomerId = other.Id,
+            Amount = 99,
+            PaymentNumber = "UNRELATED"
+        };
+        f.Db.AddRange(payment, foreign);
+        await f.Db.SaveChangesAsync();
+        f.Db.AddRange(new JournalEntry
+        {
+            EntryNumber = "JOURNAL-PAYMENT",
+            ReferenceType = JournalReferenceType.Payment,
+            ReferenceId = payment.Id
+        },
+            new StockMovement
+            {
+                ProductId = f.Product,
+                WarehouseId = f.Source,
+                Quantity = 1,
+                UnitCost = 10,
+                ReferenceType = "SalesInvoice",
+                ReferenceId = sale.Id
+            });
         await f.Db.SaveChangesAsync();
         var mapping = new Mapster.TypeAdapterConfig();
         mapping.Scan(typeof(NEXT.Application.ApplicationRegistrationExtensions).Assembly);
         var reader = new RelatedRecordsReader(f.Db, mapping);
         var result = await reader.ReadAsync<Customer>(customer.Id, "Payment", 1, default);
-        Assert.Single(result.Records); Assert.Contains(result.Records[0].Values, x => Equals(x.Value, "PAY-LINKED"));
+        Assert.Single(result.Records);
+        Assert.Contains(result.Records[0].Values, x => Equals(x.Value, "PAY-LINKED"));
         Assert.Equal(2, result.Sections.Single(x => x.Key == "SalesInvoice").Count);
         Assert.Equal(1, result.Sections.Single(x => x.Key == "JournalEntry").Count);
         Assert.Equal(1, result.Sections.Single(x => x.Key == "StockMovement").Count);
@@ -312,7 +472,12 @@ public sealed class PostgresInventoryTests
         // Server-side filters/sorting execute on PostgreSQL, not on the current page in memory.
         var customers = new CustomerRepository(f.Db);
         var filtered = customers.FindAsync(customers.BuildFilterExpression(
-            new NEXT.Application.QueryModels.CustomerQueryModel { SearchTerm = "Customer", TagId = tag.Id, IsActive = true }));
+            new NEXT.Application.QueryModels.CustomerQueryModel
+            {
+                SearchTerm = "Customer",
+                TagId = tag.Id,
+                IsActive = true
+            }));
         Assert.Equal(customer.Id, (await filtered.SingleAsync()).Id);
     }
     [PostgresFact]
@@ -334,7 +499,8 @@ public sealed class PostgresInventoryTests
     {
         await using var f = await Database.Create();
         await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: f.TestConnection);
-        using var client = WorkspaceUiTests.Client(app); await WorkspaceUiTests.Login(client, "ui-admin");
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
         var form = await client.GetStringAsync("/Roles/Create");
         Assert.Equal(System.Net.HttpStatusCode.OK, (await WorkspaceUiTests.Post(client, "/Roles/Create", WorkspaceUiTests.Token(form), ("Name", "Audit role"))).StatusCode);
         form = await client.GetStringAsync("/Permissions/Create");
@@ -359,15 +525,38 @@ public sealed class PostgresInventoryTests
     public async Task RepositoryExpressionsUseProductRangesAndGeneralStockSortingOnPostgres()
     {
         await using var f = await Database.Create();
-        var product = await f.Db.Products.SingleAsync(); product.CostPrice = 10; product.RetailPrice = 25; product.MinStock = 5; product.MaxStock = 100; product.HasExpiry = true;
-        f.Db.Stocks.Add(new Stock { ProductId = f.Product, WarehouseId = f.Source, Quantity = 20, ReservedQuantity = 6, AverageCost = 10 }); await f.Db.SaveChangesAsync();
+        var product = await f.Db.Products.SingleAsync();
+        product.CostPrice = 10;
+        product.RetailPrice = 25;
+        product.MinStock = 5;
+        product.MaxStock = 100;
+        product.HasExpiry = true;
+        f.Db.Stocks.Add(new Stock
+        {
+            ProductId = f.Product,
+            WarehouseId = f.Source,
+            Quantity = 20,
+            ReservedQuantity = 6,
+            AverageCost = 10
+        });
+        await f.Db.SaveChangesAsync();
         var productRepository = new ProductRepository(f.Db);
-        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 9, MaxRetailPrice = 30, MinStock = 4, MaxStock = 101, HasExpiry = true }));
+        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
+        {
+            MinCostPrice = 9,
+            MaxRetailPrice = 30,
+            MinStock = 4,
+            MaxStock = 101,
+            HasExpiry = true
+        }));
         Assert.Single(await products.ToListAsync());
         var stockRepository = new StockRepository(f.Db);
         var stocks = stockRepository.ApplySorting(stockRepository.FindAsync(stockRepository.BuildFilterExpression(new PaginationQuery())), "Quantity", SortDirection.Descending);
         Assert.Equal(14, (await stocks.SingleAsync()).Quantity - (await stocks.SingleAsync()).ReservedQuantity);
-        var excluded = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel { MinCostPrice = 11 }));
+        var excluded = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
+        {
+            MinCostPrice = 11
+        }));
         Assert.Empty(await excluded.ToListAsync());
     }
     private sealed record CurrentUser(Guid? UserId) : ICurrentUserService;
@@ -385,14 +574,21 @@ public sealed class PostgresInventoryTests
     {
         private readonly string name = "next_tests_" + Guid.NewGuid().ToString("N");
         private readonly string adminConnection;
-        private string Connection => new NpgsqlConnectionStringBuilder(adminConnection) { Database = name }.ConnectionString;
+        private string Connection => new NpgsqlConnectionStringBuilder(adminConnection)
+        {
+            Database = name
+        }.ConnectionString;
         public string TestConnection => Connection;
         public Guid Branch { get; private set; }
         public NEXTDbContext Db { get; private set; } = null!;
         public Guid Product { get; private set; }
         public Guid Source { get; private set; }
         public Guid Target { get; private set; }
-        private Database(string connection) => adminConnection = new NpgsqlConnectionStringBuilder(connection) { Database = "postgres", Pooling = false }.ConnectionString;
+        private Database(string connection) => adminConnection = new NpgsqlConnectionStringBuilder(connection)
+        {
+            Database = "postgres",
+            Pooling = false
+        }.ConnectionString;
         public static async Task<Database> Create(bool expiry = false, bool migrate = false, bool preupgraded = false)
         {
             var configuration = new ConfigurationBuilder().AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629").AddEnvironmentVariables().Build();
@@ -411,30 +607,57 @@ public sealed class PostgresInventoryTests
                     {
                         await database.Db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261027072142_UseApplicationManagedConcurrencyTokens");
                         foreach (var file in new[] { "20261028_inventory_constraints.sql", "20261028_partner_profiles.sql" })
+                        {
                             await database.Db.Database.ExecuteSqlRawAsync(await File.ReadAllTextAsync(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../docs/sql", file))));
+                        }
                         var script = database.Db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().GenerateScript(
-                            "20261027072142_UseApplicationManagedConcurrencyTokens", null, Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGenerationOptions.Idempotent);
+                                                    "20261027072142_UseApplicationManagedConcurrencyTokens", null, Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGenerationOptions.Idempotent);
                         await database.Db.Database.ExecuteSqlRawAsync(script);
                         await database.Db.Database.ExecuteSqlRawAsync(script);
                     }
                     await database.Db.Database.MigrateAsync();
                 }
-                else await database.Db.Database.EnsureCreatedAsync();
-                var product = new Product { Name = "Test product", HasExpiry = expiry };
-                var source = new Warehouse { Name = "Source", Code = "S" };
-                var target = new Warehouse { Name = "Target", Code = "T" };
-                var branch = new Branch { Name = "Test branch" };
+                else
+                {
+                    await database.Db.Database.EnsureCreatedAsync();
+                }
+                var product = new Product
+                {
+                    Name = "Test product",
+                    HasExpiry = expiry
+                };
+                var source = new Warehouse
+                {
+                    Name = "Source",
+                    Code = "S"
+                };
+                var target = new Warehouse
+                {
+                    Name = "Target",
+                    Code = "T"
+                };
+                var branch = new Branch
+                {
+                    Name = "Test branch"
+                };
                 database.Db.AddRange(product, source, target, branch);
                 await database.Db.SaveChangesAsync();
                 database.Branch = branch.Id;
-                database.Product = product.Id; database.Source = source.Id; database.Target = target.Id;
+                database.Product = product.Id;
+                database.Source = source.Id;
+                database.Target = target.Id;
                 return database;
             }
-            catch { await database.DisposeAsync(); throw; }
+            catch
+            {
+                await database.DisposeAsync();
+                throw;
+            }
         }
         public NEXTDbContext NewContext(params Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor[] interceptors)
         {
-            var context = new TestContext(); var serializer = new AuditValueSerializer();
+            var context = new TestContext();
+            var serializer = new AuditValueSerializer();
             return new NEXTDbContext(new DbContextOptionsBuilder<NEXTDbContext>().UseNpgsql(Connection).AddInterceptors(interceptors).Options,
                 new TrackedChangesProcessor(context, serializer, new SoftDeleteHandler(serializer), new AuditFieldsHandler()),
                 new AuditEntryFactory(context, context, serializer));
@@ -446,14 +669,33 @@ public sealed class PostgresInventoryTests
                 new TRepository<StockMovement>(db), new TRepository<ProductBatch>(db), new UnitOfWork(db),
                 new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>());
         }
-        public ReceiveStockDto Receipt(decimal quantity, decimal cost) => new() { ProductId = Product, WarehouseId = Source, Quantity = quantity, UnitCost = cost };
-        public TransferStockDto Transfer(decimal quantity) => new() { ProductId = Product, SourceWarehouseId = Source, DestinationWarehouseId = Target, Quantity = quantity };
+        public ReceiveStockDto Receipt(decimal quantity, decimal cost) => new()
+        {
+            ProductId = Product,
+            WarehouseId = Source,
+            Quantity = quantity,
+            UnitCost = cost
+        };
+        public TransferStockDto Transfer(decimal quantity) => new()
+        {
+            ProductId = Product,
+            SourceWarehouseId = Source,
+            DestinationWarehouseId = Target,
+            Quantity = quantity
+        };
         public async ValueTask DisposeAsync()
         {
-            if (Db is not null) await Db.DisposeAsync();
-            await using var admin = new NpgsqlConnection(adminConnection); await admin.OpenAsync();
+            if (Db is not null)
+            {
+                await Db.DisposeAsync();
+            }
+            await using var admin = new NpgsqlConnection(adminConnection);
+            await admin.OpenAsync();
             // Only this fixture's generated database name is ever dropped.
-            if (!name.StartsWith("next_tests_", StringComparison.Ordinal) || name.Length != 43) throw new InvalidOperationException("Invalid test database name.");
+            if (!name.StartsWith("next_tests_", StringComparison.Ordinal) || name.Length != 43)
+            {
+                throw new InvalidOperationException("Invalid test database name.");
+            }
             await new NpgsqlCommand("DROP DATABASE IF EXISTS " + new NpgsqlCommandBuilder().QuoteIdentifier(name) + " WITH (FORCE)", admin).ExecuteNonQueryAsync();
         }
         private sealed class TestContext : ICurrentUserService, IRequestMetadataService

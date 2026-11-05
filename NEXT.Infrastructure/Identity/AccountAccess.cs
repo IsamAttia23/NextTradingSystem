@@ -16,13 +16,13 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
     private async Task<LoginOutcome> LoginCoreAsync(LoginDto input)
     {
         loginValidator.Validate(input);
-
         var user = await signIn.UserManager.FindByNameAsync(input.UserName);
         if (user is null || !await policy.CanSignInAsync(user.Id))
+        {
             return LoginOutcome.Failed;
-
+        }
         var result = await signIn.PasswordSignInAsync(user, input.Password, input.RememberMe, true);
-        return result.Succeeded ? LoginOutcome.Succeeded 
+        return result.Succeeded ? LoginOutcome.Succeeded
             : result.RequiresTwoFactor ? LoginOutcome.RequiresTwoFactor : LoginOutcome.Failed;
     }
     public Task<bool> HasChallengeAsync() => StorageErrors.ExecuteAsync(async () => await signIn.GetTwoFactorAuthenticationUserAsync() is not null);
@@ -30,15 +30,14 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
     private async Task<LoginOutcome> VerifyCoreAsync(VerifyLoginDto input)
     {
         verifyValidator.Validate(input);
-
         var user = await signIn.GetTwoFactorAuthenticationUserAsync();
         if (user is null || !await policy.CanSignInAsync(user.Id))
+        {
             return LoginOutcome.MissingChallenge;
-
+        }
         var result = input.UseRecoveryCode
             ? await signIn.TwoFactorRecoveryCodeSignInAsync(input.Code.Replace(" ", ""))
             : await signIn.TwoFactorAuthenticatorSignInAsync(input.Code.Replace(" ", "").Replace("-", ""), input.RememberMe, false);
-       
         return result.Succeeded ? LoginOutcome.Succeeded : LoginOutcome.Failed;
     }
     public Task LogoutAsync() => StorageErrors.ExecuteAsync(() => signIn.SignOutAsync());

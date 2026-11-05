@@ -16,7 +16,10 @@ public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyReposi
     public override Expression<Func<PurchaseInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as PurchaseInvoiceQueryModel ?? new PurchaseInvoiceQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as PurchaseInvoiceQueryModel ?? new PurchaseInvoiceQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<PurchaseInvoice, bool>> BuildFilterExpression(PurchaseInvoiceQueryModel query)
@@ -44,7 +47,6 @@ public sealed class PurchaseInvoiceRepository(NEXTDbContext context) : KeyReposi
             (!query.MaxPaidAmount.HasValue || entity.PaidAmount <= query.MaxPaidAmount.Value) &&
             (!query.MinRemainingAmount.HasValue || entity.RemainingAmount >= query.MinRemainingAmount.Value) &&
             (!query.MaxRemainingAmount.HasValue || entity.RemainingAmount <= query.MaxRemainingAmount.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "InvoiceNumber", "Notes");
     }
 

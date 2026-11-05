@@ -25,7 +25,10 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
             Remove(entity);
             await SaveChangesAsync(ct);
         }
-        finally { _permanentDeletions.Remove(entity); }
+        finally
+        {
+            _permanentDeletions.Remove(entity);
+        }
     }
 
     public DbSet<Permission> Permissions => Set<Permission>();
@@ -68,15 +71,12 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         // جداول ASP.NET Core Identity
         builder.Entity<IdentityUserClaim<Guid>>()
             .ToTable("UserClaims", "security");
-
-builder.Entity<IdentityUserLogin<Guid>>()
-            .ToTable("UserLogins", "security");
-
+        builder.Entity<IdentityUserLogin<Guid>>()
+                    .ToTable("UserLogins", "security");
         builder.Entity<IdentityUserToken<Guid>>()
             .ToTable("UserTokens", "security");
-
-builder.Entity<IdentityRoleClaim<Guid>>()
-            .ToTable("RoleClaims", "security");
+        builder.Entity<IdentityRoleClaim<Guid>>()
+                    .ToTable("RoleClaims", "security");
 
         // تطبيق فلاتر الحذف المنطقي
         ApplySoftDeleteQueryFilters(builder);
@@ -89,17 +89,16 @@ builder.Entity<IdentityRoleClaim<Guid>>()
             var entityClrType = entityType.ClrType;
             var isSoftDeletable = typeof(IsDeletableEntity<Guid>).IsAssignableFrom(entityClrType);
             var isUser = entityClrType == typeof(ApplicationUser);
-
             if (!isSoftDeletable && !isUser)
+            {
                 continue;
-
+            }
             var parameter = Expression.Parameter(entityClrType, "entity");
             var deletedAt = Expression.Property(parameter, nameof(IsDeletableEntity<Guid>.DeletedAt));
             var isNotDeleted = Expression.Equal(
                 deletedAt,
                 Expression.Constant(null, typeof(DateTimeOffset?)));
             var filter = Expression.Lambda(isNotDeleted, parameter);
-
             builder.Entity(entityClrType).HasQueryFilter(filter);
         }
     }
@@ -107,7 +106,10 @@ builder.Entity<IdentityRoleClaim<Guid>>()
     internal Exception? TransactionFailure { get; set; }
     internal void EnsureTransactionUsable()
     {
-        if (TransactionFailure is not null) throw new InvalidOperationException("The transaction cannot continue after a failed rollback.", TransactionFailure);
+        if (TransactionFailure is not null)
+        {
+            throw new InvalidOperationException("The transaction cannot continue after a failed rollback.", TransactionFailure);
+        }
     }
 
     public override int SaveChanges() => SaveChanges(true);
@@ -125,7 +127,10 @@ builder.Entity<IdentityRoleClaim<Guid>>()
             var result = base.SaveChanges(false);
             var written = state.Capture(); // Includes generated keys and new concurrency tokens.
             state.MarkWritten();
-            if (auditEntryFactory.AddAuditRows(this, pending) > 0) result += base.SaveChanges(false);
+            if (auditEntryFactory.AddAuditRows(this, pending) > 0)
+            {
+                result += base.SaveChanges(false);
+            }
             transaction.Complete();
             FinishSave(state, written, acceptAllChangesOnSuccess);
             return result;
@@ -133,12 +138,18 @@ builder.Entity<IdentityRoleClaim<Guid>>()
         catch (Exception error)
         {
             failure = error;
-            if (transaction?.Rollback(error) == false) TransactionFailure = error;
+            if (transaction?.Rollback(error) == false)
+            {
+                TransactionFailure = error;
+            }
             RestoreAfterFailure(state, before, error);
             StorageErrors.ThrowTranslated(error);
             throw;
         }
-        finally { transaction?.Dispose(failure); }
+        finally
+        {
+            transaction?.Dispose(failure);
+        }
     }
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => SaveChangesAsync(true, cancellationToken);
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -156,7 +167,10 @@ builder.Entity<IdentityRoleClaim<Guid>>()
             var result = await base.SaveChangesAsync(false, cancellationToken);
             var written = state.Capture();
             state.MarkWritten();
-            if (auditEntryFactory.AddAuditRows(this, pending) > 0) result += await base.SaveChangesAsync(false, cancellationToken);
+            if (auditEntryFactory.AddAuditRows(this, pending) > 0)
+            {
+                result += await base.SaveChangesAsync(false, cancellationToken);
+            }
             await transaction.CompleteAsync(cancellationToken);
             FinishSave(state, written, acceptAllChangesOnSuccess);
             return result;
@@ -164,21 +178,43 @@ builder.Entity<IdentityRoleClaim<Guid>>()
         catch (Exception error)
         {
             failure = error;
-            if (transaction is not null && !await transaction.RollbackAsync(error)) TransactionFailure = error;
+            if (transaction is not null && !await transaction.RollbackAsync(error))
+            {
+                TransactionFailure = error;
+            }
             RestoreAfterFailure(state, before, error);
             StorageErrors.ThrowTranslated(error);
             throw;
         }
-        finally { if (transaction is not null) await transaction.DisposeAsync(failure); }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync(failure);
+            }
+        }
     }
     private void FinishSave(SaveChangesStatePreserver state, IReadOnlyList<EntryStateSnapshot> written, bool accept)
     {
-        if (accept) ChangeTracker.AcceptAllChanges();
-        else state.Restore(written, removeNewEntries: false);
+        if (accept)
+        {
+            ChangeTracker.AcceptAllChanges();
+        }
+        else
+        {
+            state.Restore(written, removeNewEntries: false);
+        }
     }
     private void RestoreAfterFailure(SaveChangesStatePreserver state, IReadOnlyList<EntryStateSnapshot> before, Exception original)
     {
-        try { state.Restore(before); }
-        catch (Exception cleanup) { original.Data["TrackerRestoreFailure"] = cleanup; TransactionFailure = original; }
+        try
+        {
+            state.Restore(before);
+        }
+        catch (Exception cleanup)
+        {
+            original.Data["TrackerRestoreFailure"] = cleanup;
+            TransactionFailure = original;
+        }
     }
 }

@@ -16,11 +16,14 @@ public sealed class DeleteRoleHandler(IRoleManagementService roles, NEXT.Applica
         var role = await roles.FindByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException($"Role '{request.Id}' was not found.");
         if (role.IsSystem)
+        {
             throw new UnprocessableEntityException("System roles cannot be deleted.");
-
+        }
         using var audit = deletionAudit.Begin(NEXT.Application.Services.DeletionReason.Require(request.Reason));
         var result = await roles.DeleteAsync(role, cancellationToken);
         if (!result.Succeeded)
+        {
             throw new UnprocessableEntityException(string.Join("; ", result.Errors.Select(x => x.Description)));
+        }
     }
 }

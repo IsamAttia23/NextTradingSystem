@@ -7,9 +7,9 @@ namespace NEXT.Application.Features.RecycleBin;
 public interface IRecycleBinHandler<TEntity, TKey>
         where TKey : struct
         where TEntity : IsDeletableEntity<TKey>
-    {
-        string EntityKey { get; }
+{
+    string EntityKey { get; }
 
-        Task OnRestoreAsync(TEntity entity, CancellationToken ct = default);
-        Task OnHardDeleteAsync(TEntity entity, CancellationToken ct = default);
-    }
+    Task OnRestoreAsync(TEntity entity, CancellationToken ct = default);
+    Task OnHardDeleteAsync(TEntity entity, CancellationToken ct = default);
+}

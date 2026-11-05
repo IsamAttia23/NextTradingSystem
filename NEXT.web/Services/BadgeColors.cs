@@ -1,11 +1,18 @@
 using NEXT.web.Models;
 using System.Text.RegularExpressions;
 namespace NEXT.web.Services;
+
 public static partial class BadgeColors
 {
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")] private static partial Regex HexColor();
     public static string Safe(string value) => HexColor().IsMatch(value) ? value : value.ToLowerInvariant() switch
-    { "blue" => "#153d97", "green" => "#147550", "red" => "#b42339", "yellow" => "#f5d446", _ => "#64748b" };
+    {
+        "blue" => "#153d97",
+        "green" => "#147550",
+        "red" => "#b42339",
+        "yellow" => "#f5d446",
+        _ => "#64748b"
+    };
     public static string Foreground(string color)
     {
         var hex = Safe(color);

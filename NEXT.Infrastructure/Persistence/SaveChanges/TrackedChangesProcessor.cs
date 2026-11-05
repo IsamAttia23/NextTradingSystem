@@ -19,7 +19,6 @@ public sealed class TrackedChangesProcessor(
     internal IReadOnlyList<PendingAuditEntry> Prepare(NEXTDbContext context)
     {
         context.ChangeTracker.DetectChanges();
-
         var now = DateTimeOffset.UtcNow;
         var userId = currentUserService.UserId;
         var pending = new List<PendingAuditEntry>();
@@ -28,27 +27,25 @@ public sealed class TrackedChangesProcessor(
         var entries = context.ChangeTracker.Entries()
             .Where(IsPotentiallyChanged)
             .ToList();
-
         foreach (var entry in entries)
         {
             if (ShouldSkip(entry))
+            {
                 continue;
-
+            }
             var wasSoftDeleted = softDeleteHandler.TryHandle(context, entry, now, userId);
             auditFieldsHandler.Apply(entry, now, userId);
             ConcurrencyTokenHandler.Apply(entry);
-
             var action = GetAction(entry, wasSoftDeleted);
             if (action is null)
+            {
                 continue;
-
+            }
             var oldValues = action == AuditAction.Create
                 ? null
                 : valueSerializer.Serialize(entry, originalValues: true);
-
             pending.Add(new PendingAuditEntry(entry, action.Value, oldValues));
         }
-
         return pending;
     }
 
@@ -65,8 +62,9 @@ public sealed class TrackedChangesProcessor(
     private static AuditAction? GetAction(EntityEntry entry, bool wasSoftDeleted)
     {
         if (wasSoftDeleted)
+        {
             return AuditAction.Delete;
-
+        }
         return entry.State switch
         {
             EntityState.Added => AuditAction.Create,

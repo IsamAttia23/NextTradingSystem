@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class TagsController(ISender sender, EntityPresenter<TagDto, TagInputDto> presenter)
     : EntityController<TagDto, TagInputDto, PaginationQuery>(sender, presenter);

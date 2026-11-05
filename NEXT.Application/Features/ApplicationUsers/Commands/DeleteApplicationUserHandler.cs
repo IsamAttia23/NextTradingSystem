@@ -19,7 +19,10 @@ public sealed class DeleteApplicationUserHandler(UserDtoReader reader, IUserComm
     public async Task<UserOperationResult> Handle(DeleteApplicationUserCommand request, CancellationToken ct)
     {
         RequestValidation.Identifier(request.UserId, "UserId");
-        if (current.UserId == request.UserId) throw new UnprocessableEntityException("You cannot delete your own account.");
+        if (current.UserId == request.UserId)
+        {
+            throw new UnprocessableEntityException("You cannot delete your own account.");
+        }
         var reason = NEXT.Application.Services.DeletionReason.Require(request.Reason);
         return await UserOperationTransaction.ExecuteAsync(unitOfWork, async token =>
         {

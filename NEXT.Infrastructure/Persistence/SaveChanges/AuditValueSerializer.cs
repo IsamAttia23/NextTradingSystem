@@ -20,18 +20,17 @@ public sealed class AuditValueSerializer
     public string Serialize(EntityEntry entry, bool originalValues)
     {
         var values = new Dictionary<string, object?>();
-
         foreach (var property in entry.Properties)
         {
             var name = property.Metadata.Name;
             if (ShouldExclude(name))
+            {
                 continue;
-
+            }
             values[name] = originalValues
                 ? property.OriginalValue
                 : property.CurrentValue;
         }
-
         return JsonSerializer.Serialize(values, JsonOptions);
     }
 

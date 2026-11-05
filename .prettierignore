@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/Migrations/
+NEXT.web/wwwroot/lib/
+**/*.cshtml
+**/*.resx
+**/*.svg

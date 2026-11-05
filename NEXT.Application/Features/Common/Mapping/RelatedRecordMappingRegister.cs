@@ -17,7 +17,9 @@ public sealed class RelatedRecordMappingRegister : IRegister
                      type.Namespace == typeof(Product).Namespace && !type.IsAbstract && !type.ContainsGenericParameters &&
                      type.GetProperty("Id")?.PropertyType == typeof(Guid) &&
                      type != typeof(ApplicationUser) && type != typeof(UserRole) && type != typeof(RolePermission)))
+        {
             register.MakeGenericMethod(type).Invoke(null, [config]);
+        }
     }
 
     private static void RegisterProjection<TEntity>(TypeAdapterConfig config)

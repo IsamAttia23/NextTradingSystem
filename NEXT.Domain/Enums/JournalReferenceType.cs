@@ -1,4 +1,4 @@
-﻿
+
 namespace NEXT.Domain.Enums;
 
 public enum JournalReferenceType
@@ -10,4 +10,3 @@ public enum JournalReferenceType
     StockAdjustment,
     OpeningBalance
 }
-

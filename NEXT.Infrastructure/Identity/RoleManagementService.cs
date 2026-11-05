@@ -30,14 +30,13 @@ public sealed class RoleManagementService(RoleManager<Role> roleManager, NEXTDbC
 
     public async Task<IdentityOperationResult> DeleteAsync(Role role, CancellationToken ct = default)
     {
-        if (await StorageErrors.ExecuteAsync(() => context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id, ct)) ||
-            await StorageErrors.ExecuteAsync(() => context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id, ct)))
+        if (await StorageErrors.ExecuteAsync(() => context.UserRoles.AnyAsync(userRole => userRole.RoleId == role.Id, ct))
+            || await StorageErrors.ExecuteAsync(() => context.RolePermissions.AnyAsync(rolePermission => rolePermission.RoleId == role.Id, ct)))
         {
             return IdentityOperationResult.Failure([
                 new IdentityOperationError("RoleInUse", "The role is assigned to users or permissions and cannot be deleted.")
             ]);
         }
-
         return Convert(await IdentityCall.CompleteAsync(() => roleManager.DeleteAsync(role), ct));
     }
 

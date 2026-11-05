@@ -22,7 +22,10 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
     public override Expression<Func<SalesInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as SalesInvoiceQueryModel ?? new SalesInvoiceQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as SalesInvoiceQueryModel ?? new SalesInvoiceQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<SalesInvoice, bool>> BuildFilterExpression(SalesInvoiceQueryModel query)
@@ -35,7 +38,6 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
             (!query.CustomerId.HasValue || entity.CustomerId == query.CustomerId.Value) &&
             (string.IsNullOrEmpty(customerName) || (entity.Customer != null && entity.Customer.Name.Contains(customerName))) &&
             (!query.Status.HasValue || entity.Status == query.Status.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "InvoiceNumber", "Notes");
     }
 

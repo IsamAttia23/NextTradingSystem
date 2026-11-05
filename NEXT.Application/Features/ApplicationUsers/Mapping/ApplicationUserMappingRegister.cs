@@ -10,10 +10,8 @@ public sealed class ApplicationUserMappingRegister : IRegister
     {
         config.NewConfig<ApplicationUser, UserResponseDto>()
             .Map(destination => destination.HasRole, source => source.UserRoles.Any());
-
         config.NewConfig<ApplicationUser, UserDto>()
             .Map(destination => destination.Roles, source => source.UserRoles.Select(role => role.Role.Name!).ToArray());
-
         config.NewConfig<UserCreationDto, ApplicationUser>()
             .Map(destination => destination.FullName, source => source.FullName.Trim())
             .Map(destination => destination.UserName, source => source.UserName.Trim())
@@ -25,7 +23,6 @@ public sealed class ApplicationUserMappingRegister : IRegister
             .Ignore(destination => destination.PasswordHash)
             .Ignore(destination => destination.SecurityStamp)
             .Ignore(destination => destination.ConcurrencyStamp);
-
         config.NewConfig<UserUpdateDto, ApplicationUser>()
             .Map(destination => destination.FullName, source => source.FullName.Trim())
             .Map(destination => destination.UserName, source => source.UserName.Trim())

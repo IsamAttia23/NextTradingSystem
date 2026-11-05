@@ -21,10 +21,13 @@ public sealed class CurrentProfileTests
         Assert.Contains("data-profile-form=\"true\"", html);
         Assert.Contains("href=\"/Account/Profile\"", html);
         foreach (var field in new[] { "FullName", "UserName", "Email", "PhoneNumber", "Avatar", "CurrentPassword", "NewPassword", "ConfirmPassword" })
+        {
             Assert.Contains("name=\"" + field + "\"", html);
+        }
         foreach (var field in new[] { "BranchId", "IsActive", "Role", "Roles", "UserId" })
+        {
             Assert.DoesNotContain("name=\"" + field + "\"", html);
-
+        }
         Guid originalBranch, otherUserId;
         await using (var scope = app.Services.CreateAsyncScope())
         {
@@ -37,17 +40,24 @@ public sealed class CurrentProfileTests
         foreach (var field in new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = WorkspaceUiTests.Token(html),
-            ["FullName"] = "Updated reader", ["UserName"] = "ui-reader", ["Email"] = "ui-reader@example.test",
-            ["BranchId"] = Guid.NewGuid().ToString(), ["IsActive"] = "false", ["Roles"] = "Admin",
-            ["UserId"] = otherUserId.ToString(), ["ProfileOnly"] = "false"
-        }) form.Add(new StringContent(field.Value), field.Key);
+            ["FullName"] = "Updated reader",
+            ["UserName"] = "ui-reader",
+            ["Email"] = "ui-reader@example.test",
+            ["BranchId"] = Guid.NewGuid().ToString(),
+            ["IsActive"] = "false",
+            ["Roles"] = "Admin",
+            ["UserId"] = otherUserId.ToString(),
+            ["ProfileOnly"] = "false"
+        })
+        {
+            form.Add(new StringContent(field.Value), field.Key);
+        }
         form.Add(new ByteArrayContent(image), "Avatar", "photo.png");
         var response = await client.PostAsync("/Account/Profile", form);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("success", json.RootElement.GetProperty("notification").GetProperty("kind").GetString());
         Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("redirectUrl").ValueKind);
-
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -91,8 +101,13 @@ public sealed class CurrentProfileTests
         })
         {
             var fields = new Dictionary<string, string>
-            { ["FullName"] = "UI test ui-reader", ["UserName"] = "ui-reader", ["Email"] = "ui-reader@example.test" };
-            foreach (var (key, value) in scenario) fields[key] = value;
+            {
+                ["FullName"] = "UI test ui-reader",
+                ["UserName"] = "ui-reader",
+                ["Email"] = "ui-reader@example.test"
+            };
+            foreach (var (key, value) in scenario)
+                fields[key] = value;
             var response = await WorkspaceUiTests.Post(client, "/Account/Profile", token,
                 fields.Select(x => (x.Key, x.Value)).ToArray());
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

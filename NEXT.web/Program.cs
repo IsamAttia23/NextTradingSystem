@@ -20,12 +20,18 @@ services.AddAuthentication(options =>
 }).AddIdentityCookies();
 
 services.AddPresentation(configuration);
-if (builder.Environment.IsDevelopment() && configuration.GetValue<bool>("DevelopmentAccess:EphemeralKeys"))
+if (builder.Environment.IsDevelopment()
+    && configuration.GetValue<bool>("DevelopmentAccess:EphemeralKeys"))
+{
     services.AddDataProtection().UseEphemeralDataProtectionProvider();
+}
 
 var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
+{
     await scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Context.IApplicationInitializer>().InitializeAsync();
+}
+
 app.UseStatusCodePagesWithReExecute("/Status/{0}");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRequestLocalization();

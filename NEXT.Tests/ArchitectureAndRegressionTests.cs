@@ -69,14 +69,20 @@ public class ArchitectureAndRegressionTests
     private static ServiceProvider CreateProvider()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        { ["ConnectionStrings:NEXTDatabase"] = "Host=localhost;Database=next_tests;Username=test;Password=test" }).Build();
+        {
+            ["ConnectionStrings:NEXTDatabase"] = "Host=localhost;Database=next_tests;Username=test;Password=test"
+        }).Build();
         var services = new ServiceCollection().AddLogging();
         services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(configuration);
         services.AddSingleton<Microsoft.Extensions.Hosting.IHostEnvironment>(new TestHostEnvironment());
         services.AddAuthentication(Microsoft.AspNetCore.Identity.IdentityConstants.ApplicationScheme).AddIdentityCookies();
         services.AddApplicationServices(configuration);
         services.AddInfrastructureServices(configuration);
-        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+        return services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        });
     }
 
     [Fact]
@@ -95,7 +101,9 @@ public class ArchitectureAndRegressionTests
         var contracts = typeof(IPermissionRepository).Assembly.GetTypes().Where(x => x.IsInterface &&
             x.Namespace == "NEXT.Application.Abstractions.Persistence.Repositories");
         foreach (var contract in contracts)
+        {
             Assert.NotNull(scope.ServiceProvider.GetRequiredService(contract));
+        }
         Assert.Null(scope.ServiceProvider.GetRequiredService<ICurrentUserService>().UserId);
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IUnitOfWork>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IRecycleBinService<Tag, Guid>>());
@@ -107,7 +115,12 @@ public class ArchitectureAndRegressionTests
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-        var tag = new Tag { Id = Guid.NewGuid(), Name = "Wholesale", Color = "blue" };
+        var tag = new Tag
+        {
+            Id = Guid.NewGuid(),
+            Name = "Wholesale",
+            Color = "blue"
+        };
         db.Attach(tag);
         await new KeyRepository<Tag, Guid>(db).DeleteAsync(tag);
         Assert.Equal(EntityState.Deleted, db.Entry(tag).State);
@@ -128,7 +141,12 @@ public class ArchitectureAndRegressionTests
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-        var permission = new Permission { Id = Guid.NewGuid(), Code = "READ", Module = "Tests" };
+        var permission = new Permission
+        {
+            Id = Guid.NewGuid(),
+            Code = "READ",
+            Module = "Tests"
+        };
         db.Attach(permission);
         await new KeyRepository<Permission, Guid>(db).DeleteAsync(permission);
         Assert.Equal(EntityState.Deleted, db.Entry(permission).State);
@@ -140,7 +158,10 @@ public class ArchitectureAndRegressionTests
         using var provider = CreateProvider();
         using var scope = provider.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
-        await Assert.ThrowsAsync<AppValidationException>(() => sender.Send(new NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<PermissionDto, PermissionUpdateDto>(Guid.NewGuid(), new PermissionUpdateDto { Code = null! })));
+        await Assert.ThrowsAsync<AppValidationException>(() => sender.Send(new NEXT.Application.Features.Common.CQRS.UpdateEntityCommand<PermissionDto, PermissionUpdateDto>(Guid.NewGuid(), new PermissionUpdateDto
+        {
+            Code = null!
+        })));
     }
 
     [Fact]
@@ -164,7 +185,10 @@ public class ArchitectureAndRegressionTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
         var middleware = new ExceptionHandlingMiddleware(_ => throw new AppValidationException(
-            new Dictionary<string, string[]> { ["Code"] = ["Required"] }), NullLogger<ExceptionHandlingMiddleware>.Instance);
+            new Dictionary<string, string[]>
+            {
+                ["Code"] = ["Required"]
+            }), NullLogger<ExceptionHandlingMiddleware>.Instance);
         await middleware.InvokeAsync(context);
         context.Response.Body.Position = 0;
         using var json = await JsonDocument.ParseAsync(context.Response.Body);

@@ -6,12 +6,12 @@ using System.Text;
 namespace NEXT.Application.QueryModels;
 
 public sealed class AuditLogQueryModel : PaginationQuery
-    {
-        public DateTimeOffset? From { get; init; }
+{
+    public DateTimeOffset? From { get; init; }
 
-        public DateTimeOffset? To { get; init; }
+    public DateTimeOffset? To { get; init; }
 
-        public Guid? UserId { get; init; }
+    public Guid? UserId { get; init; }
 
-        public string? EntityType { get; init; }
-    }
+    public string? EntityType { get; init; }
+}

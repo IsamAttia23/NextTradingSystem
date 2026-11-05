@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Persistence;
 namespace NEXT.Infrastructure.Persistence;
+
 public sealed class QueryExecutor : IQueryExecutor
 {
     public Task<T?> FirstOrDefaultAsync<T>(IQueryable<T> query, CancellationToken ct = default) where T : class

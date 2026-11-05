@@ -50,7 +50,10 @@ public sealed class ApplicationRepairTests
     {
         Exception failure = status switch
         {
-            400 => new AppValidationException(new Dictionary<string, string[]> { ["Name"] = ["Required"] }),
+            400 => new AppValidationException(new Dictionary<string, string[]>
+            {
+                ["Name"] = ["Required"]
+            }),
             404 => new NotFoundException("Record not found."),
             409 => new ConflictException("Record changed."),
             422 => new UnprocessableEntityException("Record is in use."),
@@ -65,7 +68,10 @@ public sealed class ApplicationRepairTests
         context.Response.Body.Position = 0;
         var json = await new StreamReader(context.Response.Body).ReadToEndAsync();
         Assert.Contains("traceId", json);
-        if (status >= 500) Assert.DoesNotContain("private-storage-detail", json);
+        if (status >= 500)
+        {
+            Assert.DoesNotContain("private-storage-detail", json);
+        }
     }
 
     [Fact]
@@ -73,7 +79,10 @@ public sealed class ApplicationRepairTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        var context = new DefaultHttpContext { RequestAborted = cancellation.Token };
+        var context = new DefaultHttpContext
+        {
+            RequestAborted = cancellation.Token
+        };
         var middleware = new ExceptionHandlingMiddleware(_ => throw new OperationCanceledException(cancellation.Token),
             NullLogger<ExceptionHandlingMiddleware>.Instance);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => middleware.InvokeAsync(context));
@@ -86,10 +95,19 @@ public sealed class ApplicationRepairTests
         await using var scope = app.Services.CreateAsyncScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var created = await sender.Send(new CreateEntityCommand<PermissionDto, PermissionCreationDto>(
-            new() { Code = "Envelope.Read", Module = "Envelope" }));
+            new()
+            {
+                Code = "Envelope.Read",
+                Module = "Envelope"
+            }));
         var unrelatedId = Guid.NewGuid();
         var updated = await sender.Send(new UpdateEntityCommand<PermissionDto, PermissionUpdateDto>(created.Id,
-            new() { Id = unrelatedId, Code = "Envelope.Update", Module = "Envelope" }));
+            new()
+            {
+                Id = unrelatedId,
+                Code = "Envelope.Update",
+                Module = "Envelope"
+            }));
         Assert.Equal(created.Id, updated.Id);
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
         Assert.False(await db.Permissions.AnyAsync(x => x.Id == unrelatedId));
@@ -105,13 +123,24 @@ public sealed class ApplicationRepairTests
         var services = scope.ServiceProvider;
         var sender = services.GetRequiredService<ISender>();
         await Assert.ThrowsAsync<AppValidationException>(() => sender.Send(new GetEntitiesQuery<CustomerDto>(
-            new CustomerQueryModel { MinCreditLimit = 100, MaxCreditLimit = 50 })));
+            new CustomerQueryModel
+            {
+                MinCreditLimit = 100,
+                MaxCreditLimit = 50
+            })));
         var inventory = services.GetRequiredService<IInventoryQueryService>();
         await Assert.ThrowsAsync<AppValidationException>(() => inventory.MovementsAsync(new StockMovementQueryModel
-        { From = DateTimeOffset.UtcNow, To = DateTimeOffset.UtcNow.AddDays(-1) }));
+        {
+            From = DateTimeOffset.UtcNow,
+            To = DateTimeOffset.UtcNow.AddDays(-1)
+        }));
         var validator = services.GetRequiredService<IEntityValidator<ReceiveStockDto>>();
         var error = Assert.Throws<AppValidationException>(() => validator.Validate(new ReceiveStockDto
-        { ProductId = Guid.Empty, WarehouseId = Guid.NewGuid(), Quantity = 1 }));
+        {
+            ProductId = Guid.Empty,
+            WarehouseId = Guid.NewGuid(),
+            Quantity = 1
+        }));
         Assert.Contains(nameof(ReceiveStockDto.ProductId), error.Errors.Keys);
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();

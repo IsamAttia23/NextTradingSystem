@@ -29,14 +29,33 @@ public sealed class UnitOfWork(NEXTDbContext context, ILogger<UnitOfWork>? logge
         catch (Exception error)
         {
             failure = error;
-            if (transaction is not null && !await transaction.RollbackAsync(error, logger)) context.TransactionFailure = error;
-            try { state.Restore(before); }
-            catch (Exception cleanup) { error.Data["TrackerRestoreFailure"] = cleanup; context.TransactionFailure = error; }
+            if (transaction is not null && !await transaction.RollbackAsync(error, logger))
+            {
+                context.TransactionFailure = error;
+            }
+            try
+            {
+                state.Restore(before);
+            }
+            catch (Exception cleanup)
+            {
+                error.Data["TrackerRestoreFailure"] = cleanup;
+                context.TransactionFailure = error;
+            }
             StorageErrors.ThrowTranslated(error);
             throw;
         }
-        finally { if (transaction is not null) await transaction.DisposeAsync(failure); }
+        finally
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync(failure);
+            }
+        }
     }
     public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken ct = default) =>
-        await ExecuteInTransactionAsync(async token => { await operation(token); return true; }, ct);
+        await ExecuteInTransactionAsync(async token => {
+            await operation(token);
+            return true;
+        }, ct);
 }

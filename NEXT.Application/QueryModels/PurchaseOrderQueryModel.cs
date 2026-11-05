@@ -7,14 +7,14 @@ using System.Text;
 namespace NEXT.Application.QueryModels;
 
 public sealed class PurchaseOrderQueryModel : PaginationQuery
-    {
-        // Date range
-        public DateOnly? From { get; set; }
-        public DateOnly? To { get; set; }
+{
+    // Date range
+    public DateOnly? From { get; set; }
+    public DateOnly? To { get; set; }
 
-        // Supplier filter
-        public Guid? SupplierId { get; set; }
+    // Supplier filter
+    public Guid? SupplierId { get; set; }
 
-        // Purchase order status
-        public PurchaseOrderStatus? Status { get; set; }
-    }
+    // Purchase order status
+    public PurchaseOrderStatus? Status { get; set; }
+}

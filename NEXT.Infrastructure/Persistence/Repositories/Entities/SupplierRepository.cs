@@ -16,7 +16,10 @@ public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Su
     public override Expression<Func<Supplier, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as SupplierQueryModel ?? new SupplierQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as SupplierQueryModel ?? new SupplierQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<Supplier, bool>> BuildFilterExpression(SupplierQueryModel query)
@@ -24,7 +27,6 @@ public sealed class SupplierRepository(NEXTDbContext context) : KeyRepository<Su
         ArgumentNullException.ThrowIfNull(query);
         Expression<Func<Supplier, bool>> filters = entity =>
             (!query.IsActive.HasValue || entity.IsActive == query.IsActive.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "Code", "Phone", "Email");
     }
 

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NEXT.Infrastructure.Persistence.Repositories
 {
-    public class KeyRepository<TEntity,TKey>(NEXTDbContext context) : TRepository<TEntity>(context) , IKeyRepository<TEntity, TKey>
+    public class KeyRepository<TEntity, TKey>(NEXTDbContext context) : TRepository<TEntity>(context), IKeyRepository<TEntity, TKey>
         where TEntity : AuditableEntity<TKey>
         where TKey : struct
     {

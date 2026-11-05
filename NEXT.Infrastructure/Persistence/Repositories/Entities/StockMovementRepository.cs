@@ -13,7 +13,10 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
     public override Expression<Func<StockMovement, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as StockMovementQueryModel ?? new StockMovementQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as StockMovementQueryModel ?? new StockMovementQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<StockMovement, bool>> BuildFilterExpression(StockMovementQueryModel query)
@@ -25,7 +28,6 @@ public sealed class StockMovementRepository(NEXTDbContext context) : KeyReposito
             (!query.Type.HasValue || entity.Type == query.Type.Value) &&
             (!query.From.HasValue || entity.CreatedAt >= query.From.Value) &&
             (!query.To.HasValue || entity.CreatedAt < query.To.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "Product.Name", "Warehouse.Name", "Notes");
     }
 

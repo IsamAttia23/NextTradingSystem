@@ -19,7 +19,10 @@ public sealed class GetEntitiesQueryHandler<TEntity, TDto>(
     public async Task<TPaginationQueryModel<TDto>> Handle(GetEntitiesQuery<TDto> request, CancellationToken ct)
     {
         var query = request.Pagination;
-        if (query is null) RequestValidation.Fail("Pagination", "Query is required.");
+        if (query is null)
+        {
+            RequestValidation.Fail("Pagination", "Query is required.");
+        }
         validator.Validate(query);
         var expression = repository.BuildFilterExpression(query);
         var entities = repository.FindAsync(expression, ct);

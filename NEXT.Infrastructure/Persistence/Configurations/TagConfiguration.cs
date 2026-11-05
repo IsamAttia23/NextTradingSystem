@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NEXT.Domain.Entities;
 using System;
@@ -11,19 +11,15 @@ namespace NEXT.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Tag> builder)
         {
-           builder.ToTable("Tags");
+            builder.ToTable("Tags");
             builder.HasKey(t => t.Id);
-
             builder.Property(t => t.Name)
              .IsRequired()
              .HasMaxLength(100);
-
             builder.Property(t => t.Color)
              .HasMaxLength(20);
-
             builder.HasMany(t => t.Customers)
              .WithOne(c => c.Tag);
-
             builder.HasMany(t => t.Suppliers)
              .WithOne(s => s.Tag);
         }

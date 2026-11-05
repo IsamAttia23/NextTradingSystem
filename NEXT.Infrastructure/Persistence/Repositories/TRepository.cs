@@ -31,14 +31,16 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     protected Expression BuildSearchExpression(string? searchTerm, ParameterExpression parameter, params string[] propertyPaths)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
+        {
             return Expression.Constant(true);
-
+        }
         if (propertyPaths.Length == 0)
+        {
             propertyPaths = Context.Model.FindEntityType(typeof(TEntity))!.GetProperties()
-                .Where(p => p.ClrType == typeof(string) &&
-                    new[] { "Name", "Code", "Phone", "Email", "Description", "Symbol", "BatchNumber", "Module" }.Contains(p.Name))
-                .Select(p => p.Name).ToArray();
-
+                        .Where(p => p.ClrType == typeof(string) &&
+                            new[] { "Name", "Code", "Phone", "Email", "Description", "Symbol", "BatchNumber", "Module" }.Contains(p.Name))
+                        .Select(p => p.Name).ToArray();
+        }
         Expression? search = null;
         foreach (var propertyPath in propertyPaths)
         {
@@ -55,7 +57,10 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
             }
             Expression contains = Expression.Call(member, nameof(string.Contains), Type.EmptyTypes,
                 Expression.Constant(searchTerm.Trim()));
-            if (guard is not null) contains = Expression.AndAlso(guard, contains);
+            if (guard is not null)
+            {
+                contains = Expression.AndAlso(guard, contains);
+            }
             search = search is null ? contains : Expression.OrElse(search, contains);
         }
         return search ?? Expression.Constant(true);
@@ -78,7 +83,9 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
             ?? properties.FirstOrDefault(p => p.Name == "Name") ?? properties.First(p => p.IsPrimaryKey());
         var ordered = OrderByField(source, sort.Name, sortDirection == SortDirection.Descending);
         foreach (var primary in properties.Where(p => p.IsPrimaryKey() && p.Name != sort.Name))
+        {
             ordered = ThenByField(ordered, primary.Name);
+        }
         return ordered;
     }
     protected IOrderedQueryable<TEntity> OrderByField(IQueryable<TEntity> source, string field, bool descending) =>
@@ -104,8 +111,9 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     {
         ArgumentNullException.ThrowIfNull(keyValues);
         if (keyValues.Length == 0)
+        {
             throw new ArgumentException("At least one key value is required.", nameof(keyValues));
-
+        }
         var entity = await StorageErrors.ExecuteAsync(() => _set.FindAsync(keyValues, cancellationToken).AsTask());
         // FindAsync can return a tracked instance without executing the soft-delete query filter.
         return entity is IIsDeletableEntity { DeletedAt: not null } ? null : entity;
@@ -161,12 +169,22 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     {
         var entry = Context.Entry(entity);
         var property = entry.Metadata.FindProperty("RowVersion");
-        if (property is not { IsConcurrencyToken: true }) return;
+        if (property is not { IsConcurrencyToken: true })
+        {
+            return;
+        }
         if (rowVersion is not { Length: > 0 })
-            throw new AppValidationException(new Dictionary<string, string[]> { ["RowVersion"] = ["Reload the record before editing it."] });
+        {
+            throw new AppValidationException(new Dictionary<string, string[]>
+            {
+                ["RowVersion"] = ["Reload the record before editing it."]
+            });
+        }
         var version = entry.Property<byte[]>("RowVersion");
         if (!version.CurrentValue!.SequenceEqual(rowVersion))
+        {
             throw new ConflictException("The record changed after it was opened. Reload and retry.");
+        }
         version.OriginalValue = rowVersion.ToArray();
     }
 
@@ -175,25 +193,27 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
     {
         var entityType = Context.Model.FindEntityType(typeof(TEntity));
         if (entityType == null)
+        {
             return false;
-
+        }
         var method = typeof(TRepository<TEntity>)
             .GetMethod(nameof(AnyDependentAsync), BindingFlags.NonPublic | BindingFlags.Instance)!;
-
         foreach (var fk in entityType.GetReferencingForeignKeys())
         {
             var values = fk.PrincipalKey.Properties
                 .Select(p => Context.Entry(entity).Property(p.Name).CurrentValue).ToArray();
             if (values.Any(value => value is null))
+            {
                 continue;
+            }
             var dependentType = fk.DeclaringEntityType.ClrType;
             var task = (Task<bool>)method.MakeGenericMethod(dependentType)
                 .Invoke(this, new object[] { fk.Properties, values, ct })!;
-
             if (await task)
+            {
                 return true;
+            }
         }
-
         return false;
     }
 

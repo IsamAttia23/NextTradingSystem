@@ -19,7 +19,10 @@ public sealed class SetApplicationUserNameHandler(IUserCommandService users, IUs
     {
         var name = RequestValidation.Text(request.UserName, "UserName");
         var user = await reader.RequireAsync(request.UserId, ct);
-        if (await queries.IsUserNameTakenAsync(name, user.Id.ToString(), ct)) RequestValidation.Fail("UserName", "This username is already in use.");
+        if (await queries.IsUserNameTakenAsync(name, user.Id.ToString(), ct))
+        {
+            RequestValidation.Fail("UserName", "This username is already in use.");
+        }
         return await users.SetUserNameAsync(user, name, ct);
     }
 }

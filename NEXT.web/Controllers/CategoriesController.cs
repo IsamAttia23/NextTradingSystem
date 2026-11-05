@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class CategoriesController(ISender sender, EntityPresenter<CategoryDto, CategoryInputDto> presenter)
     : EntityController<CategoryDto, CategoryInputDto, PaginationQuery>(sender, presenter);

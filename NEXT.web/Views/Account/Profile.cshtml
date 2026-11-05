@@ -1,6 +1,7 @@
 @model ModalForm
-@{ ViewData["Title"] = L["MyProfile"]; }
-
+@{
+    ViewData["Title"] = L["MyProfile"];
+}
 <section class="page-heading">
     <div>
         <span class="eyebrow">@L["AccountSettings"]</span>
@@ -8,7 +9,6 @@
         <p>@L["ProfileDescription"]</p>
     </div>
 </section>
-
 <section class="content-card profile-settings">
     <partial name="_ModalForm" model="Model" />
 </section>

@@ -12,6 +12,11 @@ internal static class PermissionCode
     {
         var normalized = code.Trim().ToUpperInvariant();
         if (await repository.AnyAsync(x => x.Id != id && x.Code.ToUpper() == normalized, ct))
-            throw new AppValidationException(new Dictionary<string, string[]> { ["Code"] = ["This permission code already exists."] });
+        {
+            throw new AppValidationException(new Dictionary<string, string[]>
+            {
+                ["Code"] = ["This permission code already exists."]
+            });
+        }
     }
 }

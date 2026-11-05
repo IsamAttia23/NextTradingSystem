@@ -17,9 +17,12 @@ public sealed class SetApplicationUserPhoneNumberHandler(IUserCommandService use
 {
     public async Task<UserOperationResult> Handle(SetApplicationUserPhoneNumberCommand request, CancellationToken ct)
     {
-        if (request.PhoneNumber is { Length: > 32 } ||
-            !string.IsNullOrEmpty(request.PhoneNumber) && !new PhoneAttribute().IsValid(request.PhoneNumber))
+        if (request.PhoneNumber is { Length: > 32 }
+            || !string.IsNullOrEmpty(request.PhoneNumber)
+            && !new PhoneAttribute().IsValid(request.PhoneNumber))
+        {
             RequestValidation.Fail("PhoneNumber", "Enter a valid phone number.");
+        }
         return await users.SetPhoneNumberAsync(await reader.RequireAsync(request.UserId, ct), request.PhoneNumber, ct);
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using NEXT.Application.Abstractions.Identity;
 
 namespace NEXT.web;
 
@@ -43,7 +44,10 @@ public static class PresentationRegistration
             {
                 await SecurityStampValidator.ValidatePrincipalAsync(context);
                 var id = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(id, out var userId) || !await context.HttpContext.RequestServices.GetRequiredService<NEXT.Application.Abstractions.Identity.ILoginAccessPolicy>().CanSignInAsync(userId))
+                if (!Guid.TryParse(id, out var userId)
+                    || !await context.HttpContext.RequestServices
+                        .GetRequiredService<ILoginAccessPolicy>()
+                        .CanSignInAsync(userId))
                 {
                     context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
@@ -58,8 +62,14 @@ public static class PresentationRegistration
     }
     private static Task RedirectOrStatus(RedirectContext<CookieAuthenticationOptions> context, int status)
     {
-        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest") context.Response.StatusCode = status;
-        else context.Response.Redirect(context.RedirectUri);
+        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            context.Response.StatusCode = status;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
         return Task.CompletedTask;
     }
 }

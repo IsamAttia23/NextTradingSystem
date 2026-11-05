@@ -13,7 +13,10 @@ public sealed class AuditLogRepository(NEXTDbContext context) : KeyRepository<Au
     public override Expression<Func<AuditLog, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as AuditLogQueryModel ?? new AuditLogQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as AuditLogQueryModel ?? new AuditLogQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<AuditLog, bool>> BuildFilterExpression(AuditLogQueryModel query)
@@ -24,7 +27,6 @@ public sealed class AuditLogRepository(NEXTDbContext context) : KeyRepository<Au
             (!query.To.HasValue || entity.CreatedAt < query.To.Value) &&
             (!query.UserId.HasValue || entity.UserId == query.UserId.Value) &&
             (string.IsNullOrWhiteSpace(query.EntityType) || entity.EntityType == query.EntityType);
-
         return CombineSearchExpression(filters, query.SearchTerm, "EntityType", "OldValuesJson", "NewValuesJson");
     }
 

@@ -8,6 +8,9 @@ internal static class ValidationErrors
     {
         var errors = failures.GroupBy(x => x.Field, StringComparer.Ordinal).ToDictionary(
             group => group.Key, group => group.Select(x => x.Message).Distinct().ToArray(), StringComparer.Ordinal);
-        if (errors.Count > 0) throw new AppValidationException(errors);
+        if (errors.Count > 0)
+        {
+            throw new AppValidationException(errors);
+        }
     }
 }

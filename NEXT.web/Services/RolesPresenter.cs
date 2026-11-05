@@ -21,8 +21,16 @@ public sealed class RolesPresenter(ISender sender, FormFieldPresenter fields)
     public async Task<ModalForm> RoleFormAsync(string title, string action, RoleDto? role = null, CancellationToken ct = default)
     {
         var formFields = role is null
-            ? await fields.FormAsync(new RoleCreationDto { Name = role?.Name ?? "", Description = role?.Description }, ct, includedFields: ["Name", "Description"])
-            : await fields.FormAsync(new RoleUpdateDto { Name = role?.Name ?? "", Description = role?.Description }, ct, includedFields: ["Name", "Description"]);
+            ? await fields.FormAsync(new RoleCreationDto
+            {
+                Name = role?.Name ?? "",
+                Description = role?.Description
+            }, ct, includedFields: ["Name", "Description"])
+            : await fields.FormAsync(new RoleUpdateDto
+            {
+                Name = role?.Name ?? "",
+                Description = role?.Description
+            }, ct, includedFields: ["Name", "Description"]);
         return new(title, action, formFields);
     }
 }

@@ -13,10 +13,16 @@ internal static class UserOperationTransaction
             return await unitOfWork.ExecuteInTransactionAsync(async token =>
             {
                 var result = await action(token);
-                if (!result.Succeeded) throw new UserOperationFailedException(result);
+                if (!result.Succeeded)
+                {
+                    throw new UserOperationFailedException(result);
+                }
                 return result;
             }, ct);
         }
-        catch (UserOperationFailedException failure) { return failure.Result; }
+        catch (UserOperationFailedException failure)
+        {
+            return failure.Result;
+        }
     }
 }

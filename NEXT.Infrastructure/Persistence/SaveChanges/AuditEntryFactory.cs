@@ -17,7 +17,6 @@ public sealed class AuditEntryFactory(
     internal int AddAuditRows(NEXTDbContext context, IEnumerable<PendingAuditEntry> pendingEntries)
     {
         var count = 0;
-
         foreach (var pending in pendingEntries)
         {
             context.AuditLogs.Add(new AuditLog
@@ -32,17 +31,19 @@ public sealed class AuditEntryFactory(
                 UserAgent = requestMetadataService.UserAgent,
                 CreatedAt = DateTimeOffset.UtcNow
             });
-
             count++;
         }
-
         return count;
     }
 
     private string? Values(PendingAuditEntry pending)
     {
         var json = pending.Action == AuditAction.Purge ? null : valueSerializer.Serialize(pending.Entry, originalValues: false);
-        if (pending.Action is not (AuditAction.Delete or AuditAction.Purge) || deletionAudit?.Reason is not {} reason) return json;
+        if (pending.Action is not (AuditAction.Delete or AuditAction.Purge)
+            || deletionAudit?.Reason is not { } reason)
+        {
+            return json;
+        }
         var values = json is null ? new System.Text.Json.Nodes.JsonObject() : System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
         values["DeletionReason"] = reason;
         return values.ToJsonString();
@@ -51,8 +52,9 @@ public sealed class AuditEntryFactory(
     {
         var primaryKey = entry.Metadata.FindPrimaryKey();
         if (primaryKey is null || primaryKey.Properties.Count != 1)
+        {
             return null;
-
+        }
         var keyProperty = primaryKey.Properties[0];
         var value = entry.Property(keyProperty.Name).CurrentValue;
         return value is Guid id && id != Guid.Empty ? id : null;

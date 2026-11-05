@@ -10,7 +10,10 @@ public sealed class CheckApplicationUserPasswordHandler(IUserQueryService users,
 {
     public async Task<bool> Handle(CheckApplicationUserPasswordQuery request, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(request.Password)) RequestValidation.Fail("Password", "A password is required.");
+        if (string.IsNullOrEmpty(request.Password))
+        {
+            RequestValidation.Fail("Password", "A password is required.");
+        }
         return await users.CheckPasswordAsync(await reader.RequireAsync(request.UserId, ct), request.Password, ct);
     }
 }

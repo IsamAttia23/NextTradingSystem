@@ -1,6 +1,12 @@
 @model RecordIdentityDto
 <span class="record-identity">
-    @if (Model.ImageUrl is {} image) { <img class="record-avatar avatar-image" src="@image" alt="" loading="lazy" /> }
-    else { <span class="record-avatar avatar-image initial-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(Model.Name) ? "؟" : StringInfo.GetNextTextElement(Model.Name.Trim()))</span> }
-    <strong title="@Model.Name">@Model.Name</strong>
+@if (Model.ImageUrl is {} image)
+{
+    <img class="record-avatar avatar-image" src="@image" alt="" loading="lazy" />
+}
+else
+{
+    <span class="record-avatar avatar-image initial-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(Model.Name) ? "؟" : StringInfo.GetNextTextElement(Model.Name.Trim()))</span>
+}
+<strong title="@Model.Name">@Model.Name</strong>
 </span>

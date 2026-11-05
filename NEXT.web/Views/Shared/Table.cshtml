@@ -4,42 +4,105 @@
     var rowNumber = ((long)Math.Max(1, Model.Page) - 1) * Math.Max(1, Model.PageSize);
 }
 <section class="page-heading">
-    <div><span class="eyebrow">@L["Administration"]</span><h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1><p>@L[Model.Description]</p></div>
-    @if (Model.Create is not null) { <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button> }
+    <div>
+        <span class="eyebrow">@L["Administration"]</span>
+        <h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1>
+        <p>@L[Model.Description]</p>
+    </div>
+    @if (Model.Create is not null)
+    {
+        <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button>
+    }
 </section>
 @if (ViewData["Sections"] is string[] sections)
 {
     <nav class="section-tabs" aria-label="@L["RecycleBin"]">
-    @foreach (var category in sections) { <a asp-action="Index" asp-route-section="@category" class="@(ViewData["Section"]?.ToString() == category ? "selected" : "")">@L[category]</a> }
+        @foreach (var category in sections)
+        {
+            <a asp-action="Index" asp-route-section="@category" class="@(ViewData["Section"]?.ToString() == category ? "selected" : "")">@L[category]</a>
+        }
     </nav>
 }
-@if (Model.Query is not null) { <partial name="_QueryFilters" model="Model" /> }
+@if (Model.Query is not null)
+{
+    <partial name="_QueryFilters" model="Model" />
+}
 <section class="content-card">
-    <div class="table-toolbar"><div><strong>@L["AllRecords"]</strong> <span class="count-pill">@Model.TotalCount</span></div></div>
-    <div class="table-scroll-hint"><partial name="_Icon" model='@("transfer")' /> @L["ScrollTableHint"]</div>
-    <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]"><table class="table align-middle"><caption class="visually-hidden">@L[Model.Title]</caption>
-        <thead><tr><th scope="col" class="row-number">#</th>@foreach (var column in Model.Columns) { <th scope="col">@L[column]</th> }<th scope="col" class="actions-column">@L["Actions"]</th></tr></thead>
-        <tbody>
-        @foreach (var row in Model.Rows)
-        {
-            <tr data-record>
-            <td class="row-number"><bdi>@((++rowNumber).ToString(CultureInfo.InvariantCulture))</bdi></td>
-            @for (var i = 0; i < row.Cells.Count; i++)
-            {
-                <td class="@(Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">@if (Model.Columns[i] == row.BadgeColumn && row.Badge is {} badge) { <partial name="_ColorBadge" model="badge" /> }
-                    else if (Model.Columns[i] == "Name" && row.Identity is {} identity) { <partial name="_RecordIdentity" model="identity" /> }
-                    else if (Model.Columns[i] is "Status" or "Type" or "MovementType") { <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span> } else { <bdi>@row.Cells[i]</bdi> }
-                    @if (i == 0 && row.NameWarning is {} warning) { <span class="text-danger ms-1" data-no-role title="@L[warning]" aria-label="@L[warning]">●<span class="visually-hidden"> @L[warning]</span></span> }</td>
-            }
-            <td class="actions-column">@foreach (var item in row.Actions)
-            {
-                if (item.Modal) { <button class="btn btn-sm @(item.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button> }
-                else { <a class="btn btn-sm text-primary" href="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></a> }
-            }</td>
-            </tr>
-        }
-        </tbody>
-    </table></div>
-    <div class="empty-state" data-empty hidden="@(Model.Rows.Count != 0)"><span class="empty-icon" aria-hidden="true">◇</span><h2>@L["NoRecords"]</h2><p>@L["NoRecordsDetail"]</p></div>
+    <div class="table-toolbar">
+        <div>
+            <strong>@L["AllRecords"]</strong>
+            <span class="count-pill">@Model.TotalCount</span>
+        </div>
+    </div>
+    <div class="table-scroll-hint">
+        <partial name="_Icon" model='@("transfer")' />
+        @L["ScrollTableHint"]
+    </div>
+    <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]">
+        <table class="table align-middle">
+            <caption class="visually-hidden">@L[Model.Title]</caption>
+            <thead>
+                <tr>
+                    <th scope="col" class="row-number">#</th>
+                    @foreach (var column in Model.Columns)
+                    {
+                        <th scope="col">@L[column]</th>
+                    }
+                    <th scope="col" class="actions-column">@L["Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr data-record>
+                        <td class="row-number"><bdi>@((++rowNumber).ToString(CultureInfo.InvariantCulture))</bdi></td>
+                        @for (var i = 0; i < row.Cells.Count; i++)
+                        {
+                            <td class="@(Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">
+                                @if (Model.Columns[i] == row.BadgeColumn && row.Badge is {} badge)
+                                {
+                                    <partial name="_ColorBadge" model="badge" />
+                                }
+                                else if (Model.Columns[i] == "Name" && row.Identity is {} identity)
+                                {
+                                    <partial name="_RecordIdentity" model="identity" />
+                                }
+                                else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
+                                {
+                                    <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span>
+                                }
+                                else
+                                {
+                                    <bdi>@row.Cells[i]</bdi>
+                                }
+                                @if (i == 0 && row.NameWarning is {} warning)
+                                {
+                                    <span class="text-danger ms-1" data-no-role title="@L[warning]" aria-label="@L[warning]">●<span class="visually-hidden"> @L[warning]</span></span>
+                                }
+                            </td>
+                        }
+                        <td class="actions-column">
+                            @foreach (var item in row.Actions)
+                            {
+                                if (item.Modal)
+                                {
+                                    <button class="btn btn-sm @(item.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm text-primary" href="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></a>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="empty-state" data-empty hidden="@(Model.Rows.Count != 0)">
+        <span class="empty-icon" aria-hidden="true">◇</span>
+        <h2>@L["NoRecords"]</h2>
+        <p>@L["NoRecordsDetail"]</p>
+    </div>
     <partial name="_Pagination" model='@(new PagerDto(Model.Page, Model.TotalPages, Model.TotalCount, Model.Query is null ? "page" : "PageNumber", Model.PageSize, Model.Query is not null))' />
 </section>

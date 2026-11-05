@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using NEXT.Application.Abstractions.Identity;
 using NEXT.Infrastructure.Persistence;
 namespace NEXT.Infrastructure.Identity;
+
 public sealed class AdministratorLookup(NEXTDbContext db, IConfiguration configuration) : IAdministratorLookup
 {
     public async Task<bool> IsLastActiveAsync(Guid userId, CancellationToken ct)

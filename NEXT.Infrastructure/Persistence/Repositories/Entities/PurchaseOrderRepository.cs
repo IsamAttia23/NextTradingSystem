@@ -16,7 +16,10 @@ public sealed class PurchaseOrderRepository(NEXTDbContext context) : KeyReposito
     public override Expression<Func<PurchaseOrder, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as PurchaseOrderQueryModel ?? new PurchaseOrderQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as PurchaseOrderQueryModel ?? new PurchaseOrderQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<PurchaseOrder, bool>> BuildFilterExpression(PurchaseOrderQueryModel query)
@@ -27,7 +30,6 @@ public sealed class PurchaseOrderRepository(NEXTDbContext context) : KeyReposito
             (!query.To.HasValue || entity.OrderDate <= query.To.Value) &&
             (!query.SupplierId.HasValue || entity.SupplierId == query.SupplierId.Value) &&
             (!query.Status.HasValue || entity.Status == query.Status.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "Number", "Notes");
     }
 

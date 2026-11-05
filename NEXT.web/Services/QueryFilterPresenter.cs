@@ -25,5 +25,5 @@ public sealed class QueryFilterPresenter(FormFieldPresenter fields)
         return result;
     }
     public static int ActiveCount(PaginationQuery query) => query.GetType().GetProperties()
-        .Count(p => (!Common.Contains(p.Name) || p.Name == "SearchTerm") && p.GetValue(query) is {} value && (value is not string text || !string.IsNullOrWhiteSpace(text)));
+        .Count(p => (!Common.Contains(p.Name) || p.Name == "SearchTerm") && p.GetValue(query) is { } value && (value is not string text || !string.IsNullOrWhiteSpace(text)));
 }

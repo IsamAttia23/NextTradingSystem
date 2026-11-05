@@ -26,14 +26,14 @@ public sealed class RecordMappingRegister : IRegister
             .Map(d => d.Type, s => s.Type.ToString());
         config.NewConfig<ProductBatch, ProductBatchDto>();
         config.NewConfig<Branch, BranchOption>();
-
         foreach (var type in new[] { typeof(Customer), typeof(Tag), typeof(Category), typeof(Branch),
                      typeof(Warehouse), typeof(Product), typeof(UnitOfMeasure) })
+        {
             config.ForType(type, typeof(ReferenceOptionDto)).Map("Value", "Id").Map("Label", "Name");
+        }
         config.NewConfig<Permission, ReferenceOptionDto>()
-            .Map(d => d.Value, s => s.Id.ToString())
-            .Map(d => d.Label, s => s.Module + " / " + s.Code);
-
+                    .Map(d => d.Value, s => s.Id.ToString())
+                    .Map(d => d.Label, s => s.Module + " / " + s.Code);
         config.When((source, destination, _) => typeof(IIsDeletableEntity).IsAssignableFrom(source) &&
                 destination.IsGenericType && destination.GetGenericTypeDefinition() == typeof(RecycleBinItemDto<>))
             .Map("EntityId", "Id").Map("DeletedOn", "DeletedAt").Ignore("EntityType");

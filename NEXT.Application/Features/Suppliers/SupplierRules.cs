@@ -16,6 +16,11 @@ public sealed class SupplierRules(IRepository<Tag> tags, IRepository<Supplier> s
     {
         var normalized = string.IsNullOrWhiteSpace(input.Code) ? null : input.Code.Trim();
         await ReferenceGuard.Require(tags, x => x.Id == input.TagId, "TagId", ct);
-        if (normalized is not null && await suppliers.AnyAsync(x => x.Id != id && x.Code == normalized, ct)) ReferenceGuard.Fail("Code", "Code already exists.");
+        if (normalized is not null
+            && await suppliers.AnyAsync(x => x.Id != id
+            && x.Code == normalized, ct))
+        {
+            ReferenceGuard.Fail("Code", "Code already exists.");
+        }
     }
 }

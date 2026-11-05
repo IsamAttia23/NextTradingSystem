@@ -16,10 +16,8 @@ public sealed class NEXTDbContextFactory : IDesignTimeDbContextFactory<NEXTDbCon
      .AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629")
      .AddEnvironmentVariables()
      .Build();
-
         var connectionString =
             configuration.GetConnectionString("NEXTDatabase");
-
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
@@ -39,7 +37,6 @@ public sealed class NEXTDbContextFactory : IDesignTimeDbContextFactory<NEXTDbCon
             currentUser, valueSerializer, softDeleteHandler, auditFieldsHandler);
         var auditEntryFactory = new AuditEntryFactory(
             currentUser, requestMetadata, valueSerializer);
-
         return new NEXTDbContext(options, trackedChangesProcessor, auditEntryFactory);
     }
 

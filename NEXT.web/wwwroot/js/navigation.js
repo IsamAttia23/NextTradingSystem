@@ -1,166 +1,343 @@
 "use strict";
 (() => {
-    if (!window.fetch || !window.DOMParser || !window.history?.pushState) return;
-    let pendingGet, sequence = 0;
+    if (!window.fetch || !window.DOMParser || !window.history?.pushState) {
+        return;
+    }
+    let pendingGet;
+    let sequence = 0;
     // A document-scoped DOM marker helps verify that navigation preserves the live shell.
     const shell = document.querySelector(".app-shell");
-    if (shell) shell.dataset.shellInstance = globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
+    if (shell) {
+        shell.dataset.shellInstance = globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36);
+    }
     const main = () => document.getElementById("main");
     const notice = (message, kind = "error") => window.NextNotifications?.show(message, kind);
     const messages = () => document.getElementById("workspaceModal")?.dataset ?? {};
     function rememberScroll() {
-        history.replaceState({...history.state, nextNavigation: true, mainScroll: main()?.scrollTop ?? 0}, "", location.href);
+        history.replaceState(
+            { ...history.state, nextNavigation: true, mainScroll: main()?.scrollTop ?? 0 },
+            "",
+            location.href,
+        );
     }
     function syncAttributes(target, source) {
-        for (const attribute of [...target.attributes]) if (attribute.name.startsWith("data-")) target.removeAttribute(attribute.name);
-        for (const attribute of source.attributes) if (attribute.name.startsWith("data-")) target.setAttribute(attribute.name, attribute.value);
+        for (const attribute of [...target.attributes]) {
+            if (attribute.name.startsWith("data-")) {
+                target.removeAttribute(attribute.name);
+            }
+        }
+        for (const attribute of source.attributes) {
+            if (attribute.name.startsWith("data-")) {
+                target.setAttribute(attribute.name, attribute.value);
+            }
+        }
     }
     function updatePart(selector, documentSource) {
-        const old = document.querySelector(selector), fresh = documentSource.querySelector(selector);
-        if (old && fresh && old.innerHTML !== fresh.innerHTML) old.replaceChildren(...[...fresh.childNodes].map(n => document.importNode(n, true)));
+        const old = document.querySelector(selector);
+        const fresh = documentSource.querySelector(selector);
+        if (old && fresh && old.innerHTML !== fresh.innerHTML) {
+            old.replaceChildren(...[...fresh.childNodes].map((n) => document.importNode(n, true)));
+        }
     }
     function updateHeader(source) {
         updatePart(".breadcrumb-label", source);
-        const topbar = document.querySelector(".topbar"), next = source.querySelector(".topbar");
-        const oldMenu = topbar.querySelector(".mobile-menu"), newMenu = next.querySelector(".mobile-menu");
-        if (oldMenu && !newMenu) oldMenu.remove();
-        else if (!oldMenu && newMenu) topbar.prepend(document.importNode(newMenu, true));
-        const actions = topbar.querySelector(".topbar-actions"), nextActions = next.querySelector(".topbar-actions");
-        for (const oldForm of [...actions.querySelectorAll("form")])
-            if (![...nextActions.querySelectorAll("form")].some(f => f.getAttribute("action") === oldForm.getAttribute("action"))) oldForm.remove();
-        for (const fresh of nextActions.querySelectorAll("form")) {
-            const old = [...actions.querySelectorAll("form")].find(f => f.getAttribute("action") === fresh.getAttribute("action"));
-            if (old) old.replaceChildren(...[...fresh.childNodes].map(n => document.importNode(n, true)));
-            else actions.append(document.importNode(fresh, true));
+        const topbar = document.querySelector(".topbar");
+        const next = source.querySelector(".topbar");
+        const oldMenu = topbar.querySelector(".mobile-menu");
+        const newMenu = next.querySelector(".mobile-menu");
+        if (oldMenu && !newMenu) {
+            oldMenu.remove();
+        } else if (!oldMenu && newMenu) {
+            topbar.prepend(document.importNode(newMenu, true));
         }
-        const profile = actions.querySelector(".header-profile"), nextProfile = nextActions.querySelector(".header-profile");
-        if (profile && nextProfile) updatePart(".topbar .header-profile", source);
-        else if (profile) profile.remove();
-        else if (nextProfile) actions.append(document.importNode(nextProfile, true));
+        const actions = topbar.querySelector(".topbar-actions");
+        const nextActions = next.querySelector(".topbar-actions");
+        for (const oldForm of [...actions.querySelectorAll("form")]) {
+            if (
+                ![...nextActions.querySelectorAll("form")].some(
+                    (f) => f.getAttribute("action") === oldForm.getAttribute("action"),
+                )
+            ) {
+                oldForm.remove();
+            }
+        }
+        for (const fresh of nextActions.querySelectorAll("form")) {
+            const old = [...actions.querySelectorAll("form")].find(
+                (f) => f.getAttribute("action") === fresh.getAttribute("action"),
+            );
+            if (old) {
+                old.replaceChildren(
+                    ...[...fresh.childNodes].map((n) => document.importNode(n, true)),
+                );
+            } else {
+                actions.append(document.importNode(fresh, true));
+            }
+        }
+        const profile = actions.querySelector(".header-profile");
+        const nextProfile = nextActions.querySelector(".header-profile");
+        if (profile && nextProfile) {
+            updatePart(".topbar .header-profile", source);
+        } else if (profile) {
+            profile.remove();
+        } else if (nextProfile) {
+            actions.append(document.importNode(nextProfile, true));
+        }
     }
     function render(source, options) {
         const freshMain = source.getElementById("main");
-        if (!freshMain || !source.querySelector(".app-shell")) throw new Error("Unexpected response");
-        const oldMain = main(), focusedName = document.activeElement?.name;
-        const scroll = options.keepScroll ? oldMain.scrollTop : options.scroll ?? 0;
+        if (!freshMain || !source.querySelector(".app-shell")) {
+            throw new Error("Unexpected response");
+        }
+        const oldMain = main();
+        const focusedName = document.activeElement?.name;
+        const scroll = options.keepScroll ? oldMain.scrollTop : (options.scroll ?? 0);
         const sidebarScroll = document.querySelector(".sidebar-scroll")?.scrollTop ?? 0;
-        freshMain.querySelectorAll("script").forEach(script => script.remove());
-        oldMain.replaceChildren(...[...freshMain.childNodes].map(n => document.importNode(n, true)));
-        const oldSidebar = document.querySelector(".sidebar"), newSidebar = source.querySelector(".sidebar");
+        freshMain.querySelectorAll("script").forEach((script) => script.remove());
+        oldMain.replaceChildren(
+            ...[...freshMain.childNodes].map((n) => document.importNode(n, true)),
+        );
+        const oldSidebar = document.querySelector(".sidebar");
+        const newSidebar = source.querySelector(".sidebar");
         if (oldSidebar && newSidebar) {
-            updatePart(".sidebar-header", source); updatePart(".sidebar-scroll", source); updatePart(".sidebar-footer", source);
+            updatePart(".sidebar-header", source);
+            updatePart(".sidebar-scroll", source);
+            updatePart(".sidebar-footer", source);
             document.querySelector(".sidebar-scroll").scrollTop = sidebarScroll;
-        } else if (oldSidebar) oldSidebar.remove();
-        else if (newSidebar) document.querySelector(".app-shell").prepend(document.importNode(newSidebar, true));
-        updateHeader(source); updatePart(".app-footer", source);
-        const oldDrawer = document.getElementById("mobileNavigation"), newDrawer = source.getElementById("mobileNavigation");
+        } else if (oldSidebar) {
+            oldSidebar.remove();
+        } else if (newSidebar) {
+            document.querySelector(".app-shell").prepend(document.importNode(newSidebar, true));
+        }
+        updateHeader(source);
+        updatePart(".app-footer", source);
+        const oldDrawer = document.getElementById("mobileNavigation");
+        const newDrawer = source.getElementById("mobileNavigation");
         if (oldDrawer && newDrawer) {
-            updatePart("#mobileNavigation .offcanvas-header", source); updatePart("#mobileNavigation .offcanvas-body", source); updatePart("#mobileNavigation .sidebar-footer", source);
-        } else if (oldDrawer) { bootstrap.Offcanvas.getInstance(oldDrawer)?.hide(); oldDrawer.remove(); }
-        else if (newDrawer) document.body.append(document.importNode(newDrawer, true));
+            updatePart("#mobileNavigation .offcanvas-header", source);
+            updatePart("#mobileNavigation .offcanvas-body", source);
+            updatePart("#mobileNavigation .sidebar-footer", source);
+        } else if (oldDrawer) {
+            bootstrap.Offcanvas.getInstance(oldDrawer)?.hide();
+            oldDrawer.remove();
+        } else if (newDrawer) {
+            document.body.append(document.importNode(newDrawer, true));
+        }
         for (const id of ["notifications", "workspaceModal"]) {
-            const old = document.getElementById(id), fresh = source.getElementById(id);
-            if (old && fresh) syncAttributes(old, fresh);
+            const old = document.getElementById(id);
+            const fresh = source.getElementById(id);
+            if (old && fresh) {
+                syncAttributes(old, fresh);
+            }
         }
         document.documentElement.lang = source.documentElement.lang;
         document.documentElement.dir = source.documentElement.dir;
-        document.body.classList.toggle("authentication-page", source.body.classList.contains("authentication-page"));
+        document.body.classList.toggle(
+            "authentication-page",
+            source.body.classList.contains("authentication-page"),
+        );
         const style = document.querySelector('link[rel="stylesheet"][href*="bootstrap"]');
         const nextStyle = source.querySelector('link[rel="stylesheet"][href*="bootstrap"]');
         if (style && nextStyle) {
             const href = new URL(nextStyle.getAttribute("href"), location.href).href;
-            if (style.href !== href) style.href = href;
+            if (style.href !== href) {
+                style.href = href;
+            }
         }
         document.title = source.title;
         oldMain.scrollTop = scroll;
         if (options.keepFocus && focusedName) {
-            const input = [...oldMain.querySelectorAll("input, select, textarea")].find(e => e.name === focusedName);
-            input?.focus({preventScroll: true});
-        } else if (!options.keepScroll) oldMain.focus({preventScroll: true});
+            const input = [...oldMain.querySelectorAll("input, select, textarea")].find(
+                (e) => e.name === focusedName,
+            );
+            input?.focus({ preventScroll: true });
+        } else if (!options.keepScroll) {
+            oldMain.focus({ preventScroll: true });
+        }
         const initialError = source.getElementById("notifications")?.dataset.initialError;
-        if (initialError) notice(initialError);
-        document.dispatchEvent(new CustomEvent("next:navigated", {detail: {url: location.href}}));
+        if (initialError) {
+            notice(initialError);
+        }
+        document.dispatchEvent(
+            new CustomEvent("next:navigated", { detail: { url: location.href } }),
+        );
     }
     async function readDocument(response) {
-        if (new URL(response.url).origin !== location.origin) throw new Error("Unexpected response origin");
+        if (new URL(response.url).origin !== location.origin) {
+            throw new Error("Unexpected response origin");
+        }
         const html = new DOMParser().parseFromString(await response.text(), "text/html");
-        if (!html.getElementById("main") || !html.querySelector(".app-shell")) throw new Error("Unexpected response");
+        if (!html.getElementById("main") || !html.querySelector(".app-shell")) {
+            throw new Error("Unexpected response");
+        }
         return html;
     }
     function updateHistory(url, options) {
-        if (options.history === false || options.fromHistory) return;
+        if (options.history === false || options.fromHistory) {
+            return;
+        }
         history[options.replace ? "replaceState" : "pushState"](
-            {nextNavigation: true, mainScroll: options.keepScroll ? main().scrollTop : 0}, "", url);
+            { nextNavigation: true, mainScroll: options.keepScroll ? main().scrollTop : 0 },
+            "",
+            url,
+        );
     }
     async function navigate(url, options = {}) {
         const target = new URL(url, location.href);
-        if (target.origin !== location.origin) return false;
+        if (target.origin !== location.origin) {
+            return false;
+        }
         const token = ++sequence;
         pendingGet?.abort();
         const method = options.method ?? "GET";
         const controller = method === "GET" ? new AbortController() : null;
         pendingGet = controller;
-        if (!options.fromHistory) rememberScroll();
+        if (!options.fromHistory) {
+            rememberScroll();
+        }
         main()?.setAttribute("aria-busy", "true");
         try {
-            const response = await window.NextHttp.request(target.href, {method, body: options.body, signal: controller?.signal, cache: "no-store"});
-            if (token !== sequence) return false;
+            const response = await window.NextHttp.request(target.href, {
+                method,
+                body: options.body,
+                signal: controller?.signal,
+                cache: "no-store",
+            });
+            if (token !== sequence) {
+                return false;
+            }
             if (response.status === 401) {
                 notice(messages().expired);
-                return navigate(new URL((messages().loginUrl ?? "/Account/Login") + "?returnUrl=" + encodeURIComponent(target.pathname + target.search), location.origin).href, {replace: true});
+                return navigate(
+                    new URL(
+                        (messages().loginUrl ?? "/Account/Login") +
+                            "?returnUrl=" +
+                            encodeURIComponent(target.pathname + target.search),
+                        location.origin,
+                    ).href,
+                    { replace: true },
+                );
             }
             if (!response.headers.get("content-type")?.includes("text/html")) {
                 notice(await window.NextHttp.problemMessage(response, messages()));
                 return false;
             }
             const html = await readDocument(response);
-            if (token !== sequence) return false;
+            if (token !== sequence) {
+                return false;
+            }
             updateHistory(response.url, options);
             render(html, options);
             return true;
         } catch (error) {
-            if (error.name !== "AbortError" && token === sequence) notice(messages().error);
+            if (error.name !== "AbortError" && token === sequence) {
+                notice(messages().error);
+            }
             return false;
         } finally {
-            if (token === sequence) { pendingGet = null; main()?.removeAttribute("aria-busy"); }
+            if (token === sequence) {
+                pendingGet = null;
+                main()?.removeAttribute("aria-busy");
+            }
         }
     }
-    document.addEventListener("click", event => {
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    document.addEventListener("click", (event) => {
+        if (
+            event.defaultPrevented ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        ) {
+            return;
+        }
         const link = event.target.closest("a[href]");
-        if (!link || link.hasAttribute("download") || link.target && link.target !== "_self" || link.matches("[data-native-navigation], [data-modal-url]") || link.getAttribute("href").startsWith("#")) return;
+        if (!link) {
+            return;
+        }
+
+        const usesNativeNavigation =
+            link.hasAttribute("download") ||
+            (link.target && link.target !== "_self") ||
+            link.matches("[data-native-navigation], [data-modal-url]") ||
+            link.getAttribute("href").startsWith("#");
+
+        if (usesNativeNavigation) {
+            return;
+        }
         const url = new URL(link.href, location.href);
-        if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return;
+        if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) {
+            return;
+        }
         event.preventDefault();
         const drawer = document.getElementById("mobileNavigation");
-        if (drawer?.classList.contains("show")) bootstrap.Offcanvas.getInstance(drawer)?.hide();
+        if (drawer?.classList.contains("show")) {
+            bootstrap.Offcanvas.getInstance(drawer)?.hide();
+        }
         void navigate(url.href);
     });
-    document.addEventListener("submit", async event => {
+    document.addEventListener("submit", async (event) => {
         const form = event.target;
-        if (!(form instanceof HTMLFormElement) || event.defaultPrevented || form.matches("[data-modal-form], [data-native-navigation]") || form.target && form.target !== "_self") return;
+        if (!(form instanceof HTMLFormElement) || event.defaultPrevented) {
+            return;
+        }
+
+        const usesNativeSubmission =
+            form.matches("[data-modal-form], [data-native-navigation]") ||
+            (form.target && form.target !== "_self");
+
+        if (usesNativeSubmission) {
+            return;
+        }
         const url = new URL(form.action || location.href, location.href);
-        if (url.origin !== location.origin) return;
+        if (url.origin !== location.origin) {
+            return;
+        }
         event.preventDefault();
-        if (form.dataset.navigationBusy || !form.reportValidity()) return;
-        const method = form.method.toUpperCase(), body = new FormData(form);
-        if (event.submitter?.name) body.append(event.submitter.name, event.submitter.value);
+        if (form.dataset.navigationBusy || !form.reportValidity()) {
+            return;
+        }
+        const method = form.method.toUpperCase();
+        const body = new FormData(form);
+        if (event.submitter?.name) {
+            body.append(event.submitter.name, event.submitter.value);
+        }
         if (method === "GET") {
-            url.search = new URLSearchParams([...body].filter(([, value]) => typeof value === "string" && value !== ""));
-            await navigate(url.href, {keepFocus: true});
+            url.search = new URLSearchParams(
+                [...body].filter(([, value]) => typeof value === "string" && value !== ""),
+            );
+            await navigate(url.href, { keepFocus: true });
         } else {
             form.dataset.navigationBusy = "true";
             const buttons = [...form.querySelectorAll('button[type="submit"], button:not([type])')];
             window.NextHttp.setBusy(form, true, buttons);
-            try { await navigate(url.href, {method, body, replace: true, keepFocus: true}); }
-            finally { delete form.dataset.navigationBusy; window.NextHttp.setBusy(form, false); }
+            try {
+                await navigate(url.href, { method, body, replace: true, keepFocus: true });
+            } finally {
+                delete form.dataset.navigationBusy;
+                window.NextHttp.setBusy(form, false);
+            }
         }
     });
-    document.addEventListener("change", event => {
-        if (event.target.matches("[data-page-size]")) event.target.form.requestSubmit();
+    document.addEventListener("change", (event) => {
+        if (event.target.matches("[data-page-size]")) {
+            event.target.form.requestSubmit();
+        }
     });
-    window.addEventListener("popstate", event => { void navigate(location.href, {fromHistory: true, scroll: event.state?.mainScroll ?? 0}); });
-    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    history.replaceState({...history.state, nextNavigation: true, mainScroll: main()?.scrollTop ?? 0}, "", location.href);
-    window.NextNavigation = Object.freeze({navigate, refresh: () => navigate(location.href, {history: false, keepScroll: true, keepFocus: true})});
+    window.addEventListener("popstate", (event) => {
+        void navigate(location.href, { fromHistory: true, scroll: event.state?.mainScroll ?? 0 });
+    });
+    if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+    }
+    history.replaceState(
+        { ...history.state, nextNavigation: true, mainScroll: main()?.scrollTop ?? 0 },
+        "",
+        location.href,
+    );
+    window.NextNavigation = Object.freeze({
+        navigate,
+        refresh: () =>
+            navigate(location.href, { history: false, keepScroll: true, keepFocus: true }),
+    });
 })();

@@ -18,7 +18,6 @@ public sealed class SecurityMappingRegister : IRegister
             .Ignore(d => d.Id)
             .Ignore(d => d.CreatedAt)
             .Ignore(d => d.CreatedBy);
-
         config.NewConfig<Role, RoleDto>();
         config.NewConfig<RoleCreationDto, Role>()
             .Map(d => d.Name, s => s.Name.Trim())
@@ -28,7 +27,6 @@ public sealed class SecurityMappingRegister : IRegister
             .Map(d => d.NormalizedName, s => s.Name.Trim().ToUpperInvariant())
             .Ignore(d => d.Id)
             .Ignore(d => d.ConcurrencyStamp);
-
         config.NewConfig<RolePermission, RolePermissionDto>()
             .Map(d => d.RoleName, s => s.Role.Name)
             .Map(d => d.Code, s => s.Permission.Code)

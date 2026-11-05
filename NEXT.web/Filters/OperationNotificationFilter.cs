@@ -14,9 +14,10 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (context.Controller is AccountController &&
-            context.RouteData.Values["action"]?.ToString() == "Profile" &&
-            HttpMethods.IsPost(context.HttpContext.Request.Method) && !context.ModelState.IsValid)
+        if (context.Controller is AccountController
+            && context.RouteData.Values["action"]?.ToString() == "Profile"
+            && HttpMethods.IsPost(context.HttpContext.Request.Method)
+            && !context.ModelState.IsValid)
         {
             var errors = context.ModelState.Where(x => x.Value!.Errors.Count > 0).ToDictionary(
                 x => x.Key, x => x.Value!.Errors.Select(error =>
@@ -39,17 +40,29 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
             }
             else
             {
-                if (operation.RequiresSignIn) await access.LogoutAsync();
+                if (operation.RequiresSignIn)
+                {
+                    await access.LogoutAsync();
+                }
                 var controller = (Controller)context.Controller;
                 var message = text[operation.RequiresSignIn ? "ProfileSavedSignInAgain" : "UpdatedNotice"].Value;
                 if (operation.Warnings.Count > 0)
+                {
                     message += " " + string.Join(" ", operation.Warnings.Select(x => text[x.Code].Value));
+                }
                 context.Result = new JsonResult(new
                 {
-                    notification = new { kind = operation.Warnings.Count > 0 ? "warning" : "success", message },
+                    notification = new
+                    {
+                        kind = operation.Warnings.Count > 0 ? "warning" : "success",
+                        message
+                    },
                     redirectUrl = operation.RequiresSignIn
-                        ? controller.Url.Action("Login", "Account", new { returnUrl = controller.Url.Action("Profile", "Account") })
-                        : null
+                                        ? controller.Url.Action("Login", "Account", new
+                                        {
+                                            returnUrl = controller.Url.Action("Profile", "Account")
+                                        })
+                                        : null
                 });
             }
         }
@@ -63,7 +76,14 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
                 "Restore" => ("info", "RestoredNotice"),
                 _ => ("info", "UpdatedNotice")
             };
-            context.Result = new JsonResult(new { notification = new { kind, message = text[key].Value } });
+            context.Result = new JsonResult(new
+            {
+                notification = new
+                {
+                    kind,
+                    message = text[key].Value
+                }
+            });
         }
         await next();
     }

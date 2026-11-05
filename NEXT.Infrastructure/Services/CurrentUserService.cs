@@ -7,6 +7,7 @@ namespace NEXT.Infrastructure.Services;
 public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     public Guid? UserId
+
     {
         get
         {

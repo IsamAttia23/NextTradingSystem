@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class ProductsController(ISender sender, EntityPresenter<ProductDto, ProductInputDto> presenter)
     : EntityController<ProductDto, ProductInputDto, ProductQueryModel>(sender, presenter);

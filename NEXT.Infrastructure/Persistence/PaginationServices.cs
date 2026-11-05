@@ -22,20 +22,20 @@ namespace NEXT.Infrastructure.Persistence
             var pageNumber = query?.PageNumber > 0 ? query.PageNumber : 1;
             var pageSize = query?.PageSize > 0 ? query.PageSize : 10;
             pageSize = Math.Min(pageSize, 50);
-
             ArgumentNullException.ThrowIfNull(entities);
             ArgumentNullException.ThrowIfNull(projection);
             if ((long)(pageNumber - 1) * pageSize > int.MaxValue)
-                throw new AppValidationException(new Dictionary<string, string[]> {
+            {
+                throw new AppValidationException(new Dictionary<string, string[]>
+                {
                     [nameof(query.PageNumber)] = ["The requested page is too large."]
                 });
+            }
             var totalCount = await StorageErrors.ExecuteAsync(() => entities.CountAsync(cancellationToken));
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
             pageNumber = Math.Min(pageNumber, Math.Max(1, totalPages));
-
             var pageEntities = entities.Skip((pageNumber - 1) * pageSize).Take(pageSize);
             var data = await StorageErrors.ExecuteAsync(() => projection(pageEntities).ToListAsync(cancellationToken));
-
             var pagedList = new TPaginationQueryModel<TResult>
             {
                 Data = data,
@@ -44,7 +44,6 @@ namespace NEXT.Infrastructure.Persistence
                 TotalCount = totalCount,
                 TotalPages = totalPages
             };
-
             return pagedList;
         }
     }

@@ -21,13 +21,13 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("NEXTDatabase");
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             throw new InvalidOperationException("Connection string 'NEXTDatabase' was not configured.");
-
+        }
         services.AddDbContext<NEXTDbContext>(options =>
         {
             options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
         });
-
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
         services.AddScoped<IAccountAccess, AccountAccess>();
@@ -39,9 +39,7 @@ public static class DependencyInjection
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.Queries.IBranchLookup, BranchLookup>();
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
-
         services.AddScoped<NEXT.Application.Abstractions.Services.IPaginationServices, PaginationServices>();
-
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IRequestMetadataService, RequestMetadataService>();
@@ -60,17 +58,16 @@ public static class DependencyInjection
                 services.AddScoped(contract, implementation);
                 foreach (var generic in contract.GetInterfaces().Where(x => x.IsGenericType &&
                     (x.GetGenericTypeDefinition() == typeof(IRepository<>) || x.GetGenericTypeDefinition() == typeof(IKeyRepository<,>))))
+                {
                     services.AddScoped(generic, sp => sp.GetRequiredService(contract));
+                }
             }
         }
-
         services.AddScoped<AuditEntryFactory>();
         services.AddScoped<AuditFieldsHandler>();
         services.AddScoped<AuditValueSerializer>();
-
         services.AddScoped<SoftDeleteHandler>();
         services.AddScoped<TrackedChangesProcessor>();
-
         services.AddScoped(typeof(IRecycleBinStore<,>), typeof(NEXT.Infrastructure.Features.RecycleBin.RecycleBinStore<,>));
         services.AddNEXTIdentity();
         return services;

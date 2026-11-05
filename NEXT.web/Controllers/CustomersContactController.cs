@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class CustomersContactController(ISender sender, EntityPresenter<CustomerContactDto, CustomerContactInputDto> presenter)
     : EntityController<CustomerContactDto, CustomerContactInputDto, PaginationQuery>(sender, presenter);

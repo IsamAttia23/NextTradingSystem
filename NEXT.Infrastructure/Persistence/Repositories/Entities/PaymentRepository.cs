@@ -13,7 +13,10 @@ public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Pay
     public override Expression<Func<Payment, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as PaymentQueryModel ?? new PaymentQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as PaymentQueryModel ?? new PaymentQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<Payment, bool>> BuildFilterExpression(PaymentQueryModel query)
@@ -24,7 +27,6 @@ public sealed class PaymentRepository(NEXTDbContext context) : KeyRepository<Pay
             (!query.To.HasValue || entity.PaymentDate <= query.To.Value) &&
             (string.IsNullOrEmpty(query.CustomerName) || (entity.Customer != null && entity.Customer.Name == query.CustomerName)) &&
             (string.IsNullOrEmpty(query.SupplierName) || (entity.Supplier != null && entity.Supplier.Name == query.SupplierName));
-
         return CombineSearchExpression(filters, query.SearchTerm, "PaymentNumber", "Notes");
     }
 

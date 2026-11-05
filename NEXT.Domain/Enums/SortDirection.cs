@@ -1,4 +1,4 @@
-﻿namespace NEXT.Domain.Enums
+namespace NEXT.Domain.Enums
 {
     public enum SortDirection
     {

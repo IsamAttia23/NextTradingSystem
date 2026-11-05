@@ -47,10 +47,10 @@ public sealed class WorkspaceUiTests
         builder.Services.AddInfrastructureServices(builder.Configuration);
         if (postgresConnection is null)
         {
-        builder.Services.RemoveAll<DbContextOptions<NEXTDbContext>>();
-        builder.Services.RemoveAll<IDbContextOptionsConfiguration<NEXTDbContext>>();
-        var database = Guid.NewGuid().ToString();
-        builder.Services.AddDbContext<NEXTDbContext>(options => options.UseInMemoryDatabase(database));
+            builder.Services.RemoveAll<DbContextOptions<NEXTDbContext>>();
+            builder.Services.RemoveAll<IDbContextOptionsConfiguration<NEXTDbContext>>();
+            var database = Guid.NewGuid().ToString();
+            builder.Services.AddDbContext<NEXTDbContext>(options => options.UseInMemoryDatabase(database));
         }
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddAuthentication(options =>
@@ -72,18 +72,38 @@ public sealed class WorkspaceUiTests
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-            var branch = new Branch { Id = Guid.NewGuid(), Name = "Khartoum / الخرطوم", IsActive = true };
+            var branch = new Branch
+            {
+                Id = Guid.NewGuid(),
+                Name = "Khartoum / الخرطوم",
+                IsActive = true
+            };
             db.Add(branch);
             await db.SaveChangesAsync();
             var roles = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
-            Assert.True((await roles.CreateAsync(new Role { Id = Guid.NewGuid(), Name = "Admin", IsSystem = true })).Succeeded);
+            Assert.True((await roles.CreateAsync(new Role
+            {
+                Id = Guid.NewGuid(),
+                Name = "Admin",
+                IsSystem = true
+            })).Succeeded);
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             foreach (var name in new[] { "ui-admin", "ui-reader" })
             {
-                var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = name, FullName = "UI test " + name,
-                    Email = name + "@example.test", IsActive = true, BranchId = branch.Id };
+                var user = new ApplicationUser
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = name,
+                    FullName = "UI test " + name,
+                    Email = name + "@example.test",
+                    IsActive = true,
+                    BranchId = branch.Id
+                };
                 Assert.True((await users.CreateAsync(user, "Test-only!2026")).Succeeded);
-                if (name == "ui-admin") Assert.True((await users.AddToRoleAsync(user, "Admin")).Succeeded);
+                if (name == "ui-admin")
+                {
+                    Assert.True((await users.AddToRoleAsync(user, "Admin")).Succeeded);
+                }
             }
         }
         await app.StartAsync();
@@ -92,8 +112,12 @@ public sealed class WorkspaceUiTests
 
     internal static HttpClient Client(WebApplication app) => new(new HttpClientHandler
     {
-        AllowAutoRedirect = false, CookieContainer = new CookieContainer()
-    }) { BaseAddress = new Uri(app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single()) };
+        AllowAutoRedirect = false,
+        CookieContainer = new CookieContainer()
+    })
+    {
+        BaseAddress = new Uri(app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single())
+    };
 
     internal static string Token(string html) => WebUtility.HtmlDecode(Regex.Match(html,
         "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
@@ -101,13 +125,21 @@ public sealed class WorkspaceUiTests
     internal static async Task<HttpResponseMessage> Post(HttpClient client, string url, string token, params (string Key, string Value)[] fields)
     {
         // Existing CRUD scenarios supply a reason; dedicated validation tests explicitly post an empty reason.
-        if ((url.Contains("/Delete", StringComparison.Ordinal) || url.Contains("/Purge", StringComparison.Ordinal)) && !fields.Any(x => x.Key == "Reason"))
+        if ((url.Contains("/Delete", StringComparison.Ordinal)
+                || url.Contains("/Purge", StringComparison.Ordinal))
+            && !fields.Any(x => x.Key == "Reason"))
+        {
             fields = fields.Append(("Reason", "Test deletion reason")).ToArray();
-        if (url.Contains("/Edit/", StringComparison.Ordinal) && !fields.Any(x => x.Key == "RowVersion"))
+        }
+        if (url.Contains("/Edit/", StringComparison.Ordinal)
+            && !fields.Any(x => x.Key == "RowVersion"))
         {
             var currentForm = await client.GetStringAsync(url);
             var version = RowVersion(currentForm);
-            if (!string.IsNullOrEmpty(version)) fields = fields.Append(("RowVersion", version)).ToArray();
+            if (!string.IsNullOrEmpty(version))
+            {
+                fields = fields.Append(("RowVersion", version)).ToArray();
+            }
         }
         return await client.PostAsync(url, new FormUrlEncodedContent(fields.Append(("__RequestVerificationToken", token))
             .Select(x => new KeyValuePair<string, string>(x.Item1, x.Item2))));
@@ -136,7 +168,10 @@ public sealed class WorkspaceUiTests
         var arabic = await client.GetStringAsync("/Account/Login");
         Assert.Contains("dir=\"rtl\"", arabic);
         Assert.Contains("bootstrap.rtl.min.css", arabic);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Culture/Set", new FormUrlEncodedContent(new Dictionary<string,string> { ["culture"] = "en" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Culture/Set", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["culture"] = "en"
+        }))).StatusCode);
         await Post(client, "/Culture/Set", Token(arabic), ("culture", "en"), ("returnUrl", "https://example.org/evil"));
         var english = await client.GetStringAsync("/Account/Login");
         Assert.Contains("dir=\"ltr\"", english);
@@ -149,13 +184,18 @@ public sealed class WorkspaceUiTests
             Assert.Contains("workspaceModal", await response.Content.ReadAsStringAsync());
         }
         var form = await client.GetStringAsync("/Roles/Create");
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Roles/Create", new FormUrlEncodedContent(new Dictionary<string,string> { ["Name"] = "Forbidden" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Roles/Create", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Name"] = "Forbidden"
+        }))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await Post(client, "/Roles/Create", Token(form), ("Name", "Sales"))).StatusCode);
         var rolesHtml = await client.GetStringAsync("/Roles");
         Assert.Contains("Sales", rolesHtml);
         Guid roleId;
         await using (var scope = app.Services.CreateAsyncScope())
+        {
             roleId = await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Roles.Where(x => x.Name == "Sales").Select(x => x.Id).SingleAsync();
+        }
         var edit = await client.GetStringAsync("/Roles/Edit/" + roleId);
         Assert.Equal(HttpStatusCode.OK, (await Post(client, "/Roles/Edit/" + roleId, Token(edit), ("Name", "Sales updated"))).StatusCode);
         var permissionForm = await client.GetStringAsync("/Permissions/Create");
@@ -216,14 +256,18 @@ public sealed class WorkspaceUiTests
             Assert.True(response.StatusCode == HttpStatusCode.OK, $"/{route} returned {response.StatusCode}.");
         }
         foreach (var route in new[] { "Customers", "CustomersContact", "Tags", "Suppliers", "Categories", "Branches", "Products", "Units", "Warehouses" })
+        {
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/" + route + "/Create")).StatusCode);
+        }
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Inventory/Receive")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Inventory/Transfer")).StatusCode);
         var tagForm = await client.GetStringAsync("/Tags/Create");
         Assert.Equal(HttpStatusCode.OK, (await Post(client, "/Tags/Create", Token(tagForm), ("Name", "Retail"), ("Color", "#102030"))).StatusCode);
         Guid tagId;
         await using (var scope = app.Services.CreateAsyncScope())
+        {
             tagId = await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Tags.Select(x => x.Id).SingleAsync();
+        }
         var customerForm = await client.GetStringAsync("/Customers/Create");
         Assert.Contains(tagId.ToString(), customerForm);
         Assert.Equal(HttpStatusCode.BadRequest, (await Post(client, "/Customers/Create", Token(customerForm), ("Name", "Invalid"), ("TagId", Guid.Empty.ToString()))).StatusCode);
@@ -233,7 +277,8 @@ public sealed class WorkspaceUiTests
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var customer = await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Customers.SingleAsync();
-            customerId = customer.Id; Assert.Equal(12.25m, customer.CreditLimit);
+            customerId = customer.Id;
+            Assert.Equal(12.25m, customer.CreditLimit);
         }
         var deleteTag = "/Tags/Delete/" + tagId;
         var blockedDelete = await Post(client, deleteTag, Token(await client.GetStringAsync(deleteTag)));
@@ -250,8 +295,12 @@ public sealed class WorkspaceUiTests
         Assert.Equal(HttpStatusCode.OK, (await Post(client, delete, Token(await client.GetStringAsync(delete)))).StatusCode);
         Assert.DoesNotContain("Updated customer", await client.GetStringAsync("/Customers"));
         // A generic controller's write actions still enforce antiforgery and administration authorization.
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Tags/Create", new FormUrlEncodedContent(new Dictionary<string,string> { ["Name"] = "No token" }))).StatusCode);
-        using var reader = Client(app); await Login(reader, "ui-reader");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Tags/Create", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Name"] = "No token"
+        }))).StatusCode);
+        using var reader = Client(app);
+        await Login(reader, "ui-reader");
         reader.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
         Assert.Equal(HttpStatusCode.Forbidden, (await reader.GetAsync("/Inventory/Receive")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await reader.GetAsync("/Customers/Create")).StatusCode);
@@ -260,47 +309,96 @@ public sealed class WorkspaceUiTests
     [Fact]
     public async Task SharedFiltersBadgesPaginationAndDetailsWorkAcrossCatalogEntities()
     {
-        await using var app = await StartAsync(); using var client = Client(app);
+        await using var app = await StartAsync();
+        using var client = Client(app);
         await Login(client, "ui-admin");
         Guid targetId, tagId;
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-            var tag = new Tag { Name = "Gold partner", Color = "#ffcc00" }; var other = new Tag { Name = "Other", Color = "#102030" };
-            db.AddRange(tag, other); await db.SaveChangesAsync(); tagId = tag.Id;
-            var target = new Customer { Name = "Alpha customer", TagId = tag.Id, Phone = "111", IsActive = true };
+            var tag = new Tag
+            {
+                Name = "Gold partner",
+                Color = "#ffcc00"
+            };
+            var other = new Tag
+            {
+                Name = "Other",
+                Color = "#102030"
+            };
+            db.AddRange(tag, other);
+            await db.SaveChangesAsync();
+            tagId = tag.Id;
+            var target = new Customer
+            {
+                Name = "Alpha customer",
+                TagId = tag.Id,
+                Phone = "111",
+                IsActive = true
+            };
             db.Add(target);
-            db.AddRange(Enumerable.Range(1, 24).Select(i => new Customer { Name = "Partner " + i.ToString("D2"), TagId = tag.Id, IsActive = true }));
-            db.Add(new Customer { Name = "Inactive sentinel", TagId = other.Id, IsActive = false });
-            await db.SaveChangesAsync(); targetId = target.Id;
-            db.CustomerContacts.Add(new CustomerContact { CustomerId = target.Id, Name = "Linked contact" });
-            db.Payments.Add(new Payment { CustomerId = target.Id, Amount = 99, PaymentNumber = "PAY-CUSTOMER" });
+            db.AddRange(Enumerable.Range(1, 24).Select(i => new Customer
+            {
+                Name = "Partner " + i.ToString("D2"),
+                TagId = tag.Id,
+                IsActive = true
+            }));
+            db.Add(new Customer
+            {
+                Name = "Inactive sentinel",
+                TagId = other.Id,
+                IsActive = false
+            });
+            await db.SaveChangesAsync();
+            targetId = target.Id;
+            db.CustomerContacts.Add(new CustomerContact
+            {
+                CustomerId = target.Id,
+                Name = "Linked contact"
+            });
+            db.Payments.Add(new Payment
+            {
+                CustomerId = target.Id,
+                Amount = 99,
+                PaymentNumber = "PAY-CUSTOMER"
+            });
             await db.SaveChangesAsync();
         }
         var url = $"/Customers?TagId={tagId}&IsActive=true&PageSize=10&SortBy=Name&SortDirection=Ascending";
         var html = await client.GetStringAsync(url);
-        Assert.Contains("Gold partner", html); Assert.Contains("background-color:#ffcc00", html);
-        Assert.Contains("initial-avatar", html); Assert.DoesNotContain("Inactive sentinel", html);
-        Assert.Contains("PageNumber=2", html); Assert.Contains("TagId=" + tagId, html);
+        Assert.Contains("Gold partner", html);
+        Assert.Contains("background-color:#ffcc00", html);
+        Assert.Contains("initial-avatar", html);
+        Assert.DoesNotContain("Inactive sentinel", html);
+        Assert.Contains("PageNumber=2", html);
+        Assert.Contains("TagId=" + tagId, html);
         Assert.Contains("Alpha customer", html);
         Assert.Contains("<th scope=\"col\" class=\"row-number\">#</th>", html);
         Assert.Equal(Enumerable.Range(1, 10), Regex.Matches(html, "<td class=\"row-number\"><bdi>([0-9]+)</bdi></td>")
             .Select(match => int.Parse(match.Groups[1].Value)));
         Assert.True(html.IndexOf("class=\"list-navigation\"", StringComparison.Ordinal) >
             html.IndexOf("</table>", StringComparison.Ordinal));
-        var second = await client.GetStringAsync(url + "&PageNumber=2"); Assert.DoesNotContain("Alpha customer", second);
+        var second = await client.GetStringAsync(url + "&PageNumber=2");
+        Assert.DoesNotContain("Alpha customer", second);
         Assert.Equal(Enumerable.Range(11, 10), Regex.Matches(second, "<td class=\"row-number\"><bdi>([0-9]+)</bdi></td>")
             .Select(match => int.Parse(match.Groups[1].Value)));
         var search = await client.GetStringAsync("/Customers?SearchTerm=Alpha&PageSize=10");
-        Assert.Contains("Alpha customer", search); Assert.DoesNotContain("Partner 01", search);
-        var byPhone = await client.GetStringAsync("/Customers?SearchTerm=111"); Assert.Contains("Alpha customer", byPhone);
-        var inactive = await client.GetStringAsync("/Customers?IsActive=false"); Assert.Contains("Inactive sentinel", inactive); Assert.DoesNotContain("Alpha customer", inactive);
+        Assert.Contains("Alpha customer", search);
+        Assert.DoesNotContain("Partner 01", search);
+        var byPhone = await client.GetStringAsync("/Customers?SearchTerm=111");
+        Assert.Contains("Alpha customer", byPhone);
+        var inactive = await client.GetStringAsync("/Customers?IsActive=false");
+        Assert.Contains("Inactive sentinel", inactive);
+        Assert.DoesNotContain("Alpha customer", inactive);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/Inventory/Movements?From=2026-12-01&To=2026-01-01")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/Customers?TagId=not-a-guid")).StatusCode);
         var details = await client.GetStringAsync("/Customers/Details/" + targetId);
-        Assert.Contains("record-card", details); Assert.Contains("Gold partner", details); Assert.Contains("Linked contact", details);
+        Assert.Contains("record-card", details);
+        Assert.Contains("Gold partner", details);
+        Assert.Contains("Linked contact", details);
         var payments = await client.GetStringAsync($"/Customers/Details/{targetId}?activityKind=Payment");
-        Assert.Contains("PAY-CUSTOMER", payments); Assert.DoesNotContain("PasswordHash", details);
+        Assert.Contains("PAY-CUSTOMER", payments);
+        Assert.DoesNotContain("PasswordHash", details);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"/Customers/Details/{targetId}?activityKind=NotASection")).StatusCode);
         var layout = await client.GetStringAsync("/Customers");
         Assert.Contains("nav-group-title", layout);
@@ -310,7 +408,8 @@ public sealed class WorkspaceUiTests
         var mobile = layout[layout.IndexOf("id=\"mobileNavigation\"", StringComparison.Ordinal)..];
         Assert.True(mobile.IndexOf("sidebar-profile", StringComparison.Ordinal) > mobile.IndexOf("grouped-navigation", StringComparison.Ordinal));
         Assert.DoesNotContain("sidebar-bottom", layout);
-        var tagDetails = await client.GetStringAsync("/Tags/Details/" + tagId); Assert.Contains("record-card", tagDetails);
+        var tagDetails = await client.GetStringAsync("/Tags/Details/" + tagId);
+        Assert.Contains("record-card", tagDetails);
         var tags = await client.GetStringAsync("/Tags");
         Assert.Contains("class=\"color-badge\" style=\"background-color:#ffcc00", tags);
     }
@@ -318,20 +417,32 @@ public sealed class WorkspaceUiTests
     [Fact]
     public async Task PartnerPhotoUploadsAreValidatedPreservedAndRemovable()
     {
-        await using var app = await StartAsync(); using var client = Client(app); await Login(client, "ui-admin");
+        await using var app = await StartAsync();
+        using var client = Client(app);
+        await Login(client, "ui-admin");
         Guid tag;
         await using (var scope = app.Services.CreateAsyncScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>(); var entity = new Tag { Name = "Partners", Color = "#102030" };
-            db.Tags.Add(entity); await db.SaveChangesAsync(); tag = entity.Id;
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var entity = new Tag
+            {
+                Name = "Partners",
+                Color = "#102030"
+            };
+            db.Tags.Add(entity);
+            await db.SaveChangesAsync();
+            tag = entity.Id;
         }
         var image = await File.ReadAllBytesAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot/pwa/icon-192.png"));
         foreach (var route in new[] { "Customers", "Suppliers" })
         {
-            var form = await client.GetStringAsync("/" + route + "/Create"); var token = Token(form);
+            var form = await client.GetStringAsync("/" + route + "/Create");
+            var token = Token(form);
             using var upload = new MultipartFormDataContent();
-            upload.Add(new StringContent(token), "__RequestVerificationToken"); upload.Add(new StringContent("Photo " + route), "Name");
-            upload.Add(new StringContent(tag.ToString()), "TagId"); upload.Add(new ByteArrayContent(image), "Avatar", "photo.png");
+            upload.Add(new StringContent(token), "__RequestVerificationToken");
+            upload.Add(new StringContent("Photo " + route), "Name");
+            upload.Add(new StringContent(tag.ToString()), "TagId");
+            upload.Add(new ByteArrayContent(image), "Avatar", "photo.png");
             Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/" + route + "/Create", upload)).StatusCode);
             Guid id;
             await using (var scope = app.Services.CreateAsyncScope())
@@ -339,14 +450,18 @@ public sealed class WorkspaceUiTests
                 var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
                 id = route == "Customers" ? await db.Customers.Select(x => x.Id).SingleAsync() : await db.Suppliers.Select(x => x.Id).SingleAsync();
             }
-            var avatar = await client.GetAsync($"/{route}/Avatar/{id}"); Assert.Equal("image/png", avatar.Content.Headers.ContentType?.MediaType);
+            var avatar = await client.GetAsync($"/{route}/Avatar/{id}");
+            Assert.Equal("image/png", avatar.Content.Headers.ContentType?.MediaType);
             Assert.Contains("/" + route + "/Avatar/" + id, await client.GetStringAsync($"/{route}/Details/{id}"));
-            var editUrl = $"/{route}/Edit/{id}"; var edit = await client.GetStringAsync(editUrl);
+            var editUrl = $"/{route}/Edit/{id}";
+            var edit = await client.GetStringAsync(editUrl);
             Assert.Equal(HttpStatusCode.OK, (await Post(client, editUrl, Token(edit), ("Name", "Preserved"), ("TagId", tag.ToString()))).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/{route}/Avatar/{id}")).StatusCode);
             edit = await client.GetStringAsync(editUrl);
-            using var bad = new MultipartFormDataContent(); bad.Add(new StringContent(Token(edit)), "__RequestVerificationToken");
-            bad.Add(new StringContent("Invalid"), "Name"); bad.Add(new StringContent(tag.ToString()), "TagId");
+            using var bad = new MultipartFormDataContent();
+            bad.Add(new StringContent(Token(edit)), "__RequestVerificationToken");
+            bad.Add(new StringContent("Invalid"), "Name");
+            bad.Add(new StringContent(tag.ToString()), "TagId");
             bad.Add(new StringContent(RowVersion(edit)), "RowVersion");
             bad.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("<script>bad</script>")), "Avatar", "fake.png");
             Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync(editUrl, bad)).StatusCode);
@@ -359,19 +474,32 @@ public sealed class WorkspaceUiTests
     [Fact]
     public async Task DeleteConfirmationRequiresReasonAndPreservesItInRecycleBin()
     {
-        await using var app = await StartAsync(); using var client = Client(app); await Login(client, "ui-admin");
+        await using var app = await StartAsync();
+        using var client = Client(app);
+        await Login(client, "ui-admin");
         Guid id;
         await using (var scope = app.Services.CreateAsyncScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>(); var tag = new Tag { Name = "Deletion test", Color = "#102030" };
-            db.Tags.Add(tag); await db.SaveChangesAsync(); id = tag.Id;
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var tag = new Tag
+            {
+                Name = "Deletion test",
+                Color = "#102030"
+            };
+            db.Tags.Add(tag);
+            await db.SaveChangesAsync();
+            id = tag.Id;
         }
-        var url = "/Tags/Delete/" + id; var html = await client.GetStringAsync(url);
-        Assert.Contains("name=\"Reason\"", html); Assert.Contains("maxlength=\"500\"", html);
+        var url = "/Tags/Delete/" + id;
+        var html = await client.GetStringAsync(url);
+        Assert.Contains("name=\"Reason\"", html);
+        Assert.Contains("maxlength=\"500\"", html);
         Assert.Equal(HttpStatusCode.BadRequest, (await Post(client, url, Token(html), ("Reason", "  "))).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await Post(client, url, Token(html), ("Reason", new string('x',501)))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Post(client, url, Token(html), ("Reason", new string('x', 501)))).StatusCode);
         await using (var scope = app.Services.CreateAsyncScope())
+        {
             Assert.True(await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Tags.AnyAsync(x => x.Id == id));
+        }
         Assert.Equal(HttpStatusCode.OK, (await Post(client, url, Token(html), ("Reason", "  Duplicate record  "))).StatusCode);
         await using (var scope = app.Services.CreateAsyncScope())
         {
@@ -383,51 +511,117 @@ public sealed class WorkspaceUiTests
         }
         Assert.Contains("Duplicate record", await client.GetStringAsync("/RecycleBin?section=Tag"));
         var page = await client.GetStringAsync("/Tags");
-        Assert.Contains("sidebar-header", page); Assert.Contains("sidebar-scroll", page); Assert.Contains("sidebar-footer", page); Assert.Contains("app-footer", page);
+        Assert.Contains("sidebar-header", page);
+        Assert.Contains("sidebar-scroll", page);
+        Assert.Contains("sidebar-footer", page);
+        Assert.Contains("app-footer", page);
         Assert.Contains("data-success-title", page);
     }
 
     [Fact]
     public async Task FiltersMatchEachQueryModelAndPageSizeLivesInNavigation()
     {
-        await using var app = await StartAsync(); using var client = Client(app); await Login(client,"ui-admin");
+        await using var app = await StartAsync();
+        using var client = Client(app);
+        await Login(client, "ui-admin");
         var customers = await client.GetStringAsync("/Customers");
-        foreach (var field in new[]{"Type","Category","TaxNumber","CommercialRegister","MinCreditLimit","MaxCreditLimit","MinCurrentBalance","MaxCurrentBalance","MinPaymentTermsDays","MaxPaymentTermsDays","TagId","IsActive"})
-            Assert.Contains("name=\""+field+"\"", customers);
-        var panel = Regex.Match(customers,"<details[^>]*data-filter-panel[\\s\\S]*?</details>").Value;
-        Assert.NotEmpty(panel); Assert.DoesNotContain("<details open",panel);
-        Assert.DoesNotContain("<select class=\"form-select\" name=\"PageSize\"",panel);
-        Assert.Contains("class=\"list-navigation\"",customers); Assert.Contains("data-page-size",customers);
-        Assert.DoesNotContain("name=\"From\"",customers);
+        foreach (var field in new[] { "Type", "Category", "TaxNumber", "CommercialRegister", "MinCreditLimit", "MaxCreditLimit", "MinCurrentBalance", "MaxCurrentBalance", "MinPaymentTermsDays", "MaxPaymentTermsDays", "TagId", "IsActive" })
+        {
+            Assert.Contains("name=\"" + field + "\"", customers);
+        }
+        var panel = Regex.Match(customers, "<details[^>]*data-filter-panel[\\s\\S]*?</details>").Value;
+        Assert.NotEmpty(panel);
+        Assert.DoesNotContain("<details open", panel);
+        Assert.DoesNotContain("<select class=\"form-select\" name=\"PageSize\"", panel);
+        Assert.Contains("class=\"list-navigation\"", customers);
+        Assert.Contains("data-page-size", customers);
+        Assert.DoesNotContain("name=\"From\"", customers);
         var suppliers = await client.GetStringAsync("/Suppliers");
-        Assert.Contains("name=\"IsActive\"",suppliers); Assert.DoesNotContain("name=\"MinCreditLimit\"",suppliers); Assert.DoesNotContain("name=\"TaxNumber\"",suppliers);
+        Assert.Contains("name=\"IsActive\"", suppliers);
+        Assert.DoesNotContain("name=\"MinCreditLimit\"", suppliers);
+        Assert.DoesNotContain("name=\"TaxNumber\"", suppliers);
         var products = await client.GetStringAsync("/Products");
-        foreach(var field in new[]{"Barcode","Name","Description","CategoryId","UnitOfMeasureId","MinCostPrice","MaxRetailPrice","MinWholesalePrice","MaxVipPrice","MinTaxRate","HasExpiry","IsActive"})
-            Assert.Contains("name=\""+field+"\"",products);
+        foreach (var field in new[] { "Barcode", "Name", "Description", "CategoryId", "UnitOfMeasureId", "MinCostPrice", "MaxRetailPrice", "MinWholesalePrice", "MaxVipPrice", "MinTaxRate", "HasExpiry", "IsActive" })
+        {
+            Assert.Contains("name=\"" + field + "\"", products);
+        }
         var movements = await client.GetStringAsync("/Inventory/Movements");
-        foreach(var field in new[]{"ProductId","WarehouseId","Type","From","To"}) Assert.Contains("name=\""+field+"\"",movements);
-        var font = await client.GetByteArrayAsync("/fonts/tajawal/Tajawal-Regular.ttf"); Assert.Equal(new byte[]{0,1,0,0},font.Take(4));
+        foreach (var field in new[] { "ProductId", "WarehouseId", "Type", "From", "To" })
+        {
+            Assert.Contains("name=\"" + field + "\"", movements);
+        }
+        var font = await client.GetByteArrayAsync("/fonts/tajawal/Tajawal-Regular.ttf");
+        Assert.Equal(new byte[] { 0, 1, 0, 0 }, font.Take(4));
     }
 
     [Fact]
     public async Task EntitySpecificEnumsFinancialRangesAndProductRangesFilterBeforePaging()
     {
-        await using var app = await StartAsync(); using var client = Client(app); await Login(client,"ui-admin");
-        await using(var scope = app.Services.CreateAsyncScope())
+        await using var app = await StartAsync();
+        using var client = Client(app);
+        await Login(client, "ui-admin");
+        await using (var scope = app.Services.CreateAsyncScope())
         {
-            var db=scope.ServiceProvider.GetRequiredService<NEXTDbContext>(); var tag=new Tag{Name="Range tag",Color="#102030"};db.Add(tag);await db.SaveChangesAsync();
-            db.AddRange(new Customer{Name="Matched company",TagId=tag.Id,Type=NEXT.Domain.Enums.CustomerType.Company,Category=NEXT.Domain.Enums.CustomerCategory.Wholesale,TaxNumber="TAX-1",CommercialRegister="REG-1",CreditLimit=100,CurrentBalance=30,PaymentTermsDays=15},
-                new Customer{Name="Excluded individual",TagId=tag.Id,CreditLimit=10,CurrentBalance=2},
-                new Product{Name="Matched product",Barcode="ABC-123",CostPrice=10,RetailPrice=25,WholesalePrice=20,VipPrice=18,TaxRate=5,MinStock=4,MaxStock=50,HasExpiry=true},
-                new Product{Name="Excluded product",Barcode="XYZ",CostPrice=1,RetailPrice=2,MinStock=1});
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var tag = new Tag
+            {
+                Name = "Range tag",
+                Color = "#102030"
+            };
+            db.Add(tag);
+            await db.SaveChangesAsync();
+            db.AddRange(new Customer
+            {
+                Name = "Matched company",
+                TagId = tag.Id,
+                Type = NEXT.Domain.Enums.CustomerType.Company,
+                Category = NEXT.Domain.Enums.CustomerCategory.Wholesale,
+                TaxNumber = "TAX-1",
+                CommercialRegister = "REG-1",
+                CreditLimit = 100,
+                CurrentBalance = 30,
+                PaymentTermsDays = 15
+            },
+                new Customer
+                {
+                    Name = "Excluded individual",
+                    TagId = tag.Id,
+                    CreditLimit = 10,
+                    CurrentBalance = 2
+                },
+                new Product
+                {
+                    Name = "Matched product",
+                    Barcode = "ABC-123",
+                    CostPrice = 10,
+                    RetailPrice = 25,
+                    WholesalePrice = 20,
+                    VipPrice = 18,
+                    TaxRate = 5,
+                    MinStock = 4,
+                    MaxStock = 50,
+                    HasExpiry = true
+                },
+                new Product
+                {
+                    Name = "Excluded product",
+                    Barcode = "XYZ",
+                    CostPrice = 1,
+                    RetailPrice = 2,
+                    MinStock = 1
+                });
             await db.SaveChangesAsync();
         }
-        var html=await client.GetStringAsync("/Customers?Type=Company&Category=Wholesale&TaxNumber=TAX&CommercialRegister=REG&MinCreditLimit=90&MaxCreditLimit=110&MinCurrentBalance=20&MaxCurrentBalance=40&MinPaymentTermsDays=10&MaxPaymentTermsDays=20&PageSize=1");
-        Assert.Contains("Matched company",html);Assert.DoesNotContain("Excluded individual",html);
-        html=await client.GetStringAsync("/Products?Barcode=ABC&MinCostPrice=9&MaxCostPrice=11&MinRetailPrice=24&MaxRetailPrice=26&MinStock=3&MaxStock=60&HasExpiry=true");
-        Assert.Contains("Matched product",html);Assert.DoesNotContain("Excluded product",html);
-        foreach(var route in new[]{"/Customers?MinCreditLimit=20&MaxCreditLimit=10","/Customers?Type=999","/Products?MinRetailPrice=30&MaxRetailPrice=2","/Products?HasExpiry=invalid"})
-            Assert.Equal(HttpStatusCode.BadRequest,(await client.GetAsync(route)).StatusCode);
+        var html = await client.GetStringAsync("/Customers?Type=Company&Category=Wholesale&TaxNumber=TAX&CommercialRegister=REG&MinCreditLimit=90&MaxCreditLimit=110&MinCurrentBalance=20&MaxCurrentBalance=40&MinPaymentTermsDays=10&MaxPaymentTermsDays=20&PageSize=1");
+        Assert.Contains("Matched company", html);
+        Assert.DoesNotContain("Excluded individual", html);
+        html = await client.GetStringAsync("/Products?Barcode=ABC&MinCostPrice=9&MaxCostPrice=11&MinRetailPrice=24&MaxRetailPrice=26&MinStock=3&MaxStock=60&HasExpiry=true");
+        Assert.Contains("Matched product", html);
+        Assert.DoesNotContain("Excluded product", html);
+        foreach (var route in new[] { "/Customers?MinCreditLimit=20&MaxCreditLimit=10", "/Customers?Type=999", "/Products?MinRetailPrice=30&MaxRetailPrice=2", "/Products?HasExpiry=invalid" })
+        {
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(route)).StatusCode);
+        }
     }
 
     [Fact]
@@ -444,15 +638,24 @@ public sealed class WorkspaceUiTests
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var user = await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().FindByNameAsync("ui-admin");
-            id = user!.Id; branch = user.BranchId;
+            id = user!.Id;
+            branch = user.BranchId;
         }
         var url = "/Users/Edit/" + id;
         var token = Token(await client.GetStringAsync(url));
         using var form = new MultipartFormDataContent();
-        foreach (var field in new Dictionary<string,string> {
-            ["__RequestVerificationToken"] = token, ["FullName"] = "Avatar Test", ["UserName"] = "ui-admin",
-            ["Email"] = "ui-admin@example.test", ["BranchId"] = branch.ToString(), ["IsActive"] = "true" })
+        foreach (var field in new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["FullName"] = "Avatar Test",
+            ["UserName"] = "ui-admin",
+            ["Email"] = "ui-admin@example.test",
+            ["BranchId"] = branch.ToString(),
+            ["IsActive"] = "true"
+        })
+        {
             form.Add(new StringContent(field.Value), field.Key);
+        }
         var image = await File.ReadAllBytesAsync(Path.Combine(app.Environment.ContentRootPath, "wwwroot/pwa/icon-192.png"));
         form.Add(new ByteArrayContent(image), "Avatar", "not-an-image-extension.txt");
         var saved = await client.PostAsync(url, form);
@@ -463,10 +666,18 @@ public sealed class WorkspaceUiTests
         Assert.True(avatar.Headers.CacheControl?.NoStore);
         Assert.Contains("Avatar Test", await client.GetStringAsync("/"));
         using var invalid = new MultipartFormDataContent();
-        foreach (var field in new Dictionary<string,string> {
-            ["__RequestVerificationToken"] = token, ["FullName"] = "Avatar Test", ["UserName"] = "ui-admin",
-            ["Email"] = "ui-admin@example.test", ["BranchId"] = branch.ToString(), ["IsActive"] = "true" })
+        foreach (var field in new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["FullName"] = "Avatar Test",
+            ["UserName"] = "ui-admin",
+            ["Email"] = "ui-admin@example.test",
+            ["BranchId"] = branch.ToString(),
+            ["IsActive"] = "true"
+        })
+        {
             invalid.Add(new StringContent(field.Value), field.Key);
+        }
         invalid.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("<script>bad</script>")), "Avatar", "photo.png");
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync(url, invalid)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/manifest.webmanifest")).StatusCode);

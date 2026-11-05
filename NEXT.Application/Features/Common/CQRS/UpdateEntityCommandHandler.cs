@@ -20,14 +20,26 @@ public sealed class UpdateEntityCommandHandler<TEntity, TDto, TUpdateDto>(
     public async Task<TDto> Handle(UpdateEntityCommand<TDto, TUpdateDto> request, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        if (request.Data is null) RequestValidation.Fail("Data", "Input is required.");
+        if (request.Data is null)
+        {
+            RequestValidation.Fail("Data", "Input is required.");
+        }
         RequestValidation.Identifier(request.Id);
-        if (request.Data is TIdType<Guid> keyed) keyed.Id = request.Id;
-        foreach (var rule in rules) rule.Normalize(request.Data);
+        if (request.Data is TIdType<Guid> keyed)
+        {
+            keyed.Id = request.Id;
+        }
+        foreach (var rule in rules)
+        {
+            rule.Normalize(request.Data);
+        }
         validator.Validate(request.Data);
         var entity = await repository.GetByIdAsync(request.Id, ct) ?? throw new NotFoundException("Record was not found.");
         repository.SetRowVersion(entity, request.RowVersion);
-        foreach (var rule in rules) await rule.ValidateAsync(request.Id, request.Data, ct);
+        foreach (var rule in rules)
+        {
+            await rule.ValidateAsync(request.Id, request.Data, ct);
+        }
         var existing = (entity as IHasProfileImage)?.AvatarUrl;
         mapper.Map(request.Data, entity);
         entity.Id = request.Id;

@@ -47,12 +47,32 @@ public sealed class ProjectionReadTests
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
         var mapping = scope.ServiceProvider.GetRequiredService<TypeAdapterConfig>();
-        var product = new Product { Name = "Related product", CostPrice = 12.5m };
-        var warehouse = new Warehouse { Name = "Related warehouse", Code = "RELATED" };
+        var product = new Product
+        {
+            Name = "Related product",
+            CostPrice = 12.5m
+        };
+        var warehouse = new Warehouse
+        {
+            Name = "Related warehouse",
+            Code = "RELATED"
+        };
         db.AddRange(product, warehouse);
-        var stock = new Stock { Product = product, Warehouse = warehouse, Quantity = 500.25m, ReservedQuantity = 2m };
-        var movement = new StockMovement { Product = product, Warehouse = warehouse, Quantity = 1.25m,
-            Type = NEXT.Domain.Enums.StockMovementType.TransferOut, Notes = null };
+        var stock = new Stock
+        {
+            Product = product,
+            Warehouse = warehouse,
+            Quantity = 500.25m,
+            ReservedQuantity = 2m
+        };
+        var movement = new StockMovement
+        {
+            Product = product,
+            Warehouse = warehouse,
+            Quantity = 1.25m,
+            Type = NEXT.Domain.Enums.StockMovementType.TransferOut,
+            Notes = null
+        };
         db.AddRange(stock, movement);
         await db.SaveChangesAsync();
         var projected = await db.Stocks.AsNoTracking().ProjectToType<RelatedRecordDto>(mapping).SingleAsync();
@@ -76,7 +96,6 @@ public sealed class ProjectionReadTests
             .UseNpgsql("Host=localhost;Database=translation_only;Username=unused;Password=unused").Options, null!, null!);
         var mapping = new TypeAdapterConfig();
         mapping.Scan(typeof(ApplicationRegistrationExtensions).Assembly);
-
         var profile = db.Users.AsNoTracking().Where(x => x.Id == Guid.NewGuid()).ProjectToType<UserDto>(mapping).ToQueryString();
         var users = db.Users.AsNoTracking().ProjectToType<UserResponseDto>(mapping).ToQueryString();
         var roles = db.Roles.AsNoTracking().ProjectToType<RoleDto>(mapping).ToQueryString();
@@ -92,7 +111,6 @@ public sealed class ProjectionReadTests
         Assert.Contains("EXISTS", users);
         Assert.DoesNotContain("AvatarUrl", users);
         Assert.Contains("\"Permissions\"", assignments);
-
         string ReferenceSql<T>() where T : class => db.Set<T>().AsNoTracking().OrderBy(x => EF.Property<Guid>(x, "Id"))
             .ProjectToType<ReferenceOptionDto>(mapping).ToQueryString();
         foreach (var sql in new[] { ReferenceSql<Customer>(), ReferenceSql<Tag>(), ReferenceSql<Category>(),
@@ -104,7 +122,6 @@ public sealed class ProjectionReadTests
         }
         Assert.Contains("\"Module\"", ReferenceSql<Permission>());
         Assert.Contains("\"Code\"", ReferenceSql<Permission>());
-
         var deleted = db.Products.IgnoreQueryFilters().AsNoTracking().Where(x => x.DeletedAt != null)
             .OrderByDescending(x => x.DeletedAt).ThenBy(x => x.Id).Skip(1).Take(1)
             .ProjectToType<RecycleBinItemDto<Guid>>(mapping).ToQueryString();
@@ -146,7 +163,6 @@ public sealed class ProjectionReadTests
         Assert.Null(await users.FindUserByEmailAsync<UserDto>("missing@example.test"));
         Assert.Null(await roles.FindByIdAsync<RoleDto>(Guid.NewGuid()));
         Assert.Empty(db.ChangeTracker.Entries());
-
         var entity = await users.FindUserAsync(id.ToString());
         var roleEntity = await roles.FindByIdAsync(roleId);
         Assert.Equal(EntityState.Unchanged, db.Entry(entity!).State);

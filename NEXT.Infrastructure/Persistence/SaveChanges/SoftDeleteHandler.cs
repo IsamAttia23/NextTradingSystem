@@ -16,12 +16,12 @@ public sealed class SoftDeleteHandler(AuditValueSerializer valueSerializer)
         Guid? userId)
     {
         if (entry.State != EntityState.Deleted || context.IsPermanentDeletion(entry.Entity))
+        {
             return false;
-
+        }
         var snapshot = valueSerializer.Serialize(entry, originalValues: true);
         string entityType;
         Guid entityId;
-
         if (entry.Entity is IsDeletableEntity<Guid> softDeletable)
         {
             softDeletable.DeletedAt = now;
@@ -44,7 +44,6 @@ public sealed class SoftDeleteHandler(AuditValueSerializer valueSerializer)
 
         // Turn DELETE into UPDATE so the row remains available for restoration.
         entry.State = EntityState.Modified;
-
         context.RecycleBinEntries.Add(new RecycleBinEntry
         {
             EntityType = entityType,
@@ -54,7 +53,6 @@ public sealed class SoftDeleteHandler(AuditValueSerializer valueSerializer)
             DeleteReason = (entry.Entity as IIsDeletableEntity)?.DeletionReason,
             DeletedAt = now
         });
-
         return true;
     }
 }

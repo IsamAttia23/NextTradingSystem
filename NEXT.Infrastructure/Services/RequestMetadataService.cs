@@ -8,6 +8,7 @@ public sealed class RequestMetadataService(IHttpContextAccessor accessor) : IReq
     public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
     public string? UserAgent
+
     {
         get
         {

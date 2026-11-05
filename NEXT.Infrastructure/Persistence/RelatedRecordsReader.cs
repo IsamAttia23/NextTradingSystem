@@ -33,9 +33,18 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
             // Empty sections are kept so users can distinguish no records from an unsupported relation.
             sections.Add(new(entry.Key.Name, entry.Key.Name, count));
         }
-        if (kind is not null && !sections.Any(x => x.Key == kind)) throw new AppValidationException(new Dictionary<string,string[]> { ["activityKind"] = ["Unknown related record section."] });
+        if (kind is not null && !sections.Any(x => x.Key == kind))
+        {
+            throw new AppValidationException(new Dictionary<string, string[]>
+            {
+                ["activityKind"] = ["Unknown related record section."]
+            });
+        }
         kind ??= sections.FirstOrDefault(x => x.Count > 0)?.Key ?? sections.FirstOrDefault()?.Key;
-        if (kind is null) return new(sections, null, [], 1, 0, 0);
+        if (kind is null)
+        {
+            return new(sections, null, [], 1, 0, 0);
+        }
         var selected = sections.Single(x => x.Key == kind);
         var totalPages = (int)Math.Ceiling(selected.Count / 10d);
         page = Math.Clamp(page, 1, Math.Max(1, totalPages));
@@ -49,17 +58,35 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
         foreach (var fk in parentMetadata.GetReferencingForeignKeys())
         {
             var childType = fk.DeclaringEntityType.ClrType;
-            if (path.Contains(childType) || fk.Properties.Count != 1 || fk.PrincipalKey.Properties.Count != 1 ||
-                childType.Namespace != "NEXT.Domain.Entities") continue;
+            if (path.Contains(childType)
+                || fk.Properties.Count != 1
+                || fk.PrincipalKey.Properties.Count != 1
+                || childType.Namespace != "NEXT.Domain.Entities")
+            {
+                continue;
+            }
             // Security rows contain secrets and are deliberately excluded from catalog details.
-            if (childType == typeof(ApplicationUser) || childType == typeof(UserRole) || childType == typeof(RolePermission)) continue;
+            if (childType == typeof(ApplicationUser)
+                || childType == typeof(UserRole)
+                || childType == typeof(RolePermission))
+            {
+                continue;
+            }
             await AddChild(childType, Child(parent, childType, fk.Properties[0].Name, fk.PrincipalKey.Properties[0].Name), path, found, ct);
         }
-        if (parentType == typeof(SalesInvoice) || parentType == typeof(PurchaseInvoice) || parentType == typeof(Payment))
+        if (parentType == typeof(SalesInvoice)
+            || parentType == typeof(PurchaseInvoice)
+            || parentType == typeof(Payment))
         {
             var reference = parentType == typeof(SalesInvoice) ? JournalReferenceType.SalesInvoice : parentType == typeof(PurchaseInvoice) ? JournalReferenceType.PurchaseInvoice : JournalReferenceType.Payment;
-            if (!path.Contains(typeof(JournalEntry))) await AddChild(typeof(JournalEntry), Child(parent, typeof(JournalEntry), "ReferenceId", "Id", "ReferenceType", reference), path, found, ct);
-            if (!path.Contains(typeof(StockMovement))) await AddChild(typeof(StockMovement), Child(parent, typeof(StockMovement), "ReferenceId", "Id", "ReferenceType", parentType.Name), path, found, ct);
+            if (!path.Contains(typeof(JournalEntry)))
+            {
+                await AddChild(typeof(JournalEntry), Child(parent, typeof(JournalEntry), "ReferenceId", "Id", "ReferenceType", reference), path, found, ct);
+            }
+            if (!path.Contains(typeof(StockMovement)))
+            {
+                await AddChild(typeof(StockMovement), Child(parent, typeof(StockMovement), "ReferenceId", "Id", "ReferenceType", parentType.Name), path, found, ct);
+            }
         }
     }
     private async Task AddChild(Type type, IQueryable query, HashSet<Type> path, Dictionary<Type, IQueryable> found, CancellationToken ct)
@@ -73,9 +100,15 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
     {
         var type = query.ElementType;
         var keys = db.Model.FindEntityType(type)!.GetForeignKeys().Where(x => x.PrincipalEntityType.ClrType == type && x.Properties.Count == 1).ToArray();
-        if (keys.Length == 0) return query;
+        if (keys.Length == 0)
+        {
+            return query;
+        }
         var visited = (await Ids(query, ct)).ToHashSet();
-        if (db.Database.IsNpgsql()) return await ExpandPostgres(query, keys, visited.ToArray(), ct);
+        if (db.Database.IsNpgsql())
+        {
+            return await ExpandPostgres(query, keys, visited.ToArray(), ct);
+        }
         var frontier = visited.ToArray();
         while (frontier.Length > 0)
         {
@@ -86,10 +119,20 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
                 Expression property = Expression.Property(parameter, fk.Properties[0].Name);
                 Expression predicate;
                 if (property.Type == typeof(Guid?))
+                {
                     predicate = Expression.AndAlso(Expression.Property(property, "HasValue"), Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], Expression.Constant(frontier), Expression.Property(property, "Value")));
-                else predicate = Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], Expression.Constant(frontier), property);
+                }
+                else
+                {
+                    predicate = Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)], Expression.Constant(frontier), property);
+                }
                 foreach (var id in await Ids(Where(Set(type), Expression.Lambda(predicate, parameter)), ct))
-                    if (visited.Add(id)) newIds.Add(id);
+                {
+                    if (visited.Add(id))
+                    {
+                        newIds.Add(id);
+                    }
+                }
             }
             frontier = newIds.ToArray();
         }
@@ -116,7 +159,7 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
     private static Task<List<Guid>> IdsOf<T>(IQueryable<T> query, CancellationToken ct)
     {
         var parameter = Expression.Parameter(typeof(T), "record");
-        return StorageErrors.ExecuteAsync(() => query.Select(Expression.Lambda<Func<T,Guid>>(Expression.Property(parameter, "Id"), parameter)).ToListAsync(ct));
+        return StorageErrors.ExecuteAsync(() => query.Select(Expression.Lambda<Func<T, Guid>>(Expression.Property(parameter, "Id"), parameter)).ToListAsync(ct));
     }
     private IQueryable Child(IQueryable parent, Type childType, string foreignKey, string principalKey, string? discriminator = null, object? expected = null)
     {

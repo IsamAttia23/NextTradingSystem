@@ -19,7 +19,11 @@ public class PersistenceRegressionTests
     public async Task KeyLookupDoesNotReturnTrackedSoftDeletedEntity()
     {
         await using var db = CreateContext();
-        var tag = new Tag { Name = "Deleted", Color = "blue" };
+        var tag = new Tag
+        {
+            Name = "Deleted",
+            Color = "blue"
+        };
         db.Add(tag);
         await db.SaveChangesAsync();
         var repository = new KeyRepository<Tag, Guid>(db);
@@ -44,7 +48,11 @@ public class PersistenceRegressionTests
     public async Task SoftDeleteRestoreAndPurgePersistWithAudit()
     {
         await using var db = CreateContext();
-        var tag = new Tag { Name = "Retail", Color = "green" };
+        var tag = new Tag
+        {
+            Name = "Retail",
+            Color = "green"
+        };
         db.Add(tag);
         await db.SaveChangesAsync();
         await new KeyRepository<Tag, Guid>(db).DeleteAsync(tag);
@@ -74,7 +82,10 @@ public class PersistenceRegressionTests
     public async Task ConcurrentUpdatesRejectStaleOriginalToken()
     {
         await using var first = CreateContext();
-        var product = new Product { Name = "Item" };
+        var product = new Product
+        {
+            Name = "Item"
+        };
         first.Add(product);
         await first.SaveChangesAsync();
         Assert.Equal(16, product.RowVersion.Length);
@@ -92,7 +103,11 @@ public class PersistenceRegressionTests
     public async Task PurgeDoesNotDeleteActiveEntity()
     {
         await using var db = CreateContext();
-        var tag = new Tag { Name = "Active", Color = "blue" };
+        var tag = new Tag
+        {
+            Name = "Active",
+            Color = "blue"
+        };
         db.Add(tag);
         await db.SaveChangesAsync();
         var mapping = new Mapster.TypeAdapterConfig();

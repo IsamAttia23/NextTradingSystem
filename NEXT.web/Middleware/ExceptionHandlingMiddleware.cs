@@ -12,19 +12,29 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
 {
     public async Task InvokeAsync(HttpContext context, IStringLocalizer<UiText>? text = null)
     {
-        try { await next(context); }
-        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested) { throw; }
+        try
+        {
+            await next(context);
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception) when (!context.Response.HasStarted)
         {
             // Localization runs downstream; its async culture does not flow back when an error bubbles out.
             if (context.Features.Get<IRequestCultureFeature>() is { } culture)
+            {
                 CultureInfo.CurrentUICulture = culture.RequestCulture.UICulture;
+            }
             var status = exception is AppException appException ? StatusFor(appException.Code) : 500;
             if (status >= 500)
+            {
                 logger.LogError(exception, "Request {TraceIdentifier} failed", context.TraceIdentifier);
+            }
             ProblemDetails problem = exception is AppValidationException validation
-                ? new ValidationProblemDetails(validation.Errors.ToDictionary(x => x.Key, x => x.Value.Select(value => text?[value].Value ?? value).ToArray()))
-                : new ProblemDetails();
+                            ? new ValidationProblemDetails(validation.Errors.ToDictionary(x => x.Key, x => x.Value.Select(value => text?[value].Value ?? value).ToArray()))
+                            : new ProblemDetails();
             problem.Status = status;
             problem.Title = status >= 500 ? "An unexpected error occurred." : exception.Message;
             if (exception is RecordRelationshipException)
@@ -41,9 +51,11 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             context.Response.StatusCode = status;
             if (context.Request.Headers.Accept.Any(x => x?.Contains("text/html") == true)
                 && context.Request.Headers["X-Requested-With"] != "XMLHttpRequest")
+            {
                 return; // The outer status-code middleware renders the localized error page.
+            }
             await context.Response.WriteAsJsonAsync<object>(problem, options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json",
-                cancellationToken: context.RequestAborted);
+                            cancellationToken: context.RequestAborted);
         }
     }
     private static int StatusFor(ApplicationErrorCode code) => code switch

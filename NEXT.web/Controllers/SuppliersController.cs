@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class SuppliersController(ISender sender, EntityPresenter<SupplierDto, SupplierInputDto> presenter)
     : EntityController<SupplierDto, SupplierInputDto, SupplierQueryModel>(sender, presenter);

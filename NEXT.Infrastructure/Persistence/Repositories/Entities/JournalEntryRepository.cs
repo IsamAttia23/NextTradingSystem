@@ -19,7 +19,10 @@ public sealed class JournalEntryRepository(NEXTDbContext context) : KeyRepositor
     public override Expression<Func<JournalEntry, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as JournalEntryQueryModel ?? new JournalEntryQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as JournalEntryQueryModel ?? new JournalEntryQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<JournalEntry, bool>> BuildFilterExpression(JournalEntryQueryModel query)
@@ -28,7 +31,6 @@ public sealed class JournalEntryRepository(NEXTDbContext context) : KeyRepositor
         Expression<Func<JournalEntry, bool>> filters = entity =>
             (!query.From.HasValue || entity.EntryDate >= query.From.Value) &&
             (!query.To.HasValue || entity.EntryDate <= query.To.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "EntryNumber", "Description");
     }
 

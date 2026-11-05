@@ -13,9 +13,12 @@ public sealed class AssignPermissionToRoleHandler(
     {
         validator.Validate(request.Data);
         if (request.Data.RoleId == Guid.Empty || request.Data.PermissionId == Guid.Empty)
-            throw new NEXT.Application.Exceptions.AppValidationException(new Dictionary<string, string[]> {
+        {
+            throw new NEXT.Application.Exceptions.AppValidationException(new Dictionary<string, string[]>
+            {
                 ["RolePermission"] = ["Both RoleId and PermissionId are required."]
             });
+        }
         return service.AddAsync(request.Data.RoleId, request.Data.PermissionId, cancellationToken);
     }
 }

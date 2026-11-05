@@ -10,7 +10,9 @@ public sealed class UserRoleAssignment(UserDtoReader reader, IUserCommandService
         var name = RequestValidation.Text(role, "Role");
         var user = await reader.RequireAsync(userId, ct);
         if (!await roles.NameExistsAsync(name, cancellationToken: ct))
+        {
             RequestValidation.Fail("Role", "Select an existing role.");
+        }
         return await users.AddUserToRole(user, name, ct);
     }
 }

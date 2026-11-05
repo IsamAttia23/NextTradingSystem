@@ -23,7 +23,10 @@ public sealed class RecycleBinStore<TEntity, TKey>(
             .OrderByDescending(x => x.DeletedAt).ThenBy(x => x.Id);
         var result = await pagination.GetPagedList(deleted,
             source => source.ProjectToType<RecycleBinItemDto<TKey>>(mapping), query, ct);
-        foreach (var item in result.Data) item.EntityType = typeof(TEntity).Name;
+        foreach (var item in result.Data)
+        {
+            item.EntityType = typeof(TEntity).Name;
+        }
         return result;
     }
 

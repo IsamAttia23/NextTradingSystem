@@ -22,9 +22,17 @@ internal sealed class SaveChangesStatePreserver(NEXTDbContext context)
             entry.CurrentValues.SetValues(snapshot.CurrentValues);
             entry.State = snapshot.State == EntityState.Modified ? EntityState.Unchanged : snapshot.State;
             entry.OriginalValues.SetValues(snapshot.OriginalValues);
-            foreach (var property in snapshot.TemporaryProperties) entry.Property(property).IsTemporary = true;
+            foreach (var property in snapshot.TemporaryProperties)
+            {
+                entry.Property(property).IsTemporary = true;
+            }
             if (snapshot.State == EntityState.Modified)
-                foreach (var property in snapshot.ModifiedProperties) entry.Property(property).IsModified = true;
+            {
+                foreach (var property in snapshot.ModifiedProperties)
+                {
+                    entry.Property(property).IsModified = true;
+                }
+            }
         }
     }
 }

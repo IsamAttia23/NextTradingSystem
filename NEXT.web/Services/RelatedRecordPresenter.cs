@@ -1,6 +1,7 @@
 using System.Globalization;
 using NEXT.Application.DTOs.Presentation;
 namespace NEXT.web.Services;
+
 public static class RelatedRecordPresenter
 {
     public static IReadOnlyList<DetailFieldDto> Fields(RelatedRecordDto record) => record.Values

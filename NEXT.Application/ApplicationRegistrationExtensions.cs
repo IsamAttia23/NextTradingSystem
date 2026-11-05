@@ -43,7 +43,6 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserRoleAssignment>();
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateApplicationUserHandler).Assembly));
         services.TryAddScoped(typeof(IEntityValidator<>), typeof(DataAnnotationsEntityValidator<>));
-
         services.AddEntityCqrs<Permission, PermissionDto, PermissionCreationDto, PermissionUpdateDto>();
         services.AddScoped<IEntityRules<Permission, PermissionCreationDto>, PermissionCreationRules>();
         services.AddScoped<IEntityRules<Permission, PermissionUpdateDto>, PermissionUpdateRules>();
@@ -62,8 +61,11 @@ public static class ApplicationRegistrationExtensions
     {
         var queryContract = typeof(IRequestHandler<GetEntitiesQuery<TDto>, TPaginationQueryModel<TDto>>);
         var existing = services.FirstOrDefault(x => x.ServiceType == queryContract);
-        if (existing is not null && existing.ImplementationType != typeof(GetEntitiesQueryHandler<TEntity, TDto>))
+        if (existing is not null
+            && existing.ImplementationType != typeof(GetEntitiesQueryHandler<TEntity, TDto>))
+        {
             throw new InvalidOperationException($"DTO '{typeof(TDto).Name}' already belongs to another entity registration.");
+        }
         services.TryAddScoped<IRequestHandler<CreateEntityCommand<TDto, TCreationDto>, TDto>, CreateEntityCommandHandler<TEntity, TDto, TCreationDto>>();
         services.TryAddScoped<IRequestHandler<UpdateEntityCommand<TDto, TUpdateDto>, TDto>, UpdateEntityCommandHandler<TEntity, TDto, TUpdateDto>>();
         services.TryAddScoped<IRequestHandler<DeleteEntityCommand<TDto>>, DeleteEntityCommandHandler<TEntity, TDto>>();

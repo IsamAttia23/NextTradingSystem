@@ -46,22 +46,37 @@ public sealed class ProfileImageProcessor : IProfileImageProcessor
     public byte[] Normalize(byte[] data)
     {
         Gate.Wait();
-        try { return NormalizeCore(data, CancellationToken.None); }
-        finally { Gate.Release(); }
+        try
+        {
+            return NormalizeCore(data, CancellationToken.None);
+        }
+        finally
+        {
+            Gate.Release();
+        }
     }
 
     public async Task<byte[]> NormalizeAsync(byte[] data, CancellationToken ct = default)
     {
         await Gate.WaitAsync(ct);
-        try { return NormalizeCore(data, ct); }
-        finally { Gate.Release(); }
+        try
+        {
+            return NormalizeCore(data, ct);
+        }
+        finally
+        {
+            Gate.Release();
+        }
     }
 
     private static byte[] NormalizeCore(byte[] data, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(data);
-        if (data.Length is <= 0 or > ProfileImageRules.MaxBytes) throw Invalid("ImageSizeError");
+        if (data.Length is <= 0 or > ProfileImageRules.MaxBytes)
+        {
+            throw Invalid("ImageSizeError");
+        }
         try
         {
             var (content, settings) = PrepareRead(data);
@@ -76,29 +91,59 @@ public sealed class ProfileImageProcessor : IProfileImageProcessor
     }
     private static (byte[] Content, MagickReadSettings Settings) PrepareRead(byte[] data)
     {
-        var settings = new MagickReadSettings { FrameIndex = 0, FrameCount = 1 };
-        if (LooksLikeXml(data)) { data = ValidateSvg(data); settings.Format = MagickFormat.Msvg; }
-        if (data.Length >= 4 && data[0] == 0 && data[1] == 0 && data[3] == 0 && data[2] is 1 or 2)
+        var settings = new MagickReadSettings
+        {
+            FrameIndex = 0,
+            FrameCount = 1
+        };
+        if (LooksLikeXml(data))
+        {
+            data = ValidateSvg(data);
+            settings.Format = MagickFormat.Msvg;
+        }
+        if (data.Length >= 4
+            && data[0] == 0
+            && data[1] == 0
+            && data[3] == 0
+            && data[2] is 1 or 2)
+        {
             settings.Format = data[2] == 1 ? MagickFormat.Ico : MagickFormat.Cur;
+        }
         return (data, settings);
     }
     private static void ValidateInfo(byte[] data, MagickReadSettings settings)
     {
         var info = new MagickImageInfo(data, settings);
-        if (info.Format == MagickFormat.Mvg || settings.Format != MagickFormat.Msvg && info.Format is MagickFormat.Svg or MagickFormat.Msvg)
+        if (info.Format == MagickFormat.Mvg
+            || settings.Format != MagickFormat.Msvg
+            && info.Format is MagickFormat.Svg or MagickFormat.Msvg)
+        {
             throw Invalid("ImageInvalidError");
-        if (info.Width == 0 || info.Height == 0 || (long)info.Width * info.Height > ProfileImageRules.MaxPixels)
+        }
+        if (info.Width == 0
+            || info.Height == 0
+            || (long)info.Width * info.Height > ProfileImageRules.MaxPixels)
+        {
             throw Invalid("ImageDimensionsError");
+        }
     }
     private static byte[] Encode(byte[] data, MagickReadSettings settings, CancellationToken ct)
     {
         using var image = new MagickImage();
         var timer = Stopwatch.StartNew();
-        image.Progress += (_, progress) => { if (ct.IsCancellationRequested || timer.Elapsed > TimeSpan.FromSeconds(10)) progress.Cancel = true; };
+        image.Progress += (_, progress) => {
+            if (ct.IsCancellationRequested || timer.Elapsed > TimeSpan.FromSeconds(10))
+        {
+            progress.Cancel = true;
+        }
+        };
         image.Read(data, settings);
         ct.ThrowIfCancellationRequested();
         image.AutoOrient();
-        if (image.Width > 512 || image.Height > 512) image.Thumbnail(512, 512);
+        if (image.Width > 512 || image.Height > 512)
+        {
+            image.Thumbnail(512, 512);
+        }
         image.Strip();
         return image.ToByteArray(MagickFormat.Png32);
     }
@@ -113,26 +158,46 @@ public sealed class ProfileImageProcessor : IProfileImageProcessor
     {
         using var stream = new MemoryStream(data);
         using var reader = XmlReader.Create(stream, new XmlReaderSettings
-        { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null, MaxCharactersInDocument = ProfileImageRules.MaxBytes });
+        {
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null,
+            MaxCharactersInDocument = ProfileImageRules.MaxBytes
+        });
         var document = XDocument.Load(reader);
-        if (document.Root?.Name.LocalName != "svg") throw Invalid("ImageInvalidError");
+        if (document.Root?.Name.LocalName != "svg")
+        {
+            throw Invalid("ImageInvalidError");
+        }
         foreach (var element in document.Root.DescendantsAndSelf())
         {
-            if (!SvgElements.Contains(element.Name.LocalName)) throw Invalid("ImageInvalidError");
+            if (!SvgElements.Contains(element.Name.LocalName))
+            {
+                throw Invalid("ImageInvalidError");
+            }
             foreach (var attribute in element.Attributes())
             {
-                if (attribute.IsNamespaceDeclaration) continue;
+                if (attribute.IsNamespaceDeclaration)
+                {
+                    continue;
+                }
                 var name = attribute.Name.LocalName;
                 var value = attribute.Value.Trim();
-                if (name.StartsWith("on", StringComparison.OrdinalIgnoreCase) || name == "style" ||
-                    (name is "href" or "src" && !value.StartsWith('#')) ||
-                    (value.Contains("url(", StringComparison.OrdinalIgnoreCase) &&
-                     !System.Text.RegularExpressions.Regex.IsMatch(value, @"^url\(#[a-zA-Z_][a-zA-Z0-9_.-]*\)$")))
+                if (name.StartsWith("on", StringComparison.OrdinalIgnoreCase)
+                    || name == "style"
+                    || (name is "href" or "src"
+                        && !value.StartsWith('#'))
+                    || (value.Contains("url(", StringComparison.OrdinalIgnoreCase)
+                        && !System.Text.RegularExpressions.Regex.IsMatch(value, @"^url\(#[a-zA-Z_][a-zA-Z0-9_.-]*\)$")))
+                {
                     throw Invalid("ImageInvalidError");
+                }
             }
         }
         return Encoding.UTF8.GetBytes(document.ToString(SaveOptions.DisableFormatting));
     }
 
-    private static AppValidationException Invalid(string key) => new(new Dictionary<string, string[]> { ["Avatar"] = [key] });
+    private static AppValidationException Invalid(string key) => new(new Dictionary<string, string[]>
+    {
+        ["Avatar"] = [key]
+    });
 }

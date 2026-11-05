@@ -7,5 +7,6 @@ using NEXT.Application.Abstractions.IServices;
 
 using NEXT.web.Services;
 namespace NEXT.web.Controllers;
+
 public sealed class UnitsController(ISender sender, EntityPresenter<UnitOfMeasureDto, UnitOfMeasureInputDto> presenter)
     : EntityController<UnitOfMeasureDto, UnitOfMeasureInputDto, PaginationQuery>(sender, presenter);

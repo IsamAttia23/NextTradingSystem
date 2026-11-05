@@ -8,9 +8,11 @@ public sealed class HtmlScalarModelBinderProvider : IModelBinderProvider
 {
     public IModelBinder? GetBinder(ModelBinderProviderContext context)
     {
-        if (context.Metadata.ContainerType == typeof(UserUpdateDto) &&
-            context.Metadata.PropertyName == nameof(UserUpdateDto.AvatarUrl))
+        if (context.Metadata.ContainerType == typeof(UserUpdateDto)
+            && context.Metadata.PropertyName == nameof(UserUpdateDto.AvatarUrl))
+        {
             return new ProfileImageModelBinder();
+        }
         var type = Nullable.GetUnderlyingType(context.Metadata.ModelType) ?? context.Metadata.ModelType;
         return type == typeof(decimal) || type == typeof(DateOnly) ? new HtmlScalarModelBinder(type) : null;
     }
@@ -30,15 +32,30 @@ public sealed class HtmlScalarModelBinderProvider : IModelBinderProvider
         public Task BindModelAsync(ModelBindingContext context)
         {
             var value = context.ValueProvider.GetValue(context.ModelName);
-            if (value == ValueProviderResult.None) return Task.CompletedTask;
+            if (value == ValueProviderResult.None)
+            {
+                return Task.CompletedTask;
+            }
             context.ModelState.SetModelValue(context.ModelName, value);
-            if (string.IsNullOrWhiteSpace(value.FirstValue) && Nullable.GetUnderlyingType(context.ModelType) is not null)
+            if (string.IsNullOrWhiteSpace(value.FirstValue)
+                && Nullable.GetUnderlyingType(context.ModelType)is not null)
+            {
                 context.Result = ModelBindingResult.Success(null);
-            else if (type == typeof(decimal) && decimal.TryParse(value.FirstValue, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number))
+            }
+            else if (type == typeof(decimal)
+                && decimal.TryParse(value.FirstValue, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number))
+            {
                 context.Result = ModelBindingResult.Success(number);
-            else if (type == typeof(DateOnly) && DateOnly.TryParseExact(value.FirstValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            }
+            else if (type == typeof(DateOnly)
+                && DateOnly.TryParseExact(value.FirstValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            {
                 context.Result = ModelBindingResult.Success(date);
-            else context.ModelState.TryAddModelError(context.ModelName, "The supplied number or date is invalid.");
+            }
+            else
+            {
+                context.ModelState.TryAddModelError(context.ModelName, "The supplied number or date is invalid.");
+            }
             return Task.CompletedTask;
         }
     }

@@ -9,7 +9,12 @@ public static class DeletionReason
     {
         var value = reason?.Trim();
         if (string.IsNullOrWhiteSpace(value) || value.Length > 500)
-            throw new AppValidationException(new Dictionary<string,string[]> { ["Reason"] = [string.IsNullOrWhiteSpace(value) ? "DeletionReasonRequired" : "DeletionReasonTooLong"] });
+        {
+            throw new AppValidationException(new Dictionary<string, string[]>
+            {
+                ["Reason"] = [string.IsNullOrWhiteSpace(value) ? "DeletionReasonRequired" : "DeletionReasonTooLong"]
+            });
+        }
         return value;
     }
 }

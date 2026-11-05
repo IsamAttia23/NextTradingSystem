@@ -1,4 +1,5 @@
 namespace NEXT.Application.DTOs.Presentation;
+
 public sealed record RelatedRecordDto(Guid Id, IReadOnlyDictionary<string, object?> Values)
 {
     // Columns allowed by this read contract; credentials, binary data and navigation graphs are excluded.

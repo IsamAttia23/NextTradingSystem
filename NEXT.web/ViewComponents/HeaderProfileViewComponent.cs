@@ -14,7 +14,9 @@ public sealed class HeaderProfileViewComponent(ISender sender) : ViewComponent
     public async Task<IViewComponentResult> InvokeAsync()
     {
         if (HttpContext.Items[ProfileKey] is not Task<HeaderProfile> profile)
+        {
             HttpContext.Items[ProfileKey] = profile = LoadProfileAsync();
+        }
         return View(await profile);
     }
 

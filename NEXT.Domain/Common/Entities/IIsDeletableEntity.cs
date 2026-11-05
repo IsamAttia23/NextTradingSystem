@@ -1,4 +1,4 @@
-﻿namespace NEXT.Domain.Common.Entities
+namespace NEXT.Domain.Common.Entities
 {
     public interface IIsDeletableEntity
     {

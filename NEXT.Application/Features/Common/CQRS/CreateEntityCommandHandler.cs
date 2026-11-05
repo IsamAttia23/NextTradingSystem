@@ -20,10 +20,19 @@ public sealed class CreateEntityCommandHandler<TEntity, TDto, TCreationDto>(
     public async Task<TDto> Handle(CreateEntityCommand<TDto, TCreationDto> request, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        if (request.Data is null) RequestValidation.Fail("Data", "Input is required.");
-        foreach (var rule in rules) rule.Normalize(request.Data);
+        if (request.Data is null)
+        {
+            RequestValidation.Fail("Data", "Input is required.");
+        }
+        foreach (var rule in rules)
+        {
+            rule.Normalize(request.Data);
+        }
         validator.Validate(request.Data);
-        foreach (var rule in rules) await rule.ValidateAsync(null, request.Data, ct);
+        foreach (var rule in rules)
+        {
+            await rule.ValidateAsync(null, request.Data, ct);
+        }
         var entity = mapper.Map<TEntity>(request.Data);
         entity.Id = Guid.NewGuid();
         await EntityInput.SetImageAsync(entity, request.Data, images, ct);

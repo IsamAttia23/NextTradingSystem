@@ -18,16 +18,21 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
             .Include(x => x.Stocks)
             .Where(x => x.IsActive && x.Stocks
             .Any(s => s.Quantity - s.ReservedQuantity <= x.MinStock));
-
-        if (warehouseId.HasValue) q = q.Where(x => x.Stocks
+        if (warehouseId.HasValue)
+        {
+            q = q.Where(x => x.Stocks
         .Any(s => s.WarehouseId == warehouseId && s.Quantity - s.ReservedQuantity <= x.MinStock));
+        }
         return StorageErrors.ExecuteAsync(() => q.OrderBy(x => x.Name).ToListAsync(cancellationToken));
     }
 
     public override Expression<Func<Product, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as ProductQueryModel ?? new ProductQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as ProductQueryModel ?? new ProductQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<Product, bool>> BuildFilterExpression(ProductQueryModel query)
@@ -56,7 +61,6 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
             (!query.MaxTaxRate.HasValue || entity.TaxRate <= query.MaxTaxRate.Value) &&
             (!query.MinStock.HasValue || entity.MinStock >= query.MinStock.Value) &&
             (!query.MaxStock.HasValue || (entity.MaxStock.HasValue && entity.MaxStock.Value <= query.MaxStock.Value));
-
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "Barcode", "Description");
     }
 

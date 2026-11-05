@@ -6,6 +6,7 @@ using NEXT.Application.DTOs.ApplicationUsers;
 using NEXT.Domain.Entities;
 using Mapster;
 namespace NEXT.Infrastructure.Persistence.UsersManagement;
+
 public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAdapterConfig mapping) : IUserQueryService
 {
     public Task<ApplicationUser?> FindUserAsync(string userId, CancellationToken ct = default) =>

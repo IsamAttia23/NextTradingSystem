@@ -26,7 +26,10 @@ public sealed class InventoryQueryService(IStockRepository stocks, IStockMovemen
         IRepository<TEntity> repository, PaginationQuery query, CancellationToken ct)
         where TEntity : class where TDto : class
     {
-        if (query is null) RequestValidation.Fail("Query", "Query is required.");
+        if (query is null)
+        {
+            RequestValidation.Fail("Query", "Query is required.");
+        }
         validator.Validate(query);
         var expression = repository.BuildFilterExpression(query);
         var entities = repository.FindAsync(expression, ct);

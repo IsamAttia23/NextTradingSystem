@@ -7,31 +7,31 @@ using System.Text;
 namespace NEXT.Application.QueryModels;
 
 public class CustomerQueryModel : PaginationQuery
-    {
+{
     public override IReadOnlyList<string> GetSortFields() => ["Name", "CompanyName", "CreditLimit", "CurrentBalance", "PaymentTermsDays"];
 
 
-        public CustomerType? Type { get; set; }
+    public CustomerType? Type { get; set; }
 
-        public CustomerCategory? Category { get; set; }
+    public CustomerCategory? Category { get; set; }
 
-        public string? TaxNumber { get; set; }
+    public string? TaxNumber { get; set; }
 
-        public string? CommercialRegister { get; set; }
+    public string? CommercialRegister { get; set; }
 
-        public bool? IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
-        public Guid? TagId { get; set; }
+    public Guid? TagId { get; set; }
 
-        public decimal? MinCreditLimit { get; set; }
+    public decimal? MinCreditLimit { get; set; }
 
-        public decimal? MaxCreditLimit { get; set; }
+    public decimal? MaxCreditLimit { get; set; }
 
-        public decimal? MinCurrentBalance { get; set; }
+    public decimal? MinCurrentBalance { get; set; }
 
-        public decimal? MaxCurrentBalance { get; set; }
+    public decimal? MaxCurrentBalance { get; set; }
 
-        public int? MinPaymentTermsDays { get; set; }
+    public int? MinPaymentTermsDays { get; set; }
 
-        public int? MaxPaymentTermsDays { get; set; }
-    }
+    public int? MaxPaymentTermsDays { get; set; }
+}

@@ -24,9 +24,11 @@ public sealed class UsersPresenter(ISender sender)
         bool profileOnly = false)
     {
         if (profileOnly && user is null)
+        {
             throw new NEXT.Application.Exceptions.NotFoundException("User was not found.");
+        }
         List<FormField> fields = [
-            new("Avatar", "ProfileImage", FormFieldPresenter.Avatar(user?.AvatarUrl), Type: "file"),
+                    new("Avatar", "ProfileImage", FormFieldPresenter.Avatar(user?.AvatarUrl), Type: "file"),
             new("FullName", "FullName", user?.FullName, Required: true, MaxLength: 200),
             new("UserName", "UserName", user?.UserName, Required: true, MaxLength: 256),
             new("Email", "Email", user?.Email, "email", true, 256),
@@ -51,13 +53,19 @@ public sealed class UsersPresenter(ISender sender)
             fields.Add(new("Role", "Role", Type: "select", Options: roles.Where(x => x.Name is not null)
                 .Select(x => new FieldOption(x.Name!, x.Name!)).ToArray()));
         }
-        return new(user is null ? "CreateUser" : "EditUser", user is null ? route("Create", null) : route("Edit", new { user.Id }), fields,
+        return new(user is null ? "CreateUser" : "EditUser", user is null ? route("Create", null) : route("Edit", new
+        {
+            user.Id
+        }), fields,
             Message: user is null ? "PasswordHint" : null);
     }
     public async Task<ModalForm> AssignRoleAsync(Guid id, string action, CancellationToken ct)
     {
         var user = await sender.Send(new GetApplicationUserByIdQuery(id.ToString()), ct);
-        if (user is null) throw new NEXT.Application.Exceptions.NotFoundException("User was not found.");
+        if (user is null)
+        {
+            throw new NEXT.Application.Exceptions.NotFoundException("User was not found.");
+        }
         var roles = await sender.Send(new GetRolesQuery(), ct);
         return new("AssignRole", action,
             [new("Role", "Role", Type: "select", Required: true,

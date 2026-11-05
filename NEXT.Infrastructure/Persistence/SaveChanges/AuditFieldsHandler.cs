@@ -14,13 +14,12 @@ public sealed class AuditFieldsHandler
             added.CreatedBy ??= userId;
             return;
         }
-
         if (entry.State != EntityState.Modified || entry.Entity is not AuditableEntity<Guid> modified)
+        {
             return;
-
+        }
         modified.UpdatedAt = now;
         modified.UpdatedBy = userId;
-
         entry.Property(nameof(AuditableEntity<Guid>.CreatedAt)).IsModified = false;
         entry.Property(nameof(AuditableEntity<Guid>.CreatedBy)).IsModified = false;
     }

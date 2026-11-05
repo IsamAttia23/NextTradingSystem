@@ -13,7 +13,10 @@ public sealed class CustomerRepository(NEXTDbContext context) : KeyRepository<Cu
     public override Expression<Func<Customer, bool>> BuildFilterExpression(PaginationQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return BuildFilterExpression(query as CustomerQueryModel ?? new CustomerQueryModel { SearchTerm = query.SearchTerm });
+        return BuildFilterExpression(query as CustomerQueryModel ?? new CustomerQueryModel
+        {
+            SearchTerm = query.SearchTerm
+        });
     }
 
     public Expression<Func<Customer, bool>> BuildFilterExpression(CustomerQueryModel query)
@@ -34,7 +37,6 @@ public sealed class CustomerRepository(NEXTDbContext context) : KeyRepository<Cu
             (!query.MaxCurrentBalance.HasValue || entity.CurrentBalance <= query.MaxCurrentBalance.Value) &&
             (!query.MinPaymentTermsDays.HasValue || entity.PaymentTermsDays >= query.MinPaymentTermsDays.Value) &&
             (!query.MaxPaymentTermsDays.HasValue || entity.PaymentTermsDays <= query.MaxPaymentTermsDays.Value);
-
         return CombineSearchExpression(filters, query.SearchTerm, "Name", "CompanyName", "Phone", "Email");
     }
 

@@ -30,8 +30,13 @@ public sealed class WebPresentationTests
         Assert.Equal(expected, FormFieldPresenter.Quantity(number));
         Assert.Equal(expected, FormFieldPresenter.Format(number));
         foreach (var name in new[] { "Quantity", "ReservedQuantity", "AvailableQuantity", "MinStock", "MaxStock" })
+        {
             Assert.Equal(expected, FormFieldPresenter.DisplayNumber(name, number));
-        var related = RelatedRecordPresenter.Fields(new(Guid.NewGuid(), new Dictionary<string, object?> { ["Quantity"] = number }));
+        }
+        var related = RelatedRecordPresenter.Fields(new(Guid.NewGuid(), new Dictionary<string, object?>
+        {
+            ["Quantity"] = number
+        }));
         Assert.Equal(expected, Assert.Single(related).Value);
     }
 
@@ -44,10 +49,25 @@ public sealed class WebPresentationTests
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-            var product = new Product { Name = "Quantity display", CostPrice = 25 };
-            var warehouse = new Warehouse { Name = "Display warehouse", Code = "DISPLAY" };
+            var product = new Product
+            {
+                Name = "Quantity display",
+                CostPrice = 25
+            };
+            var warehouse = new Warehouse
+            {
+                Name = "Display warehouse",
+                Code = "DISPLAY"
+            };
             db.AddRange(product, warehouse);
-            db.Add(new Stock { Product = product, Warehouse = warehouse, Quantity = 500.000m, ReservedQuantity = 12.250m, AverageCost = 7 });
+            db.Add(new Stock
+            {
+                Product = product,
+                Warehouse = warehouse,
+                Quantity = 500.000m,
+                ReservedQuantity = 12.250m,
+                AverageCost = 7
+            });
             await db.SaveChangesAsync();
         }
         var html = await client.GetStringAsync("/Inventory?culture=en");
@@ -89,7 +109,11 @@ public sealed class WebPresentationTests
     {
         var references = new CountingReferences();
         var fields = new FormFieldPresenter(references);
-        var input = new CustomerInputDto { Name = "Customer", IsActive = false };
+        var input = new CustomerInputDto
+        {
+            Name = "Customer",
+            IsActive = false
+        };
         var form = await fields.FormAsync(input, default);
         var name = Assert.Single(form, x => x.Name == "Name");
         Assert.True(name.Required);
@@ -118,19 +142,29 @@ public sealed class WebPresentationTests
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         var db = services.GetRequiredService<NEXTDbContext>();
-        var current = new Branch { Name = "Current inactive", IsActive = false };
-        var other = new Branch { Name = "Other inactive", IsActive = false };
+        var current = new Branch
+        {
+            Name = "Current inactive",
+            IsActive = false
+        };
+        var other = new Branch
+        {
+            Name = "Other inactive",
+            IsActive = false
+        };
         db.AddRange(current, other);
-        db.AddRange(Enumerable.Range(1, 65).Select(i => new Permission { Code = "Choice." + i, Module = "Choices" }));
+        db.AddRange(Enumerable.Range(1, 65).Select(i => new Permission
+        {
+            Code = "Choice." + i,
+            Module = "Choices"
+        }));
         await db.SaveChangesAsync();
-
         var sender = services.GetRequiredService<ISender>();
         var createOptions = await sender.Send(new GetAssignableBranchesQuery());
         Assert.DoesNotContain(createOptions, x => !x.IsActive);
         var editOptions = await sender.Send(new GetAssignableBranchesQuery(current.Id));
         Assert.Contains(editOptions, x => x.Id == current.Id);
         Assert.DoesNotContain(editOptions, x => x.Id == other.Id);
-
         var form = await services.GetRequiredService<AssignmentsPresenter>().CreateAsync("/Assignments/Create", default);
         var choices = Assert.Single(form.Fields, x => x.Name == "PermissionId").Options!;
         Assert.Equal(65, choices.Count);

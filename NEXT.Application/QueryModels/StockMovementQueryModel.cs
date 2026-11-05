@@ -5,7 +5,11 @@ namespace NEXT.Application.QueryModels;
 
 public sealed class StockMovementQueryModel : PaginationQuery
 {
-    public StockMovementQueryModel() { SortBy = "CreatedAt"; SortDirection = NEXT.Domain.Enums.SortDirection.Descending; }
+    public StockMovementQueryModel()
+    {
+        SortBy = "CreatedAt";
+        SortDirection = NEXT.Domain.Enums.SortDirection.Descending;
+    }
     public Guid? ProductId { get; set; }
 
     public StockMovementType? Type { get; set; }

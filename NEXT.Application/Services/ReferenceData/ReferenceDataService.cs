@@ -14,8 +14,12 @@ public sealed class ReferenceDataService : IReferenceDataService
     public ReferenceDataService(IEnumerable<IReferenceSource> sources)
     {
         foreach (var source in sources)
+        {
             if (!_sources.TryAdd(source.Key, source))
+            {
                 throw new InvalidOperationException($"Reference source '{source.Key}' is registered more than once.");
+            }
+        }
     }
     public Task<IReadOnlyList<ReferenceOptionDto>> GetAsync(string key, CancellationToken ct = default) =>
         _sources.TryGetValue(key, out var source) ? source.GetAsync(ct)
