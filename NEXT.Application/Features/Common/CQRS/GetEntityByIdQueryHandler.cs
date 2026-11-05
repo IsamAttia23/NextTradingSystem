@@ -23,7 +23,7 @@ public sealed class GetEntityByIdQueryHandler<TEntity, TDto>(
     {
         RequestValidation.Identifier(request.Id);
         var rate = await GetProductRateAsync(ct);
-        var readMapping = CreateReadMapping(rate);
+        var readMapping = CreateReadMapping(rate, request.ForEdit);
         var entities = repository.FindAsync(x => x.Id == request.Id, ct);
         return await executor.FirstOrDefaultAsync(entities.ProjectToType<TDto>(readMapping), ct)
             ?? throw new NotFoundException("Record was not found.");
@@ -39,7 +39,7 @@ public sealed class GetEntityByIdQueryHandler<TEntity, TDto>(
         return await reader.GetUsdRateAsync(ct);
     }
 
-    private TypeAdapterConfig CreateReadMapping(decimal? rate)
+    private TypeAdapterConfig CreateReadMapping(decimal? rate, bool forEdit)
     {
         var configuration = (mapping ?? new TypeAdapterConfig());
         if (rate is not { } currentRate)
@@ -50,6 +50,19 @@ public sealed class GetEntityByIdQueryHandler<TEntity, TDto>(
         readMapping.ForType<Product, ProductDto>()
             .Map(destination => destination.CostPrice, source => source.CostPrice * currentRate)
             .Map(destination => destination.ExchangeRate, source => (decimal?)currentRate);
+
+        if (forEdit)
+        {
+            return readMapping;
+        }
+
+        readMapping.ForType<Product, ProductDto>()
+            .Map(destination => destination.RetailPrice,
+                source => source.CostPrice * currentRate * (1 + source.RetailPrice / 100m))
+            .Map(destination => destination.WholesalePrice,
+                source => source.CostPrice * currentRate * (1 + source.WholesalePrice / 100m))
+            .Map(destination => destination.VipPrice,
+                source => source.CostPrice * currentRate * (1 + source.VipPrice / 100m));
         return readMapping;
     }
 }

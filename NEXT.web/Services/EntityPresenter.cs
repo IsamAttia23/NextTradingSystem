@@ -51,7 +51,7 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
 
     public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct)
     {
-        TInput input = id is { } key ? await FindAsync(key, ct) : new TInput();
+        TInput input = id is { } key ? await FindAsync(key, ct, forEdit: true) : new TInput();
         var formFields = (await fields.FormAsync(input, ct, id)).ToList();
         if (input is NEXT.Application.DTOs.Products.ProductInputDto productInput)
         {
@@ -66,8 +66,8 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
         return new(title, action, formFields);
     }
 
-    private async Task<TDto> FindAsync(Guid id, CancellationToken ct) =>
-        await sender.Send(new GetEntityByIdQuery<TDto>(id), ct) ?? throw new NotFoundException("Record was not found.");
+    private async Task<TDto> FindAsync(Guid id, CancellationToken ct, bool forEdit = false) =>
+        await sender.Send(new GetEntityByIdQuery<TDto>(id, forEdit), ct) ?? throw new NotFoundException("Record was not found.");
 
     private static string[] SortFields(PaginationQuery query) => query.GetSortFields() is { Count: > 0 } names
         ? names.ToArray()

@@ -603,9 +603,9 @@ public sealed class WorkspaceUiTests
                     Name = "Matched product",
                     Barcode = "ABC-123",
                     CostPrice = 10,
-                    RetailPrice = 25,
-                    WholesalePrice = 20,
-                    VipPrice = 18,
+                    RetailPrice = 150,
+                    WholesalePrice = 100,
+                    VipPrice = 80,
                     TaxRate = 5,
                     MinStock = 4,
                     MaxStock = 50,
@@ -616,7 +616,7 @@ public sealed class WorkspaceUiTests
                     Name = "Excluded product",
                     Barcode = "XYZ",
                     CostPrice = 1,
-                    RetailPrice = 2,
+                    RetailPrice = 100,
                     MinStock = 1
                 });
             await db.SaveChangesAsync();

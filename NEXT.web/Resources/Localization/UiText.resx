@@ -506,4 +506,10 @@
 <data name="CurrencyLoadError" xml:space="preserve"><value>Unable to contact the server. Reload the current rate and try again.</value></data>
 <data name="CurrencyConflict" xml:space="preserve"><value>Another user changed the rate. Reload the current rate before saving.</value></data>
 <data name="CurrencyForbidden" xml:space="preserve"><value>Managing the exchange rate requires administrator access.</value></data>
+<data name="RetailPricePercent" xml:space="preserve"><value>Retail markup (%)</value></data>
+<data name="WholesalePricePercent" xml:space="preserve"><value>Wholesale markup (%)</value></data>
+<data name="VipPricePercent" xml:space="preserve"><value>VIP markup (%)</value></data>
+<data name="ProductPricePreview" xml:space="preserve"><value>Calculated sale prices in SDG</value></data>
+<data name="ProductMarkupHint" xml:space="preserve"><value>Enter a percentage over cost. Sale prices follow the product cost and the current dollar rate.</value></data>
+<data name="PercentagePrecision" xml:space="preserve"><value>Use at most 12 decimal places for percentages.</value></data>
 </root>

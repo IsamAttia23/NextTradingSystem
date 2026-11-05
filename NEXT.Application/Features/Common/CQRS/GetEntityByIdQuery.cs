@@ -4,4 +4,4 @@ using NEXT.Application.DTOs.Presentation;
 
 namespace NEXT.Application.Features.Common.CQRS;
 
-public sealed record GetEntityByIdQuery<TDto>(Guid Id) : IRequest<TDto> where TDto : class;
+public sealed record GetEntityByIdQuery<TDto>(Guid Id, bool ForEdit = false) : IRequest<TDto> where TDto : class;

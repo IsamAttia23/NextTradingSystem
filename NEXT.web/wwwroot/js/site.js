@@ -57,6 +57,7 @@
                 return;
             }
             title.textContent = form.dataset.title;
+            document.dispatchEvent(new CustomEvent("next:formloaded"));
             modal.show();
             if (modalElement.classList.contains("show")) {
                 form.querySelector(

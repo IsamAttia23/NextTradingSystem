@@ -31,7 +31,9 @@ public sealed class CurrencyPricingTests
         {
             Name = "Currency product",
             CostPrice = 200,
-            RetailPrice = 250,
+            RetailPrice = 25,
+            WholesalePrice = 15,
+            VipPrice = 10,
             ExchangeRate = 10
         }));
         Assert.Equal(200, product.CostPrice);
@@ -41,7 +43,9 @@ public sealed class CurrencyPricingTests
         var read = await sender.Send(new GetEntityByIdQuery<ProductDto>(product.Id));
         Assert.Equal(400, read.CostPrice);
         Assert.Equal(20, read.ExchangeRate);
-        Assert.Equal(250, read.RetailPrice);
+        Assert.Equal(500, read.RetailPrice);
+        Assert.Equal(460, read.WholesalePrice);
+        Assert.Equal(440, read.VipPrice);
         var filter = new ProductQueryModel { MinCostPrice = 390, MaxCostPrice = 410 };
         Assert.Equal(product.Id, Assert.Single((await sender.Send(new GetEntitiesQuery<ProductDto>(filter))).Data).Id);
         Assert.Equal(390, filter.MinCostPrice);
@@ -52,7 +56,9 @@ public sealed class CurrencyPricingTests
         {
             Name = "Renamed product",
             CostPrice = read.CostPrice,
-            RetailPrice = 250,
+            RetailPrice = 25,
+            WholesalePrice = 15,
+            VipPrice = 10,
             ExchangeRate = read.ExchangeRate
         }, read.RowVersion));
         Assert.Equal(400, updated.CostPrice);

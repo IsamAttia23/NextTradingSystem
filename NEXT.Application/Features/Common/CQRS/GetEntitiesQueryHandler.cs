@@ -29,7 +29,11 @@ public sealed class GetEntitiesQueryHandler<TEntity, TDto>(
         }
         validator.Validate(query);
         var rate = await GetProductRateAsync(ct);
-        var filter = CreateFilter(query, rate);
+        if (rate is { } currentRate)
+        {
+            return await GetProductsAsync(query, currentRate, ct);
+        }
+        var filter = query;
         var readMapping = CreateReadMapping(rate);
         var expression = repository.BuildFilterExpression(filter);
         var entities = repository.FindAsync(expression, ct);
@@ -60,18 +64,55 @@ public sealed class GetEntitiesQueryHandler<TEntity, TDto>(
         readMapping.ForType<Product, ProductDto>()
             .Map(destination => destination.CostPrice, source => source.CostPrice * currentRate)
             .Map(destination => destination.ExchangeRate, source => (decimal?)currentRate);
+
+        readMapping.ForType<Product, ProductDto>()
+            .Map(destination => destination.RetailPrice,
+                source => source.CostPrice * currentRate * (1 + source.RetailPrice / 100m))
+            .Map(destination => destination.WholesalePrice,
+                source => source.CostPrice * currentRate * (1 + source.WholesalePrice / 100m))
+            .Map(destination => destination.VipPrice,
+                source => source.CostPrice * currentRate * (1 + source.VipPrice / 100m));
         return readMapping;
     }
 
-    private PaginationQuery CreateFilter(PaginationQuery query, decimal? rate)
+    private async Task<TPaginationQueryModel<TDto>> GetProductsAsync(PaginationQuery query, decimal rate, CancellationToken ct)
     {
-        if (query is not ProductQueryModel productQuery || rate is not { } currentRate)
+        var requested = query as ProductQueryModel ?? new ProductQueryModel();
+        var filter = requested.Adapt(new ProductQueryModel(), mapping);
+        filter.SearchTerm = query.SearchTerm;
+        filter.MinCostPrice = filter.MaxCostPrice = null;
+        filter.MinRetailPrice = filter.MaxRetailPrice = null;
+        filter.MinWholesalePrice = filter.MaxWholesalePrice = null;
+        filter.MinVipPrice = filter.MaxVipPrice = null;
+
+        var entities = repository.FindAsync(repository.BuildFilterExpression(filter), ct);
+        var ordered = repository.ApplySorting(entities, query.SortBy, query.SortDirection);
+        var projected = ordered.ProjectToType<TDto>(CreateReadMapping(rate));
+        var products = (IQueryable<ProductDto>)(object)projected;
+        products = products.Where(product =>
+            (!requested.MinCostPrice.HasValue || product.CostPrice >= requested.MinCostPrice.Value) &&
+            (!requested.MaxCostPrice.HasValue || product.CostPrice <= requested.MaxCostPrice.Value) &&
+            (!requested.MinRetailPrice.HasValue || product.RetailPrice >= requested.MinRetailPrice.Value) &&
+            (!requested.MaxRetailPrice.HasValue || product.RetailPrice <= requested.MaxRetailPrice.Value) &&
+            (!requested.MinWholesalePrice.HasValue || product.WholesalePrice >= requested.MinWholesalePrice.Value) &&
+            (!requested.MaxWholesalePrice.HasValue || product.WholesalePrice <= requested.MaxWholesalePrice.Value) &&
+            (!requested.MinVipPrice.HasValue || product.VipPrice >= requested.MinVipPrice.Value) &&
+            (!requested.MaxVipPrice.HasValue || product.VipPrice <= requested.MaxVipPrice.Value));
+
+        System.Linq.Expressions.Expression<Func<ProductDto, decimal>>? price = query.SortBy?.Trim().ToLowerInvariant() switch
         {
-            return query;
+            "retailprice" => product => product.RetailPrice,
+            "wholesaleprice" => product => product.WholesalePrice,
+            "vipprice" => product => product.VipPrice,
+            _ => null
+        };
+        if (price is not null)
+        {
+            products = query.SortDirection == NEXT.Domain.Enums.SortDirection.Descending
+                ? products.OrderByDescending(price).ThenByDescending(product => product.Id)
+                : products.OrderBy(price).ThenBy(product => product.Id);
         }
-        var filter = productQuery.Adapt(new ProductQueryModel(), mapping);
-        filter.MinCostPrice = productQuery.MinCostPrice / currentRate;
-        filter.MaxCostPrice = productQuery.MaxCostPrice / currentRate;
-        return filter;
+
+        return await pagination.GetPagedList((IQueryable<TDto>)(object)products, query, ct);
     }
 }

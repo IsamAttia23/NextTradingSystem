@@ -53,6 +53,9 @@ public sealed class CreateEntityCommandHandler<TEntity, TDto, TCreationDto>(
         {
             productResult.CostPrice *= currentRate;
             productResult.ExchangeRate = currentRate;
+            productResult.RetailPrice = productResult.CostPrice * (1 + productResult.RetailPrice / 100m);
+            productResult.WholesalePrice = productResult.CostPrice * (1 + productResult.WholesalePrice / 100m);
+            productResult.VipPrice = productResult.CostPrice * (1 + productResult.VipPrice / 100m);
         }
         return result;
     }

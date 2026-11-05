@@ -13,8 +13,11 @@ public class Product : IsDeletableEntity<Guid>
     public Guid? UnitOfMeasureId { get; set; }
     public UnitOfMeasure? UnitOfMeasure { get; set; }
     public decimal CostPrice { get; set; }
+    // Markup percentage over cost.
     public decimal RetailPrice { get; set; }
+    // Markup percentage over cost.
     public decimal WholesalePrice { get; set; }
+    // Markup percentage over cost.
     public decimal VipPrice { get; set; }
     public decimal TaxRate { get; set; }
     public decimal MinStock { get; set; }

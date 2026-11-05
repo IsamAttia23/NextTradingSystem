@@ -506,4 +506,10 @@
 <data name="CurrencyLoadError" xml:space="preserve"><value>تعذر الاتصال بالخادم. أعد تحميل السعر الحالي ثم حاول مرة أخرى.</value></data>
 <data name="CurrencyConflict" xml:space="preserve"><value>تغير سعر الدولار لدى مستخدم آخر. أعد تحميل السعر الحالي قبل الحفظ.</value></data>
 <data name="CurrencyForbidden" xml:space="preserve"><value>يتطلب تعديل سعر الدولار صلاحية إدارة النظام.</value></data>
+<data name="RetailPricePercent" xml:space="preserve"><value>نسبة زيادة التجزئة (%)</value></data>
+<data name="WholesalePricePercent" xml:space="preserve"><value>نسبة زيادة الجملة (%)</value></data>
+<data name="VipPricePercent" xml:space="preserve"><value>نسبة زيادة الزبائن المميزين (%)</value></data>
+<data name="ProductPricePreview" xml:space="preserve"><value>أسعار البيع المحسوبة بالجنيه السوداني</value></data>
+<data name="ProductMarkupHint" xml:space="preserve"><value>أدخل نسبة الزيادة على التكلفة. تتغير أسعار البيع تلقائيًا مع التكلفة وسعر الدولار الحالي.</value></data>
+<data name="PercentagePrecision" xml:space="preserve"><value>استخدم 12 منزلة عشرية كحد أقصى للنسب.</value></data>
 </root>

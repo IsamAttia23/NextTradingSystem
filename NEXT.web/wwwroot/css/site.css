@@ -2218,6 +2218,13 @@ a.page-number:hover {
     outline-offset: 4px;
     border-radius: 10px;
 }
+.product-price-preview {
+    padding: 18px;
+    margin-block: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--bs-tertiary-bg, #f6f8fc);
+}
 .currency-settings-card {
     max-width: 760px;
     padding: clamp(20px, 4vw, 36px);

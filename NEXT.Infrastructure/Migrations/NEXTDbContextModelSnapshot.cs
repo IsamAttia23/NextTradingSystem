@@ -811,8 +811,8 @@ namespace NEXT.Infrastructure.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<decimal>("RetailPrice")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -833,12 +833,12 @@ namespace NEXT.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("VipPrice")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)");
 
                     b.Property<decimal>("WholesalePrice")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
+                        .HasPrecision(28, 12)
+                        .HasColumnType("numeric(28,12)");
 
                     b.HasKey("Id");
 

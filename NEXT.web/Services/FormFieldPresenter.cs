@@ -44,7 +44,11 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
             }
             else
             {
-                fields.Add(await FieldAsync(property, property.GetValue(input), false, ct, excludedId));
+                var label = input is NEXT.Application.DTOs.Products.ProductInputDto &&
+                    property.Name is "RetailPrice" or "WholesalePrice" or "VipPrice"
+                    ? property.Name + "Percent"
+                    : null;
+                fields.Add(await FieldAsync(property, property.GetValue(input), false, ct, excludedId, label));
             }
         }
         return fields;

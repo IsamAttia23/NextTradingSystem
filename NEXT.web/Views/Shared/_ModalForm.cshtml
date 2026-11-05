@@ -1,5 +1,9 @@
 @model ModalForm
+@{
+    var productPricing = Model.Fields.Any(field => field.Name == "ExchangeRate");
+}
 <form action="@Model.Action" method="post" enctype="multipart/form-data"
+      data-product-pricing="@(productPricing ? "true" : null)"
       data-modal-form="@(Model.Inline ? null : "true")"
       data-profile-form="@(Model.Inline ? "true" : null)"
       data-native-navigation="@(Model.Inline ? "true" : null)" data-title="@L[Model.Title]">
@@ -50,6 +54,10 @@
                 }
             }
         </div>
+    }
+    @if (productPricing)
+    {
+        <partial name="_ProductPricePreview" />
     }
     <div class="modal-form-footer">
         @if (!Model.Inline)

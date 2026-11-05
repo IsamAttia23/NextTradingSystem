@@ -14,6 +14,18 @@ public sealed class ProductRules(IRepository<Category> categories, IRepository<U
 
     public async Task ValidateAsync(Guid? id, ProductInputDto input, CancellationToken ct)
     {
+        foreach (var (field, value) in new[]
+        {
+            (nameof(input.RetailPrice), input.RetailPrice),
+            (nameof(input.WholesalePrice), input.WholesalePrice),
+            (nameof(input.VipPrice), input.VipPrice)
+        })
+        {
+            if (decimal.Round(value, 12) != value)
+            {
+                ReferenceGuard.Fail(field, "PercentagePrecision");
+            }
+        }
         var normalized = string.IsNullOrWhiteSpace(input.Barcode) ? null : input.Barcode.Trim();
         if (input.CategoryId is { } category)
         {
