@@ -7,6 +7,7 @@ namespace NEXT.Application.Abstractions.Persistence.Repositories;
 
 public interface IProductRepository : IKeyRepository<Product, Guid>
 {
+    IQueryable<Product> QueryIncludingDeleted();
     Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default);
     Expression<Func<Product, bool>> BuildFilterExpression(ProductQueryModel query);
     Task<List<Product>> GetLowStockAsync(Guid? warehouseId = null, CancellationToken cancellationToken = default);

@@ -37,6 +37,7 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<NEXT.Application.Abstractions.Context.IDeletionAuditContext, DeletionAuditContext>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IInventoryQueryService, InventoryQueryService>();
+        services.AddScoped<NEXT.Application.Services.Currencies.ExchangeRateReader>();
         services.AddEntityFeatures();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserIdentityRules>();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserDtoReader>();

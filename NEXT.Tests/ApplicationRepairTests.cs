@@ -122,18 +122,18 @@ public sealed class ApplicationRepairTests
         await using var scope = app.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         var sender = services.GetRequiredService<ISender>();
-        await Assert.ThrowsAsync<AppValidationException>(() => sender.Send(new GetEntitiesQuery<CustomerDto>(
+        Assert.Empty((await sender.Send(new GetEntitiesQuery<CustomerDto>(
             new CustomerQueryModel
             {
                 MinCreditLimit = 100,
                 MaxCreditLimit = 50
-            })));
+            }))).Data);
         var inventory = services.GetRequiredService<IInventoryQueryService>();
-        await Assert.ThrowsAsync<AppValidationException>(() => inventory.MovementsAsync(new StockMovementQueryModel
+        Assert.Empty((await inventory.MovementsAsync(new StockMovementQueryModel
         {
             From = DateTimeOffset.UtcNow,
             To = DateTimeOffset.UtcNow.AddDays(-1)
-        }));
+        })).Data);
         var validator = services.GetRequiredService<IEntityValidator<ReceiveStockDto>>();
         var error = Assert.Throws<AppValidationException>(() => validator.Validate(new ReceiveStockDto
         {
@@ -248,9 +248,17 @@ public sealed class ApplicationRepairTests
         await using var db = database.NewContext(counter);
         var products = new ProductRepository(db);
         var executor = new QueryExecutor();
-        var handler = new GetEntityByIdQueryHandler<Product, ProductDto>(products, executor);
+        var rateReader = new NEXT.Application.Services.Currencies.ExchangeRateReader(new SystemSettingRepository(db));
+        db.Add(new SystemSetting
+        {
+            Key = NEXT.Application.Services.Currencies.ExchangeRateReader.SettingKey,
+            ValueJson = "1"
+        });
+        await db.SaveChangesAsync();
+        counter.Reads = 0;
+        var handler = new GetEntityByIdQueryHandler<Product, ProductDto>(products, executor, exchangeRates: rateReader);
         Assert.Equal(database.Product, (await handler.Handle(new(database.Product), default)).Id);
-        Assert.Equal(1, counter.Reads);
+        Assert.Equal(2, counter.Reads);
         counter.Reads = 0;
         var mapping = new TypeAdapterConfig();
         mapping.Scan(typeof(ApplicationRegistrationExtensions).Assembly);

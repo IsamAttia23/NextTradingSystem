@@ -2218,6 +2218,20 @@ a.page-number:hover {
     outline-offset: 4px;
     border-radius: 10px;
 }
+.currency-settings-card {
+    max-width: 760px;
+    padding: clamp(20px, 4vw, 36px);
+}
+.currency-rate-input {
+    max-width: 420px;
+}
+.currency-settings-message {
+    white-space: pre-line;
+    margin-block: 20px;
+}
+.currency-settings-card .form-hint {
+    margin-block: 12px 24px;
+}
 .profile-settings {
     max-width: 850px;
     padding: 24px;

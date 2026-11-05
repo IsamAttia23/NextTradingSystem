@@ -12,6 +12,6 @@ public static class NavigationCatalog
             new("Inventory", "Stocks"), new("Inventory", "StockMovements", "Movements"), new("Inventory", "ProductBatches", "Batches")]),
         new("OrganizationGroup", [new("Branches", "Branches")]),
         new("SecurityGroup", [new("Users", "Users"), new("Roles", "Roles"), new("Permissions", "Permissions"), new("Assignments", "Assignments")]),
-        new("SystemGroup", [new("RecycleBin", "RecycleBin")])
+        new("SystemGroup", [new("Currency", "CurrencySettings", "Settings"), new("RecycleBin", "RecycleBin")])
     ];
 }

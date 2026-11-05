@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = L["CurrencySettings"];
+}
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">@L["SystemGroup"]</span>
+        <h1>
+            <partial name="_Icon" model='@("transfer")' />
+            @L["CurrencySettings"]
+        </h1>
+        <p>@L["CurrencySettingsHint"]</p>
+    </div>
+</section>
+<section class="content-card currency-settings-card">
+    <form data-currency-settings
+          data-native-navigation
+          action="@Url.Content("~/Currency")"
+          method="post"
+          data-expired="@L["SessionExpired"]"
+          data-forbidden="@L["CurrencyForbidden"]"
+          data-validation="@L["ValidationFailed"]"
+          data-conflict="@L["CurrencyConflict"]"
+          data-error="@L["CurrencyLoadError"]"
+          data-saved="@L["CurrencySaved"]">
+        @Html.AntiForgeryToken()
+        <p class="alert alert-info" data-currency-initial hidden>@L["CurrencyInitialNotice"]</p>
+        <input type="hidden" name="RowVersion" />
+        <fieldset disabled>
+            <label class="form-label" for="usd-to-sdg">@L["UsdToSdg"]</label>
+            <div class="input-group currency-rate-input" dir="ltr">
+                <span class="input-group-text" aria-hidden="true">1 USD =</span>
+                <input id="usd-to-sdg"
+                       class="form-control"
+                       name="UsdToSdg"
+                       type="number"
+                       min="0.00000001"
+                       max="1000000000000"
+                       step="any"
+                       aria-describedby="currency-rate-hint"
+                       required />
+                <span class="input-group-text" aria-hidden="true">SDG</span>
+            </div>
+            <p id="currency-rate-hint" class="form-hint">@L["CurrencyRateHint"]</p>
+            <button type="submit" class="btn btn-primary">@L["CurrencySave"]</button>
+        </fieldset>
+        <p data-currency-message role="status" aria-live="polite" class="currency-settings-message"></p>
+        <button type="button" class="btn btn-outline-secondary" data-currency-reload>@L["CurrencyReload"]</button>
+    </form>
+</section>

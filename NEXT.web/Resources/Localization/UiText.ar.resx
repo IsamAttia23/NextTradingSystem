@@ -495,4 +495,15 @@
 <data name="ProfileSavedSignInAgain" xml:space="preserve"><value>تم حفظ التعديلات. يرجى تسجيل الدخول مجددًا.</value></data>
 <data name="DeleteLinkedRecord" xml:space="preserve"><value>لا يمكن حذف هذا العنصر لارتباطه بعناصر أخرى. أزل الارتباطات أولًا ثم أعد المحاولة.</value></data>
 <data name="RecordRelationshipBlocked" xml:space="preserve"><value>لا يمكن تنفيذ العملية بسبب ارتباط هذا العنصر بعناصر أخرى.</value></data>
+<data name="CurrencySettings" xml:space="preserve"><value>إعدادات العملات</value></data>
+<data name="CurrencySettingsHint" xml:space="preserve"><value>حدد سعر الدولار المستخدم لعرض تكلفة المنتجات بالجنيه السوداني.</value></data>
+<data name="UsdToSdg" xml:space="preserve"><value>سعر الدولار بالجنيه السوداني</value></data>
+<data name="CurrencyRateHint" xml:space="preserve"><value>مثال: إدخال 10 يعني أن الدولار الواحد يساوي 10 جنيهات سودانية.</value></data>
+<data name="CurrencyInitialNotice" xml:space="preserve"><value>عند الحفظ لأول مرة ستُحوّل تكاليف المنتجات الحالية إلى الدولار باستخدام هذا السعر. راجع السعر قبل الحفظ.</value></data>
+<data name="CurrencySave" xml:space="preserve"><value>حفظ سعر الدولار</value></data>
+<data name="CurrencySaved" xml:space="preserve"><value>تم حفظ سعر الدولار.</value></data>
+<data name="CurrencyReload" xml:space="preserve"><value>إعادة تحميل السعر الحالي</value></data>
+<data name="CurrencyLoadError" xml:space="preserve"><value>تعذر الاتصال بالخادم. أعد تحميل السعر الحالي ثم حاول مرة أخرى.</value></data>
+<data name="CurrencyConflict" xml:space="preserve"><value>تغير سعر الدولار لدى مستخدم آخر. أعد تحميل السعر الحالي قبل الحفظ.</value></data>
+<data name="CurrencyForbidden" xml:space="preserve"><value>يتطلب تعديل سعر الدولار صلاحية إدارة النظام.</value></data>
 </root>

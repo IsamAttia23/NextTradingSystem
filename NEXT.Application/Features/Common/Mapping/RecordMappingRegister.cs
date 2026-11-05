@@ -8,6 +8,7 @@ using Mapster;
 
 using NEXT.Domain.Entities;
 using NEXT.Domain.Common.Entities;
+using System.Linq.Expressions;
 
 namespace NEXT.Application.Features.Common.Mapping;
 
@@ -17,11 +18,7 @@ public sealed class RecordMappingRegister : IRegister
     {
         config.NewConfig<Customer, CustomerDto>().Map(d => d.TagName, s => s.Tag.Name).Map(d => d.TagColor, s => s.Tag.Color);
         config.NewConfig<Supplier, SupplierDto>().Map(d => d.TagName, s => s.Tag.Name).Map(d => d.TagColor, s => s.Tag.Color);
-        config.NewConfig<Stock, StockDto>()
-            .Map(d => d.ProductName, s => s.Product.Name)
-            .Map(d => d.WarehouseName, s => s.Warehouse.Name)
-            .Map(d => d.AvailableQuantity, s => s.Quantity - s.ReservedQuantity)
-            .Map(d => d.CostPrice, s => s.Product.CostPrice);
+        ConfigureStockMapping(config, stock => stock.Product.CostPrice);
         config.NewConfig<StockMovement, StockMovementDto>()
             .Map(d => d.Type, s => s.Type.ToString());
         config.NewConfig<ProductBatch, ProductBatchDto>();
@@ -37,5 +34,14 @@ public sealed class RecordMappingRegister : IRegister
         config.When((source, destination, _) => typeof(IIsDeletableEntity).IsAssignableFrom(source) &&
                 destination.IsGenericType && destination.GetGenericTypeDefinition() == typeof(RecycleBinItemDto<>))
             .Map("EntityId", "Id").Map("DeletedOn", "DeletedAt").Ignore("EntityType");
+    }
+
+    public static void ConfigureStockMapping(TypeAdapterConfig config, Expression<Func<Stock, decimal>> costPrice)
+    {
+        config.NewConfig<Stock, StockDto>()
+            .Map(d => d.ProductName, s => s.Product.Name)
+            .Map(d => d.WarehouseName, s => s.Warehouse.Name)
+            .Map(d => d.AvailableQuantity, s => s.Quantity - s.ReservedQuantity)
+            .Map(d => d.CostPrice, costPrice);
     }
 }

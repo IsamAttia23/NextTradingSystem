@@ -31,7 +31,8 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         List<FormField> fields = [];
         foreach (var property in typeof(TInput).GetProperties())
         {
-            if (property.Name == "Id"
+            if (property.GetCustomAttribute<ScaffoldColumnAttribute>() is { Scaffold: false }
+                || property.Name == "Id"
                 || includedFields.Length > 0
                 && !includedFields.Contains(property.Name))
             {
@@ -109,7 +110,8 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         List<DetailFieldDto> fields = [];
         foreach (var property in typeof(TDto).GetProperties())
         {
-            if (property.Name is "Id" or "Name" or "AvatarUrl" or "RemoveAvatar" or "TagName" or "TagColor" or "TagId" or "RowVersion")
+            if (property.GetCustomAttribute<ScaffoldColumnAttribute>() is { Scaffold: false }
+                || property.Name is "Id" or "Name" or "AvatarUrl" or "RemoveAvatar" or "TagName" or "TagColor" or "TagId" or "RowVersion")
             {
                 continue;
             }

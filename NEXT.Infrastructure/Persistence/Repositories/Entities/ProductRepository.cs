@@ -10,6 +10,8 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 
 public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Product, Guid>(context), IProductRepository
 {
+    public IQueryable<Product> QueryIncludingDeleted() => Context.Products.IgnoreQueryFilters().AsTracking();
+
     public Task<Product?> GetByBarcodeAsync(string barcode, CancellationToken cancellationToken = default) => StorageErrors.ExecuteAsync(() => Context.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Barcode == barcode, cancellationToken));
 
     public Task<List<Product>> GetLowStockAsync(Guid? warehouseId = null, CancellationToken cancellationToken = default)

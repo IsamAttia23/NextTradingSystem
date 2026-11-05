@@ -10,7 +10,7 @@ using NEXT.Application.DTOs.Tags;
 
 namespace NEXT.web.Services;
 
-public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter tables, FormFieldPresenter fields)
+public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter tables, FormFieldPresenter fields, NEXT.Application.Services.Currencies.ExchangeRateReader? exchangeRates = null)
     where TDto : class, TInput, IRecordDto where TInput : class, new()
 {
     public async Task<TableModel> TableAsync(string title, Func<string, object?, string> route, PaginationQuery query, CancellationToken ct)
@@ -53,6 +53,12 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
     {
         TInput input = id is { } key ? await FindAsync(key, ct) : new TInput();
         var formFields = (await fields.FormAsync(input, ct, id)).ToList();
+        if (input is NEXT.Application.DTOs.Products.ProductInputDto productInput)
+        {
+            var rate = productInput.ExchangeRate ?? await (exchangeRates
+                ?? throw new InvalidOperationException("Exchange rate reader is not registered.")).GetUsdRateAsync(ct);
+            formFields.Add(new("ExchangeRate", "ExchangeRate", FormFieldPresenter.Quantity(rate), "hidden"));
+        }
         if (id.HasValue && input is IVersionedRecordDto versioned)
         {
             formFields.Add(new("RowVersion", "RowVersion", Convert.ToBase64String(versioned.RowVersion), "hidden"));

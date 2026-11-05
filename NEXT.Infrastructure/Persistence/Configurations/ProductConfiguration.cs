@@ -16,7 +16,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Barcode).HasMaxLength(100);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL");
-        builder.Property(x => x.CostPrice).HasPrecision(15, 2);
+        builder.Property(x => x.CostPrice).HasPrecision(24, 8);
         builder.Property(x => x.RetailPrice).HasPrecision(15, 2);
         builder.Property(x => x.WholesalePrice).HasPrecision(15, 2);
         builder.Property(x => x.VipPrice).HasPrecision(15, 2);

@@ -5,6 +5,10 @@ namespace NEXT.Application.DTOs.Products;
 
 public class ProductInputDto
 {
+    [ScaffoldColumn(false)]
+    [Range(typeof(decimal), "0.00000001", "1000000000000", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
+    public decimal? ExchangeRate { get; set; }
+
     [Required, StringLength(200)]
     public string Name { get; set; } = "";
     [StringLength(100)]

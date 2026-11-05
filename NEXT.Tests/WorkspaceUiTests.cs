@@ -79,6 +79,15 @@ public sealed class WorkspaceUiTests
                 IsActive = true
             };
             db.Add(branch);
+            if (!await db.SystemSettings.AnyAsync(row => row.Key == NEXT.Application.Services.Currencies.ExchangeRateReader.SettingKey))
+            {
+                db.Add(new SystemSetting
+                {
+                    Key = NEXT.Application.Services.Currencies.ExchangeRateReader.SettingKey,
+                    Category = "Currency",
+                    ValueJson = "1"
+                });
+            }
             await db.SaveChangesAsync();
             var roles = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
             Assert.True((await roles.CreateAsync(new Role
@@ -390,7 +399,7 @@ public sealed class WorkspaceUiTests
         var inactive = await client.GetStringAsync("/Customers?IsActive=false");
         Assert.Contains("Inactive sentinel", inactive);
         Assert.DoesNotContain("Alpha customer", inactive);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/Inventory/Movements?From=2026-12-01&To=2026-01-01")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/Inventory/Movements?From=2026-12-01&To=2026-01-01")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/Customers?TagId=not-a-guid")).StatusCode);
         var details = await client.GetStringAsync("/Customers/Details/" + targetId);
         Assert.Contains("record-card", details);
@@ -618,7 +627,13 @@ public sealed class WorkspaceUiTests
         html = await client.GetStringAsync("/Products?Barcode=ABC&MinCostPrice=9&MaxCostPrice=11&MinRetailPrice=24&MaxRetailPrice=26&MinStock=3&MaxStock=60&HasExpiry=true");
         Assert.Contains("Matched product", html);
         Assert.DoesNotContain("Excluded product", html);
-        foreach (var route in new[] { "/Customers?MinCreditLimit=20&MaxCreditLimit=10", "/Customers?Type=999", "/Products?MinRetailPrice=30&MaxRetailPrice=2", "/Products?HasExpiry=invalid" })
+        foreach (var route in new[] { "/Customers?MinCreditLimit=20&MaxCreditLimit=10", "/Products?MinRetailPrice=30&MaxRetailPrice=2" })
+        {
+            var filtered = await client.GetStringAsync(route);
+            Assert.DoesNotContain("Matched company", filtered);
+            Assert.DoesNotContain("Matched product", filtered);
+        }
+        foreach (var route in new[] { "/Customers?Type=999", "/Products?HasExpiry=invalid" })
         {
             Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(route)).StatusCode);
         }
