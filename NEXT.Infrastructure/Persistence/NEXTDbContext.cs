@@ -14,6 +14,8 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     : IdentityDbContext<ApplicationUser, Role, Guid, IdentityUserClaim<Guid>, UserRole,
         IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>(options)
 {
+    public const string SoftDeleteFilterName = "SoftDelete";
+
     private readonly HashSet<object> _permanentDeletions = new(ReferenceEqualityComparer.Instance);
     internal bool IsPermanentDeletion(object entity) => _permanentDeletions.Contains(entity);
 
@@ -99,7 +101,7 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
                 deletedAt,
                 Expression.Constant(null, typeof(DateTimeOffset?)));
             var filter = Expression.Lambda(isNotDeleted, parameter);
-            builder.Entity(entityClrType).HasQueryFilter(filter);
+            builder.Entity(entityClrType).HasQueryFilter(SoftDeleteFilterName, filter);
         }
     }
 

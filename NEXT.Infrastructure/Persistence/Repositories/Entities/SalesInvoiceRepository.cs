@@ -11,13 +11,50 @@ namespace NEXT.Infrastructure.Persistence.Repositories.Entities;
 public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepository<SalesInvoice, Guid>(context), ISalesInvoiceRepository
 {
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        => StorageErrors.ExecuteAsync(() => Context.SalesInvoices.AsNoTracking()
-        .Include(x => x.Customer)
-        .Include(x => x.Warehouse)
-        .Include(x => x.User)
-        .Include(x => x.Items)
-        .ThenInclude(i => i.Product)
-        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken));
+        => StorageErrors.ExecuteAsync(async () =>
+        {
+            var invoice = await Context.SalesInvoices.AsNoTracking()
+                .Include(x => x.Customer)
+                .Include(x => x.Warehouse)
+                .Include(x => x.User)
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (invoice is null)
+            {
+                return null;
+            }
+
+            var productIds = invoice.Items.Select(x => x.ProductId).Distinct().ToArray();
+            var products = await ReadProductsAsync(productIds, cancellationToken);
+            AttachProducts(invoice, products);
+            return invoice;
+        });
+
+    private Task<Dictionary<Guid, Product>> ReadProductsAsync(Guid[] productIds, CancellationToken ct)
+    {
+        if (productIds.Length == 0)
+        {
+            return Task.FromResult(new Dictionary<Guid, Product>());
+        }
+
+        // Historical invoice lines must retain products hidden by soft deletion.
+        return Context.Products.AsNoTracking()
+            .IgnoreQueryFilters([NEXTDbContext.SoftDeleteFilterName])
+            .Where(x => productIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, ct);
+    }
+
+    private static void AttachProducts(SalesInvoice invoice, IReadOnlyDictionary<Guid, Product> products)
+    {
+        foreach (var item in invoice.Items)
+        {
+            if (products.TryGetValue(item.ProductId, out var product))
+            {
+                item.Product = product;
+            }
+        }
+    }
 
     public override Expression<Func<SalesInvoice, bool>> BuildFilterExpression(PaginationQuery query)
     {
