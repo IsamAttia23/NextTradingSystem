@@ -1,0 +1,42 @@
+@model OtpPageModel
+@{ ViewData["Title"] = L["OtpTitle"]; }
+<section class="login-grid auth-grid">
+    <partial name="_AuthIntro" />
+    <section class="content-card login-card auth-card auth-centered">
+        <span class="auth-symbol" aria-hidden="true"><partial name="_Icon" model='@("mail")' /></span>
+        <span class="auth-step">@L["StepTwoOfThree"]</span>
+        <h2>@L["OtpTitle"]</h2>
+        <p class="auth-description">@L["OtpDescription"]</p>
+        <bdi class="auth-email" dir="ltr">@Model.MaskedEmail</bdi>
+        <a class="auth-link" asp-action="ForgotPassword">@L["EditEmail"]</a>
+        <form asp-action="VerifyOtp" method="post" class="auth-form otp-form" data-otp-form
+              data-error="@L["OtpInvalidOrExpired"]" data-expired="@L["OtpExpired"]"
+              data-unavailable="@L["RequestFailed"]" data-success="@L["OtpVerified"]"
+              data-expires-at="@Model.ExpiresAt.ToString("O")" data-resend-at="@Model.ResendAt.ToString("O")"
+              data-continue="@L["ContinueToPassword"]" data-resend-label="@L["ResendCode"]"
+              data-attempts-ended="@L["OtpAttemptsEnded"]" data-resend-action="@Url.Action("ResendOtp")">
+            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+            <label for="otp-code" class="visually-hidden">@L["OtpFiveDigits"]</label>
+            <div class="otp-input" data-otp-input>
+                <div class="otp-boxes" aria-hidden="true">
+                    @for (var index = 0; index < 5; index++)
+                    {
+                        <span class="otp-box" style="--otp-index:@index"></span>
+                    }
+                </div>
+                <input id="otp-code" name="Code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                       autocapitalize="none" spellcheck="false" maxlength="5" pattern="[0-9]{5}"
+                       aria-describedby="otp-message otp-expiry" aria-invalid="false" required />
+            </div>
+            <p class="auth-feedback" id="otp-message" data-otp-message role="status" aria-live="polite"></p>
+            <button type="submit" class="btn btn-primary w-100" data-otp-submit>@L["VerifyAndContinue"]</button>
+            <p class="otp-validity" id="otp-expiry"><partial name="_Icon" model='@("clock")' />
+                @L["CodeExpiresIn"] <bdi dir="ltr" data-otp-expiry>05:00</bdi></p>
+            <div class="otp-resend-row"><span>@L["DidNotGetCode"]</span>
+                <button type="button" class="auth-link" data-otp-resend disabled>@L["ResendCode"]</button>
+                <bdi dir="ltr" data-resend-countdown>01:00</bdi>
+            </div>
+        </form>
+        <a class="auth-back" asp-action="Login">@L["BackToLogin"]</a>
+    </section>
+</section>

@@ -186,7 +186,8 @@ public sealed class ApplicationRepairTests
             await using var database = await PostgresInventoryTests.Database.Create();
             await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: database.TestConnection,
                 configureServices: services => services.AddScoped<IUserCommandService>(provider =>
-                    new FailingRoleService(new UserCommandService(provider.GetRequiredService<UserManager<ApplicationUser>>()), scenario == "exception")));
+                    new FailingRoleService(new UserCommandService(provider.GetRequiredService<UserManager<ApplicationUser>>(),
+                        provider.GetRequiredService<IUserManagementService>()), scenario == "exception")));
             await using var scope = app.Services.CreateAsyncScope();
             var services = scope.ServiceProvider;
             var db = services.GetRequiredService<NEXTDbContext>();

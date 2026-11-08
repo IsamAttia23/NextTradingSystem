@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+<resheader name="version"><value>2.0</value></resheader>
+<data name="OtpEmailSubject" xml:space="preserve"><value>رمز التحقق من NEXT</value></data>
+<data name="OtpEmailBody" xml:space="preserve"><value>رمز التحقق الخاص بك هو {0}. تنتهي صلاحيته خلال {1} دقائق. إذا لم تطلب هذا الرمز، فتجاهل الرسالة.</value></data>
+<data name="ActivationEmailSubject" xml:space="preserve"><value>تفعيل حسابك في NEXT</value></data>
+<data name="ActivationEmailBody" xml:space="preserve"><value>اسم المستخدم: {0}. رمز التفعيل: {1}. أدخله في حقل كلمة المرور لاختيار كلمة مرورك. تنتهي صلاحية الرمز خلال {2} دقائق. لا تشاركه.</value></data>
+<data name="InvalidSecurityToken" xml:space="preserve"><value>إذن التحقق غير صالح أو انتهت صلاحيته.</value></data>
+<data name="InvalidPasswordSetup" xml:space="preserve"><value>تعذر تغيير كلمة المرور بهذه البيانات.</value></data>
+<data name="TemporaryPasswordNotAvailable" xml:space="preserve"><value>الحساب غير مؤهل لإصدار كلمة مرور مؤقتة.</value></data>
+<data name="PasswordTooShort" xml:space="preserve"><value>يجب ألا تقل كلمة المرور عن {0} أحرف.</value></data>
+<data name="PasswordRequiresNonAlphanumeric" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور رمزًا خاصًا.</value></data>
+<data name="PasswordRequiresDigit" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور رقمًا.</value></data>
+<data name="PasswordRequiresLower" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور حرفًا إنجليزيًا صغيرًا.</value></data>
+<data name="PasswordRequiresUpper" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور حرفًا إنجليزيًا كبيرًا.</value></data>
+<data name="PasswordRequiresUniqueChars" xml:space="preserve"><value>استخدم {0} أحرف مختلفة على الأقل.</value></data>
+<data name="PasswordMismatch" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
+<data name="InvalidToken" xml:space="preserve"><value>إذن التحقق غير صالح أو انتهت صلاحيته.</value></data>
+<data name="ConcurrencyFailure" xml:space="preserve"><value>تغيرت بيانات الحساب. أعد التحميل وحاول مجددًا.</value></data>
+<data name="InvalidEmail" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+<data name="DuplicateEmail" xml:space="preserve"><value>هذا البريد الإلكتروني مستخدم بالفعل.</value></data>
+<data name="InvalidUserName" xml:space="preserve"><value>أدخل اسم مستخدم صالحًا.</value></data>
+<data name="DuplicateUserName" xml:space="preserve"><value>اسم المستخدم مستخدم بالفعل.</value></data>
+<data name="ActivationNotAvailable" xml:space="preserve"><value>الحساب غير مؤهل لإصدار رمز تفعيل.</value></data>
+<data name="ActivationLoginHint" xml:space="preserve"><value>عند الدخول لأول مرة، أدخل رمز التفعيل المكوّن من خمسة أرقام من بريدك في حقل كلمة المرور.</value></data>
+</root>

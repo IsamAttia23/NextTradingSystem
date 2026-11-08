@@ -1,10 +1,19 @@
-@model int
-@{
-    ViewData["Title"] = L["RequestFailed"];
-}
-<section class="content-card empty-state">
-    <span class="eyebrow">NEXT / @Model</span>
-    <h1>@L["RequestFailed"]</h1>
-    <p>@L["ErrorDetail"]</p>
-    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">@L["Dashboard"]</a>
+@model StatusPageModel
+@{ ViewData["Title"] = L[Model.TitleKey]; }
+<section class="content-card access-state">
+    @if (Model.StatusCode == 403)
+    {
+        <partial name="_AccessDeniedIllustration" />
+    }
+    <span class="eyebrow">NEXT / @Model.StatusCode</span>
+    <h1>@L[Model.TitleKey]</h1>
+    <p>@L[Model.DescriptionKey]</p>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="Account" asp-action="Profile" class="btn btn-primary">@L["BackToMyAccount"]</a>
+    }
+    else
+    {
+        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">@L["Login"]</a>
+    }
 </section>

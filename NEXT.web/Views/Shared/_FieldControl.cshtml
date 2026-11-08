@@ -9,6 +9,12 @@
         }
     </select>
 }
+else if (Model.Field.Type == "password")
+{
+    <partial name="_PasswordInput" model='@(new PasswordInputModel(Model.Id, Model.Field.Name, Model.Field.Label,
+        Model.Field.Name == "CurrentPassword" ? "current-password" : "new-password", Model.Field.Required,
+        Model.Field.Name == "CurrentPassword" ? null : 10, Model.Field.MaxLength ?? 128, Model.Placeholder))' />
+}
 else
 {
     <input class="form-control" id="@Model.Id" name="@Model.Field.Name" type="@Model.Field.Type"

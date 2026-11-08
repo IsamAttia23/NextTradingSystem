@@ -30,7 +30,7 @@ public sealed class UpdateApplicationUserHandler(IUserCommandService commands, I
                 BranchId = user.BranchId,
                 IsActive = user.IsActive
             }
-            : request.User;
+            : request.User with { IsActive = user.IsActive };
         validator.Validate(input);
         var changePassword = input.NewPassword is not null;
         var hasCurrentPassword = !string.IsNullOrEmpty(input.CurrentPassword);

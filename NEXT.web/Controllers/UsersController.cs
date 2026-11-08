@@ -44,6 +44,10 @@ public sealed class UsersController(ISender sender, UsersPresenter presenter) : 
             AvatarUrl = await ProfileUploadReader.ReadAsync(avatar, ct)
         }), ct));
     }
+    [HttpPost]
+    public async Task<IActionResult> SetActive(Guid id, UserActivationInput input, CancellationToken ct) =>
+        Operation(await sender.Send(new SetApplicationUserActiveCommand(id, input.IsActive, input.ExpectedIsActive), ct));
+
     [HttpGet] public IActionResult Delete(Guid id) => Confirm("Delete", "Delete", new { id });
     [HttpPost, ActionName("Delete")]
     public async Task<IActionResult> DeleteConfirmed(Guid id, DeletionRequestDto input, CancellationToken ct)

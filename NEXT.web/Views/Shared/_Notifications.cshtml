@@ -1,6 +1,8 @@
 @{
     var errors = ViewData.ModelState.Values.SelectMany(x => x.Errors).Select(x => L[x.ErrorMessage].Value).ToArray();
-    var pageError = errors.Length > 0 ? string.Join("\n", errors) : Context.Response.StatusCode >= 400 ? L["RequestFailed"].Value : "";
+    var pageError = errors.Length > 0 ? string.Join("\n", errors)
+        : Context.Response.StatusCode >= 400 && ViewData.Model is not StatusPageModel
+            ? L["RequestFailed"].Value : "";
 }
 <div id="notifications" class="notification-stack" aria-label="@L["Notifications"]"
      data-icons="@Url.Content("~/icons.svg")" data-success-title="@L["NoticeSuccessTitle"]" data-info-title="@L["NoticeInfoTitle"]"

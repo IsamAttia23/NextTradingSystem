@@ -5,29 +5,29 @@
         return;
     }
     const kinds = new Set(["success", "info", "warning", "error"]);
+    const duration = 7000;
+    const maximumNotices = 4;
+    const dismissals = new WeakMap();
+
+    function arrange() {
+        [...stack.children].forEach((notice, index) => notice.style.setProperty("--notice-index", index));
+    }
+
     function show(message, kind = "info") {
-        if (!message) {
-            return;
-        }
-        if (!kinds.has(kind)) {
-            kind = "info";
-        }
+        if (!message) return;
+        if (!kinds.has(kind)) kind = "info";
         const notice = document.createElement("div");
         notice.className = "app-notice notice-" + kind;
         notice.setAttribute("role", kind === "error" ? "alert" : "status");
         notice.setAttribute("aria-live", kind === "error" ? "assertive" : "polite");
+        notice.style.setProperty("--notice-duration", duration + "ms");
         const marker = document.createElement("span");
         marker.className = "notice-marker";
         marker.setAttribute("aria-hidden", "true");
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("class", "ui-icon");
         const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-        use.setAttribute(
-            "href",
-            stack.dataset.icons +
-                "#" +
-                (kind === "success" ? "check" : kind === "info" ? "info" : "warning"),
-        );
+        use.setAttribute("href", stack.dataset.icons + "#" + (kind === "success" ? "check" : kind === "info" ? "info" : "warning"));
         icon.append(use);
         marker.append(icon);
         const content = document.createElement("div");
@@ -44,53 +44,58 @@
         close.className = "notice-close";
         close.setAttribute("aria-label", stack.dataset.close);
         close.textContent = "×";
-        function dismiss() {
+        const progress = document.createElement("span");
+        progress.className = "notice-progress";
+        progress.setAttribute("aria-hidden", "true");
+        notice.append(marker, content, close, progress);
+
+        let remaining = duration;
+        let started = Date.now();
+        let paused = false;
+        let leaving = false;
+        let timer;
+        let removalTimer;
+
+        function remove() {
+            clearTimeout(timer);
+            clearTimeout(removalTimer);
+            dismissals.delete(notice);
+            notice.remove();
+            arrange();
+        }
+        function dismiss(immediate = false) {
+            if (immediate) { remove(); return; }
+            if (leaving) return;
+            leaving = true;
+            clearTimeout(timer);
             notice.classList.add("notice-leaving");
-            setTimeout(() => notice.remove(), 180);
+            removalTimer = setTimeout(remove, 180);
         }
-        close.addEventListener("click", dismiss);
-        notice.append(marker, content, close);
-        stack.append(notice);
-        while (stack.children.length > 4) {
-            stack.firstElementChild.remove();
+        function pause() {
+            if (paused || leaving) return;
+            paused = true;
+            clearTimeout(timer);
+            remaining = Math.max(0, remaining - (Date.now() - started));
+            progress.style.animationPlayState = "paused";
         }
-        // Error messages stay until dismissed; timed notices pause while hovered or focused.
-        if (kind !== "error") {
-            const progress = document.createElement("span");
-            progress.className = "notice-progress";
-            progress.setAttribute("aria-hidden", "true");
-            notice.append(progress);
-            let remaining = 7000;
-            let started = Date.now();
-            let timer = setTimeout(dismiss, remaining);
-            let paused = false;
-            function pause() {
-                if (paused) {
-                    return;
-                }
-                paused = true;
-                clearTimeout(timer);
-                remaining = Math.max(0, remaining - (Date.now() - started));
-                progress.style.animationPlayState = "paused";
-            }
-            function resume() {
-                if (
-                    !paused ||
-                    notice.matches(":hover") ||
-                    notice.contains(document.activeElement)
-                ) {
-                    return;
-                }
-                paused = false;
-                started = Date.now();
-                timer = setTimeout(dismiss, remaining);
-                progress.style.animationPlayState = "running";
-            }
-            notice.addEventListener("mouseenter", pause);
-            notice.addEventListener("mouseleave", resume);
-            notice.addEventListener("focusin", pause);
-            notice.addEventListener("focusout", () => setTimeout(resume, 0));
+        function resume() {
+            if (!paused || leaving || notice.matches(":hover") || notice.contains(document.activeElement)) return;
+            paused = false;
+            started = Date.now();
+            timer = setTimeout(() => dismiss(), remaining);
+            progress.style.animationPlayState = "running";
         }
+        close.addEventListener("click", () => dismiss());
+        notice.addEventListener("mouseenter", pause);
+        notice.addEventListener("mouseleave", resume);
+        notice.addEventListener("focusin", pause);
+        notice.addEventListener("focusout", () => setTimeout(resume, 0));
+        dismissals.set(notice, dismiss);
+        stack.prepend(notice);
+        while (stack.children.length > maximumNotices) dismissals.get(stack.lastElementChild)?.(true);
+        arrange();
+        timer = setTimeout(() => dismiss(), remaining);
+        if (notice.matches(":hover") || notice.contains(document.activeElement)) pause();
     }
 
     function afterReload(message, kind) {

@@ -2,5 +2,5 @@ namespace NEXT.Application.Abstractions.Identity;
 
 public enum LoginOutcome
 {
-    Failed, Succeeded, RequiresTwoFactor, MissingChallenge
+    Failed, Succeeded, RequiresTwoFactor, MissingChallenge, RequiresPasswordChange, AccountLocked
 }

@@ -19,7 +19,7 @@ public sealed record UserCreationDto
     /// <summary>Optional profile image content. The current model stores image bytes.</summary>
     public byte[]? AvatarUrl { get; init; }
 
-    [Required, MinLength(10), StringLength(128)]
+    // Retained for form compatibility; account creation ignores client-provided passwords.
     public string Password { get; init; } = string.Empty;
 
     public bool IsActive { get; init; } = true;

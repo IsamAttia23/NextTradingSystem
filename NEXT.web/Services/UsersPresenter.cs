@@ -17,7 +17,8 @@ public sealed class UsersPresenter(ISender sender)
     {
         var users = (await sender.Send(new GetApplicationUsersQuery(), ct)).ToArray();
         return new("Users", "UsersDescription", ["FullName", "UserName", "Email", "Status"],
-            users.Select(x => new TableRow([x.FullName, x.UserName ?? "—", x.Email ?? "—", x.IsActive ? "Active" : "Inactive"], [new("Edit", route("Edit", new { x.Id })), new("AssignRole", route("AssignRole", new { x.Id })), new("Delete", route("Delete", new { x.Id }), true)], NameWarning: x.HasRole ? null : "UserHasNoRole")).ToArray(),
+            users.Select(x => new TableRow([x.FullName, x.UserName ?? "—", x.Email ?? "—", x.IsActive ? "Active" : "Inactive"], [new("Edit", route("Edit", new { x.Id })), new("AssignRole", route("AssignRole", new { x.Id })), new("Delete", route("Delete", new { x.Id }), true)], NameWarning: x.HasRole ? null : "UserHasNoRole",
+                Activation: new UserActivationToggle(x.IsActive, route("SetActive", new { x.Id }), x.FullName))).ToArray(),
             new("CreateUser", route("Create", null)), TotalCount: users.Length);
     }
     public async Task<ModalForm> FormAsync(UserDto? user, Func<string, object?, string> route, CancellationToken ct,
@@ -45,10 +46,9 @@ public sealed class UsersPresenter(ISender sender)
         var options = (await sender.Send(new GetAssignableBranchesQuery(user?.BranchId), ct))
             .Select(x => new FieldOption(x.Id.ToString(), x.Name)).ToArray();
         fields.Add(new("BranchId", "Branch", user?.BranchId.ToString(), "select", true, Options: options));
-        fields.Add(new("IsActive", "Active", (user?.IsActive ?? true).ToString().ToLowerInvariant(), "checkbox"));
+        if (user is null) fields.Add(new("IsActive", "Active", "true", "checkbox"));
         if (user is null)
         {
-            fields.Add(new("Password", "Password", Type: "password", Required: true, MaxLength: 128));
             var roles = await sender.Send(new GetRolesQuery(), ct);
             fields.Add(new("Role", "Role", Type: "select", Options: roles.Where(x => x.Name is not null)
                 .Select(x => new FieldOption(x.Name!, x.Name!)).ToArray()));
@@ -57,7 +57,7 @@ public sealed class UsersPresenter(ISender sender)
         {
             user.Id
         }), fields,
-            Message: user is null ? "PasswordHint" : null);
+            Message: user is null ? "TemporaryPasswordCreationHint" : null);
     }
     public async Task<ModalForm> AssignRoleAsync(Guid id, string action, CancellationToken ct)
     {

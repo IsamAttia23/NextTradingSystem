@@ -20,6 +20,9 @@ public sealed class LoginAccessPolicy(UserManager<ApplicationUser> users, IHostE
         var user = await users.FindByIdAsync(userId.ToString());
         if (user is null
             || !user.IsActive
+            || user.RequiresAdministratorUnlock
+            || user.MustChangePassword
+            || user.LockoutEnd > DateTimeOffset.UtcNow
             || user.DeletedAt is not null)
         {
             return false;

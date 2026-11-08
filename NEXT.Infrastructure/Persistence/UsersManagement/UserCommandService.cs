@@ -3,10 +3,10 @@ using NEXT.Application.Abstractions.Identity;
 using NEXT.Domain.Entities;
 namespace NEXT.Infrastructure.Persistence.UsersManagement;
 
-public sealed class UserCommandService(UserManager<ApplicationUser> users) : IUserCommandService
+public sealed class UserCommandService(UserManager<ApplicationUser> users, IUserManagementService management) : IUserCommandService
 {
     public Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password, CancellationToken ct = default) =>
-        ExecuteAsync(() => users.CreateAsync(user, password), ct);
+        management.CreateWithActivationOtpAsync(user, ct);
     public Task<UserOperationResult> UpdateUserAsync(ApplicationUser user, CancellationToken ct = default) =>
         ExecuteAsync(() => users.UpdateAsync(user), ct);
     public Task<UserOperationResult> DeleteUserAsync(ApplicationUser user, CancellationToken ct = default) =>

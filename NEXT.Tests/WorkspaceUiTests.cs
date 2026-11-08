@@ -41,7 +41,8 @@ public sealed class WorkspaceUiTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["ConnectionStrings:NEXTDatabase"] = postgresConnection ?? "Host=localhost;Database=unused"
+            ["ConnectionStrings:NEXTDatabase"] = postgresConnection ?? "Host=localhost;Database=unused",
+            ["AccountSecurity:SecretKey"] = Convert.ToBase64String(new byte[32])
         });
         builder.Services.AddApplicationServices(builder.Configuration);
         builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -237,7 +238,7 @@ public sealed class WorkspaceUiTests
         Assert.Equal(HttpStatusCode.OK, (await Post(client, deleteUrl, Token(await client.GetStringAsync(deleteUrl)))).StatusCode);
         var systemEdit = "/Roles/Edit/" + adminRoleId;
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await Post(client, systemEdit, Token(await client.GetStringAsync(systemEdit)), ("Name", "Renamed"))).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/RecycleBin?section=ApplicationUser")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/RecycleBin?section=ApplicationUser")).StatusCode);
         var userForm = await client.GetStringAsync("/Users/Create");
         Assert.Contains("BranchId", userForm);
         Assert.Equal(HttpStatusCode.OK, (await Post(client, "/Users/Create", Token(userForm),

@@ -1,3 +1,9 @@
+using NEXT.Infrastructure.Identity.Security.Services;
+using NEXT.Infrastructure.Identity.Security.Email;
+using NEXT.Infrastructure.Identity.Security.Storage;
+using NEXT.Infrastructure.Identity.Security.Cryptography;
+using NEXT.Infrastructure.Identity.Security.Contracts;
+using NEXT.Infrastructure.Identity.Security.Options;
 using NEXT.Application.Abstractions.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +25,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
         var connectionString = configuration.GetConnectionString("NEXTDatabase");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -31,7 +38,30 @@ public static class DependencyInjection
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
         services.AddScoped<IAccountAccess, AccountAccess>();
+        services.AddOptions<AccountSecurityOptions>().Bind(configuration.GetSection("AccountSecurity"))
+            .Validate(x => x.OtpLifetimeMinutes is >= 1 and <= 10 && x.GrantLifetimeMinutes is >= 1 and <= 10 &&
+                x.ActivationOtpLifetimeMinutes is >= 1 and <= 1440, "Invalid account security lifetimes.")
+            .Validate(x => SecuritySecrets.IsValidKey(x.SecretKey),
+                "Configure AccountSecurity:SecretKey with at least 32 random bytes encoded as base64.")
+            .ValidateOnStart();
+        services.Configure<SmtpEmailOptions>(configuration.GetSection("Email:Smtp"));
+        services.Configure<ResendEmailOptions>(configuration.GetSection("Email:Resend"));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<SecuritySecrets>();
+        services.AddScoped<SecurityTransactions>();
+        services.AddScoped<SecurityRequestLimiter>();
+        services.AddScoped<SecurityGrantService>();
+        services.AddScoped<IOtpService, EmailOtpService>();
+        services.AddScoped<IEmailService, SecurityEmailService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<SmtpEmailTransport>();
+        services.AddHttpClient<ResendEmailTransport>(client => client.Timeout = TimeSpan.FromSeconds(30));
+        services.AddScoped<IEmailTransport, ConfiguredEmailTransport>();
+        services.AddScoped<SecurityEmailDispatcher>();
+        services.AddScoped<SecurityMaintenance>();
+        services.AddHostedService<SecurityEmailWorker>();
         services.AddScoped<IAdministratorLookup, AdministratorLookup>();
+        services.AddScoped<NEXT.Application.Features.RecycleBin.IRecycleBinSection, NEXT.Infrastructure.Features.RecycleBin.UserRecycleBinSection>();
         services.AddScoped<TemporaryAdministratorBootstrapper>();
         services.AddScoped<IApplicationInitializer>(sp => sp.GetRequiredService<TemporaryAdministratorBootstrapper>());
         services.AddScoped<IUserCommandService, UserCommandService>();

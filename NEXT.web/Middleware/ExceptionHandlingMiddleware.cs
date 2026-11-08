@@ -36,7 +36,8 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
                             ? new ValidationProblemDetails(validation.Errors.ToDictionary(x => x.Key, x => x.Value.Select(value => text?[value].Value ?? value).ToArray()))
                             : new ProblemDetails();
             problem.Status = status;
-            problem.Title = status >= 500 ? "An unexpected error occurred." : exception.Message;
+            problem.Title = status >= 500 ? text?["UnexpectedError"].Value ?? "An unexpected error occurred."
+                : text?[exception.Message].Value ?? exception.Message;
             if (exception is RecordRelationshipException)
             {
                 var deleting = context.GetRouteValue("action")?.ToString() is "Delete" or "Purge";

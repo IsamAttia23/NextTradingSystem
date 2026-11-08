@@ -1,112 +1,67 @@
-using NEXT.web.Models;
-using NEXT.Application.Abstractions.Identity;
 using Microsoft.AspNetCore.Authorization;
-
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
-
-using NEXT.web.Localization;
-using NEXT.Application.DTOs.Authentication;
-using System.Security.Claims;
-using MediatR;
+using NEXT.Application.Abstractions.Identity;
 using NEXT.Application.DTOs.ApplicationUsers;
-using NEXT.Application.Features.ApplicationUsers.Commands;
-using NEXT.Application.Features.ApplicationUsers.Queries;
+using NEXT.Application.DTOs.Authentication;
+using NEXT.web.Models;
 using NEXT.web.Services;
 
 namespace NEXT.web.Controllers;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class AccountController(IAccountAccess access, IStringLocalizer<UiText> text,
-    ISender sender, UsersPresenter presenter) : Controller
+public sealed class AccountController(AccountPresenter presenter, StatusPresenter status) : Controller
 {
-    [Authorize, HttpGet]
-    public async Task<IActionResult> Profile(CancellationToken ct) => View(
-        await presenter.FormAsync(
-            await sender.Send(new GetApplicationUserByIdQuery(User.FindFirstValue(ClaimTypes.NameIdentifier)!), ct),
-            (_, _) => Url.Action(nameof(Profile))!, ct, profileOnly: true));
+    [AllowAnonymous, HttpGet]
+    public IActionResult Login(string? returnUrl = null) => presenter.LoginPage(returnUrl);
 
-    [Authorize, HttpPost]
-    public Task<UserOperationResult> Profile([FromForm] UserUpdateDto input, CancellationToken ct) =>
-        sender.Send(new UpdateApplicationUserCommand("", input, ProfileOnly: true), ct);
+    [AllowAnonymous, HttpPost]
+    public Task<IActionResult> Login(LoginDto input, CancellationToken ct) => presenter.LoginAsync(input, ModelState, Url, ct);
 
     [AllowAnonymous, HttpGet]
-    public IActionResult Login(string? returnUrl = null) => View(new LoginDto
-    {
-        ReturnUrl = returnUrl
-    });
+    public Task<IActionResult> Verify(string? returnUrl, bool rememberMe) => presenter.VerificationPageAsync(returnUrl, rememberMe);
+
     [AllowAnonymous, HttpPost]
-    public async Task<IActionResult> Login(LoginDto input)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(input);
-        }
-        var result = await access.LoginAsync(input);
-        if (result == LoginOutcome.Succeeded)
-        {
-            return LocalRedirect(Url.IsLocalUrl(input.ReturnUrl) ? input.ReturnUrl! : Url.Action("Index", "Home")!);
-        }
-        if (result == LoginOutcome.RequiresTwoFactor)
-        {
-            return RedirectToAction(nameof(Verify), new
-            {
-                input.ReturnUrl,
-                input.RememberMe
-            });
-        }
-        ModelState.AddModelError("", text["LoginFailed"]);
-        return View(input);
-    }
+    public Task<IActionResult> Verify(VerifyLoginDto input) => presenter.VerifySecondFactorAsync(input, ModelState, Url);
+
     [AllowAnonymous, HttpGet]
-    public async Task<IActionResult> Verify(string? returnUrl, bool rememberMe)
-    {
-        if (!await access.HasChallengeAsync())
-        {
-            return RedirectToAction(nameof(Login));
-        }
-        return View(new VerifyLoginDto
-        {
-            ReturnUrl = returnUrl,
-            RememberMe = rememberMe
-        });
-    }
+    public IActionResult ForgotPassword() => presenter.ForgotPasswordPage();
+
     [AllowAnonymous, HttpPost]
-    public async Task<IActionResult> Verify(VerifyLoginDto input)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(input);
-        }
-        var result = await access.VerifyAsync(input);
-        if (result == LoginOutcome.MissingChallenge)
-        {
-            return RedirectToAction(nameof(Login));
-        }
-        if (result == LoginOutcome.Succeeded)
-        {
-            return LocalRedirect(Url.IsLocalUrl(input.ReturnUrl) ? input.ReturnUrl! : Url.Action("Index", "Home")!);
-        }
-        ModelState.AddModelError("", text["LoginFailed"]);
-        return View(input);
-    }
-    [Authorize, HttpPost]
-    public async Task<IActionResult> Logout()
-    {
-        await access.LogoutAsync();
-        return RedirectToAction(nameof(Login));
-    }
+    public Task<IActionResult> ForgotPassword(RecoveryEmailInput input, CancellationToken ct) => presenter.RequestResetAsync(input, ModelState, ct);
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult VerifyOtp() => presenter.OtpPage();
+
+    [AllowAnonymous, HttpPost]
+    public Task<IActionResult> VerifyOtp(OtpInput input, CancellationToken ct) => presenter.VerifyOtpAsync(input, ModelState, ct);
+
+    [AllowAnonymous, HttpPost]
+    public Task<IActionResult> ResendOtp(CancellationToken ct) => presenter.ResendOtpAsync(ct);
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult SetPassword() => presenter.PasswordPage();
+
+    [AllowAnonymous, HttpPost]
+    public Task<IActionResult> SetPassword(PasswordChangeInput input, CancellationToken ct) => presenter.SetPasswordAsync(input, ModelState, ct);
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult Locked() => presenter.LockedPage();
+
+    [AllowAnonymous, HttpGet]
+    public IActionResult PasswordChanged() => presenter.PasswordChangedPage();
+
     [Authorize, HttpGet]
-    public async Task<IActionResult> Avatar()
-    {
-        var image = await access.AvatarAsync();
-        Response.Headers["X-Content-Type-Options"] = "nosniff";
-        return image is { Length: > 0 } ? File(image, "image/png") : Redirect(Url.Content("~/logo.svg"));
-    }
+    public Task<IActionResult> Profile(CancellationToken ct) => presenter.ProfilePageAsync(Url, ct);
+
+    [Authorize, HttpPost]
+    public Task<UserOperationResult> Profile([FromForm] UserUpdateDto input, CancellationToken ct) => presenter.UpdateProfileAsync(input, ct);
+
+    [Authorize, HttpPost]
+    public Task<IActionResult> Logout() => presenter.LogoutAsync();
+
+    [Authorize, HttpGet]
+    public Task<IActionResult> Avatar() => presenter.AvatarAsync();
+
     [AllowAnonymous]
-    public IActionResult Denied()
-    {
-        Response.StatusCode = StatusCodes.Status403Forbidden;
-        return View();
-    }
+    public IActionResult Denied() => status.Show(403);
 }

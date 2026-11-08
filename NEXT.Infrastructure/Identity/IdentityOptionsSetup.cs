@@ -19,11 +19,12 @@ public static class IdentityOptionsSetup
             options.Password.RequireUppercase = true;
             options.Password.RequireNonAlphanumeric = true;
             options.Lockout.AllowedForNewUsers = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.MaxFailedAccessAttempts = 3;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             options.SignIn.RequireConfirmedEmail = false;
         })
         .AddRoles<Role>()
+        .AddErrorDescriber<LocalizedIdentityErrorDescriber>()
         .AddEntityFrameworkStores<Persistence.NEXTDbContext>()
         .AddSignInManager()
         .AddDefaultTokenProviders();

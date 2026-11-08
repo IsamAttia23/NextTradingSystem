@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+<resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+<resheader name="version"><value>2.0</value></resheader>
+<data name="OtpEmailSubject" xml:space="preserve"><value>NEXT verification code</value></data>
+<data name="OtpEmailBody" xml:space="preserve"><value>Your verification code is {0}. It expires in {1} minutes. If you did not request this code, ignore this message.</value></data>
+<data name="ActivationEmailSubject" xml:space="preserve"><value>NEXT account activation</value></data>
+<data name="ActivationEmailBody" xml:space="preserve"><value>Your username is {0}. Your activation code is {1}. Enter it in the password field to choose your password. The code expires in {2} minutes. Do not share it.</value></data>
+<data name="InvalidSecurityToken" xml:space="preserve"><value>The verification is invalid or expired.</value></data>
+<data name="InvalidPasswordSetup" xml:space="preserve"><value>The password change is not valid.</value></data>
+<data name="TemporaryPasswordNotAvailable" xml:space="preserve"><value>The account is not eligible for a temporary password.</value></data>
+<data name="PasswordTooShort" xml:space="preserve"><value>Passwords must be at least {0} characters.</value></data>
+<data name="PasswordRequiresNonAlphanumeric" xml:space="preserve"><value>Include a special character in your password.</value></data>
+<data name="PasswordRequiresDigit" xml:space="preserve"><value>Include a number in your password.</value></data>
+<data name="PasswordRequiresLower" xml:space="preserve"><value>Include a lowercase letter in your password.</value></data>
+<data name="PasswordRequiresUpper" xml:space="preserve"><value>Include an uppercase letter in your password.</value></data>
+<data name="PasswordRequiresUniqueChars" xml:space="preserve"><value>Use at least {0} different characters.</value></data>
+<data name="PasswordMismatch" xml:space="preserve"><value>The current password is incorrect.</value></data>
+<data name="InvalidToken" xml:space="preserve"><value>The verification is invalid or expired.</value></data>
+<data name="ConcurrencyFailure" xml:space="preserve"><value>The account changed. Reload and try again.</value></data>
+<data name="InvalidEmail" xml:space="preserve"><value>Enter a valid email address.</value></data>
+<data name="DuplicateEmail" xml:space="preserve"><value>This email address is already in use.</value></data>
+<data name="InvalidUserName" xml:space="preserve"><value>Enter a valid username.</value></data>
+<data name="DuplicateUserName" xml:space="preserve"><value>This username is already in use.</value></data>
+<data name="ActivationNotAvailable" xml:space="preserve"><value>The account is not eligible for activation.</value></data>
+<data name="ActivationLoginHint" xml:space="preserve"><value>First login? Enter the five-digit activation code from your email in the password field.</value></data>
+</root>

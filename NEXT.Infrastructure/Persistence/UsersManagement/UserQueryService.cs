@@ -7,7 +7,7 @@ using NEXT.Domain.Entities;
 using Mapster;
 namespace NEXT.Infrastructure.Persistence.UsersManagement;
 
-public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAdapterConfig mapping) : IUserQueryService
+public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAdapterConfig mapping, NEXT.Application.Abstractions.Context.ICurrentUserService current) : IUserQueryService
 {
     public Task<ApplicationUser?> FindUserAsync(string userId, CancellationToken ct = default) =>
         Guid.TryParse(userId, out var id) ? StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, ct))
@@ -53,7 +53,8 @@ public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAda
             user.NormalizedEmail == normalized && (!excluded.HasValue || user.Id != excluded.Value), ct));
     }
     public async Task<IReadOnlyList<UserResponseDto>> GetUsersAsync(CancellationToken cancellationToken = default) =>
-        await StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().ProjectToType<UserResponseDto>(mapping)
+        await StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().Where(x => x.DeletedAt == null && (!current.UserId.HasValue || x.Id != current.UserId.Value))
+            .OrderBy(x => x.FullName).ThenBy(x => x.Id).ProjectToType<UserResponseDto>(mapping)
             .ToListAsync(cancellationToken));
     public Task<bool> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken ct = default) =>
         IdentityCall.CompleteAsync(() => users.CheckPasswordAsync(user, password), ct);

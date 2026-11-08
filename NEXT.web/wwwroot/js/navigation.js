@@ -198,6 +198,7 @@
         try {
             const response = await window.NextHttp.request(target.href, {
                 method,
+                headers: { Accept: "text/html" },
                 body: options.body,
                 signal: controller?.signal,
                 cache: "no-store",

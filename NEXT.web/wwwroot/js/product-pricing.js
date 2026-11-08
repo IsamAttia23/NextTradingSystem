@@ -3,6 +3,7 @@
 (() => {
     function update(form) {
         const costInput = form.elements.namedItem("CostPrice");
+        if (!(costInput instanceof HTMLInputElement)) return;
         const cost = costInput.valueAsNumber;
         const formatter = new Intl.NumberFormat(document.documentElement.lang || "en", {
             minimumFractionDigits: 2,
@@ -10,6 +11,7 @@
         });
         for (const output of form.querySelectorAll("[data-price-preview]")) {
             const input = form.elements.namedItem(output.dataset.pricePreview);
+            if (!(input instanceof HTMLInputElement)) continue;
             const percent = input.valueAsNumber;
             const amount = cost * (1 + percent / 100);
             output.textContent = costInput.validity.valid && input.validity.valid &&
@@ -20,13 +22,13 @@
     }
 
     function initialize() {
-        for (const form of document.querySelectorAll("[data-product-pricing]")) {
+        for (const form of document.querySelectorAll('[data-product-pricing="true"]')) {
             update(form);
         }
     }
 
     document.addEventListener("input", (event) => {
-        const form = event.target.closest("[data-product-pricing]");
+        const form = event.target.closest('[data-product-pricing="true"]');
         if (form && ["CostPrice", "RetailPrice", "WholesalePrice", "VipPrice"].includes(event.target.name)) {
             update(form);
         }

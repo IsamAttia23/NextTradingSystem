@@ -2,7 +2,8 @@
     var rtl = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
     var current = ViewContext.RouteData.Values["controller"]?.ToString();
     var signedIn = User.Identity?.IsAuthenticated == true;
-    var authenticationPage = current == "Account" && ViewContext.RouteData.Values["action"]?.ToString() is "Login" or "Verify";
+    var authenticationPage = current == "Account" && ViewContext.RouteData.Values["action"]?.ToString()
+        is "Login" or "Verify" or "ForgotPassword" or "VerifyOtp" or "SetPassword" or "Locked" or "PasswordChanged" or "Denied" || current == "Status";
     var action = ViewContext.RouteData.Values["action"]?.ToString();
 }
 <!DOCTYPE html>
@@ -19,6 +20,7 @@
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/@(rtl ? "bootstrap.rtl.min.css" : "bootstrap.min.css")" />
         <link rel="preload" href="~/fonts/tajawal/Tajawal-Regular.ttf" as="font" type="font/ttf" crossorigin />
         <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/account-security.css" asp-append-version="true" />
     </head>
     <body class="@(authenticationPage ? "authentication-page" : "")">
         <a class="skip-link" href="#main">@L["SkipContent"]</a>
@@ -98,13 +100,17 @@
         <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
         <script src="~/js/notifications.js" asp-append-version="true" defer></script>
         <script src="~/js/http.js" asp-append-version="true" defer></script>
+        <script src="~/js/account-security/password-input.js" asp-append-version="true" defer></script>
         <script src="~/js/currency-settings.js" asp-append-version="true" defer></script>
         <script src="~/js/profile-image-picker.js" asp-append-version="true" defer></script>
         <script src="~/js/pwa.js" asp-append-version="true" defer></script>
         <script src="~/js/navigation.js" asp-append-version="true" defer></script>
         <script src="~/js/filters.js" asp-append-version="true" defer></script>
         <script src="~/js/product-pricing.js" asp-append-version="true" defer></script>
+        <script src="~/js/user-activation.js" asp-append-version="true" defer></script>
         <script src="~/js/site.js" asp-append-version="true" defer></script>
+        <script type="module" src="~/js/account-security/otp-page.js" asp-append-version="true"></script>
+        <script type="module" src="~/js/account-security/password-page.js" asp-append-version="true"></script>
         @await RenderSectionAsync("Scripts", required: false)
     </body>
 </html>

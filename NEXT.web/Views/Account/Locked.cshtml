@@ -1,0 +1,17 @@
+@{ ViewData["Title"] = L["AccountLockedTitle"]; }
+<section class="login-grid auth-grid">
+    <partial name="_AuthIntro" />
+    <section class="content-card login-card auth-card auth-centered">
+        <div class="auth-lock-illustration" aria-hidden="true">
+            <span class="auth-lock-halo"></span>
+            <span class="auth-lock-card"><partial name="_Icon" model='@("users")' /><i>•••••</i></span>
+            <span class="auth-lock-badge"><partial name="_Icon" model='@("lock")' /></span>
+        </div>
+        <span class="eyebrow">@L["AccountProtection"]</span>
+        <h2>@L["AccountLockedTitle"]</h2>
+        <p class="auth-description">@L["AccountLockedDescription"]</p>
+        <div class="auth-callout"><strong>@L["AdminUnlockOnly"]</strong><p>@L["AccountLockExplanation"]</p></div>
+        <a class="btn btn-primary w-100" asp-action="Login">@L["BackToLogin"]</a>
+        <details class="auth-help"><summary>@L["ContactAdminHelp"]</summary><p>@L["ContactAdminInstructions"]</p></details>
+    </section>
+</section>

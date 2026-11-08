@@ -7,6 +7,10 @@ namespace NEXT.Domain.Entities
     {
         public string FullName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public bool RequiresAdministratorUnlock { get; set; }
+        public bool MustChangePassword { get; set; }
+        public DateTimeOffset? TemporaryPasswordExpiresAt { get; set; }
+        public DateTimeOffset? TemporaryPasswordUsedAt { get; set; }
         public DateTime? LastLogin { get; set; }
         public DateTime? LastInvalidLoginAttempt { get; set; }
         public DateTimeOffset CreatedOn { get; set; }

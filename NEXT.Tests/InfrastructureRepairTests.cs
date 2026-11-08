@@ -331,7 +331,9 @@ public sealed class InfrastructureRepairTests
         await using var db = fixture.NewContext(counter);
         var store = new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserStore<ApplicationUser, Role, NEXTDbContext, Guid, IdentityUserClaim<Guid>, UserRole, IdentityUserLogin<Guid>, IdentityUserToken<Guid>, IdentityRoleClaim<Guid>>(db);
         var manager = new UserManager<ApplicationUser>(store, Microsoft.Extensions.Options.Options.Create(new IdentityOptions()), new PasswordHasher<ApplicationUser>(), [], [], new UpperInvariantLookupNormalizer(), new IdentityErrorDescriber(), app.Services, Microsoft.Extensions.Logging.Abstractions.NullLogger<UserManager<ApplicationUser>>.Instance);
-        var queries = new UserQueryService(manager, new Mapster.TypeAdapterConfig());
+        await using var scope = app.Services.CreateAsyncScope();
+        var queries = new UserQueryService(manager, new Mapster.TypeAdapterConfig(),
+            scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Context.ICurrentUserService>());
         Assert.True(await queries.IsUserNameTakenAsync("ui-admin"));
         Assert.True(await queries.IsEmailTakenAsync("ui-admin@example.test"));
         Assert.Equal(2, counter.Sql.Count);

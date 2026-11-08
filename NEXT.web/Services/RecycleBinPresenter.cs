@@ -13,8 +13,11 @@ public sealed class RecycleBinPresenter(IRecycleBinAccess access)
             PageNumber = page,
             PageSize = 20
         }, ct);
-        return new("RecycleBin", "RecycleDescription", ["RecordId", "DeletedOn", "DeletionReason"],
-            result.Data.Select(x => new TableRow([x.EntityId.ToString(), x.DeletedOn.ToLocalTime().ToString("g"), x.DeletionReason ?? "—"],
+        var users = section == nameof(NEXT.Domain.Entities.ApplicationUser);
+        return new("RecycleBin", "RecycleDescription", users ? ["FullName", "RecordId", "DeletedOn", "DeletionReason"] : ["RecordId", "DeletedOn", "DeletionReason"],
+            result.Data.Select(x => new TableRow(users
+                ? [x.DisplayName ?? "—", x.EntityId.ToString(), x.DeletedOn.ToLocalTime().ToString("g"), x.DeletionReason ?? "—"]
+                : [x.EntityId.ToString(), x.DeletedOn.ToLocalTime().ToString("g"), x.DeletionReason ?? "—"],
                 [new("Restore", route("Restore", new { section, id = x.EntityId })), new("Purge", route("Purge", new { section, id = x.EntityId }), true)])).ToArray(),
             Page: result.PageNumber, TotalPages: result.TotalPages, TotalCount: result.TotalCount);
     }

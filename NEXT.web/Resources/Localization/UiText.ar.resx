@@ -93,7 +93,7 @@
 <data name="Next" xml:space="preserve"><value>التالي</value></data>
 <data name="Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
 <data name="Saved" xml:space="preserve"><value>تم حفظ التغييرات بنجاح.</value></data>
-<data name="RequestFailed" xml:space="preserve"><value>تعذر إكمال الطلب. يُرجى المحاولة مجددًا.</value></data>
+<data name="RequestFailed" xml:space="preserve"><value>تعذر الاتصال بالخادم. حاول مجددًا.</value></data>
 <data name="ValidationFailed" xml:space="preserve"><value>تحقق من البيانات المدخلة ثم أعد المحاولة.</value></data>
 <data name="SessionExpired" xml:space="preserve"><value>انتهت جلستك. سجّل الدخول مجددًا للمتابعة.</value></data>
 <data name="Conflict" xml:space="preserve"><value>تغير السجل أو توجد سجلات مرتبطة به. حدّث الصفحة وراجعه.</value></data>
@@ -489,7 +489,7 @@
 <data name="CurrentPassword" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
 <data name="NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
 <data name="ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
-<data name="PasswordConfirmationMismatch" xml:space="preserve"><value>تأكيد كلمة المرور لا يطابق كلمة المرور الجديدة.</value></data>
+<data name="PasswordConfirmationMismatch" xml:space="preserve"><value>كلمتا المرور غير متطابقتين.</value></data>
 <data name="ProfilePasswordPairRequired" xml:space="preserve"><value>لتغيير كلمة المرور، أدخل كلمة المرور الحالية والجديدة من صفحة ملفك الشخصي.</value></data>
 <data name="ProfilePasswordHint" xml:space="preserve"><value>اترك حقول كلمة المرور فارغة للاحتفاظ بها. عند تغيير البريد أو الهاتف أو كلمة المرور ستحتاج إلى تسجيل الدخول مجددًا.</value></data>
 <data name="ProfileSavedSignInAgain" xml:space="preserve"><value>تم حفظ التعديلات. يرجى تسجيل الدخول مجددًا.</value></data>
@@ -512,4 +512,108 @@
 <data name="ProductPricePreview" xml:space="preserve"><value>أسعار البيع المحسوبة بالجنيه السوداني</value></data>
 <data name="ProductMarkupHint" xml:space="preserve"><value>أدخل نسبة الزيادة على التكلفة. تتغير أسعار البيع تلقائيًا مع التكلفة وسعر الدولار الحالي.</value></data>
 <data name="PercentagePrecision" xml:space="preserve"><value>استخدم 12 منزلة عشرية كحد أقصى للنسب.</value></data>
+<data name="SecurityHeadline" xml:space="preserve"><value>حسابك آمن. وأعمالك مستمرة.</value></data>
+<data name="SecurityDescription" xml:space="preserve"><value>خطوات بسيطة تحمي وصولك، وتُبقي بيانات أعمالك بين يديك.</value></data>
+<data name="SecureAccessNote" xml:space="preserve"><value>تحقّق آمن، وخطوة واحدة في كل مرة.</value></data>
+<data name="ForgotPasswordLink" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
+<data name="ForgotPasswordTitle" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
+<data name="ForgotPasswordDescription" xml:space="preserve"><value>أدخل بريدك المرتبط بالحساب. إذا كان الحساب مؤهلًا، سنرسل إليه رمز تحقق من ٥ أرقام.</value></data>
+<data name="BackToLogin" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+<data name="SendVerificationCode" xml:space="preserve"><value>إرسال رمز التحقق</value></data>
+<data name="EmailVerificationNote" xml:space="preserve"><value>تُستخدم الرسالة للتحقق من ملكية البريد فقط.</value></data>
+<data name="StepOneOfThree" xml:space="preserve"><value>الخطوة ١ من ٣</value></data>
+<data name="StepTwoOfThree" xml:space="preserve"><value>الخطوة ٢ من ٣</value></data>
+<data name="StepThreeOfThree" xml:space="preserve"><value>الخطوة ٣ من ٣</value></data>
+<data name="FirstLoginStep" xml:space="preserve"><value>تفعيل حسابك</value></data>
+<data name="OtpTitle" xml:space="preserve"><value>تحقّق من بريدك</value></data>
+<data name="OtpDescription" xml:space="preserve"><value>إذا كان الحساب مؤهلًا، فسيصلك رمز من ٥ أرقام إلى:</value></data>
+<data name="EditEmail" xml:space="preserve"><value>تعديل البريد الإلكتروني</value></data>
+<data name="VerifyAndContinue" xml:space="preserve"><value>تحقق ومتابعة</value></data>
+<data name="ContinueToPassword" xml:space="preserve"><value>تعيين كلمة مرور جديدة</value></data>
+<data name="OtpRequired" xml:space="preserve"><value>أدخل رمز التحقق.</value></data>
+<data name="OtpFiveDigits" xml:space="preserve"><value>أدخل رمز التحقق المكوّن من خمسة أرقام.</value></data>
+<data name="OtpInvalidOrExpired" xml:space="preserve"><value>الرمز غير صحيح أو انتهت صلاحيته.</value></data>
+<data name="OtpVerified" xml:space="preserve"><value>تم التحقق من الرمز بنجاح.</value></data>
+<data name="OtpExpired" xml:space="preserve"><value>انتهت صلاحية الرمز. اطلب رمزًا جديدًا.</value></data>
+<data name="OtpAttemptsEnded" xml:space="preserve"><value>انتهت محاولات التحقق. اطلب رمزًا جديدًا.</value></data>
+<data name="CodeExpiresIn" xml:space="preserve"><value>تنتهي صلاحية الرمز خلال</value></data>
+<data name="ResendCode" xml:space="preserve"><value>إعادة إرسال الرمز</value></data>
+<data name="DidNotGetCode" xml:space="preserve"><value>لم يصلك الرمز؟</value></data>
+<data name="WaitBeforeResend" xml:space="preserve"><value>انتظر قليلًا قبل طلب رمز جديد.</value></data>
+<data name="RecoverySessionExpired" xml:space="preserve"><value>انتهت جلسة الاستعادة. ابدأ من جديد.</value></data>
+<data name="ResetRequestNotice" xml:space="preserve"><value>إذا كان البريد مرتبطًا بحساب مؤهل، فستصلك رسالة تحتوي على رمز التحقق.</value></data>
+<data name="CredentialsNotVerified" xml:space="preserve"><value>تعذر التحقق من بيانات الدخول.</value></data>
+<data name="AccountLockedTitle" xml:space="preserve"><value>الحساب مقفل</value></data>
+<data name="AccountLockedDescription" xml:space="preserve"><value>حسابك مقفل أو تم إلغاء تنشيطه. تواصل مع مشرف النظام لاستعادة الوصول.</value></data>
+<data name="AccountProtection" xml:space="preserve"><value>حماية حسابك</value></data>
+<data name="AdminUnlockOnly" xml:space="preserve"><value>فتح الحساب بواسطة المشرف فقط</value></data>
+<data name="AccountLockExplanation" xml:space="preserve"><value>القفل لا ينتهي تلقائيًا، واستعادة كلمة المرور لا تلغيه.</value></data>
+<data name="ContactAdminHelp" xml:space="preserve"><value>كيف أستعيد الوصول إلى حسابي؟</value></data>
+<data name="ContactAdminInstructions" xml:space="preserve"><value>تواصل مع مشرف النظام في مؤسستك، واذكر اسم المستخدم واطلب فك القفل. لا ترسل كلمة مرورك أو أي رمز تحقق.</value></data>
+<data name="SetPasswordTitle" xml:space="preserve"><value>كلمة مرور جديدة</value></data>
+<data name="SetPasswordDescription" xml:space="preserve"><value>اختر كلمة مرور قوية وخاصة بك، ثم أكدها للمتابعة.</value></data>
+<data name="FirstPasswordTitle" xml:space="preserve"><value>اختر كلمة مرورك</value></data>
+<data name="FirstPasswordDescription" xml:space="preserve"><value>تم التحقق من رمز التفعيل. اختر كلمة مرور دائمة وأكّدها.</value></data>
+<data name="SavePassword" xml:space="preserve"><value>حفظ كلمة المرور</value></data>
+<data name="SignInAfterPasswordChange" xml:space="preserve"><value>بعد الحفظ ستعود لتسجيل الدخول بكلمة مرورك الجديدة.</value></data>
+<data name="PasswordSavedTitle" xml:space="preserve"><value>تم تغيير كلمة المرور</value></data>
+<data name="PasswordSavedDescription" xml:space="preserve"><value>يمكنك الآن تسجيل الدخول بكلمة مرورك الجديدة.</value></data>
+<data name="ShowPassword" xml:space="preserve"><value>إظهار</value></data>
+<data name="HidePassword" xml:space="preserve"><value>إخفاء</value></data>
+<data name="CapsLockWarning" xml:space="preserve"><value>مفتاح Caps Lock مفعّل.</value></data>
+<data name="PasswordRuleLength" xml:space="preserve"><value>١٠ أحرف على الأقل</value></data>
+<data name="PasswordRuleCase" xml:space="preserve"><value>حرف كبير وصغير</value></data>
+<data name="PasswordRuleDigit" xml:space="preserve"><value>رقم واحد على الأقل</value></data>
+<data name="PasswordRuleSymbol" xml:space="preserve"><value>رمز خاص مثل ! أو @</value></data>
+<data name="PasswordsMatch" xml:space="preserve"><value>كلمتا المرور متطابقتان.</value></data>
+<data name="PasswordLengthRange" xml:space="preserve"><value>استخدم من ١٠ إلى ١٢٨ حرفًا.</value></data>
+<data name="EmailRequired" xml:space="preserve"><value>أدخل بريدك الإلكتروني.</value></data>
+<data name="InvalidEmailAddress" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+<data name="NewPasswordRequired" xml:space="preserve"><value>أدخل كلمة المرور الجديدة.</value></data>
+<data name="ConfirmPasswordRequired" xml:space="preserve"><value>أكد كلمة المرور الجديدة.</value></data>
+<data name="UserNameRequired" xml:space="preserve"><value>أدخل اسم المستخدم.</value></data>
+<data name="PasswordRequired" xml:space="preserve"><value>أدخل كلمة المرور.</value></data>
+<data name="TemporaryPasswordCreationHint" xml:space="preserve"><value>سيصل رمز تفعيل إلى بريد المستخدم ليختار كلمة مروره.</value></data>
+<data name="UnexpectedError" xml:space="preserve"><value>حدث خطأ غير متوقع.</value></data>
+<data name="OtpEmailSubject" xml:space="preserve"><value>رمز التحقق من NEXT</value></data>
+<data name="OtpEmailBody" xml:space="preserve"><value>رمز التحقق الخاص بك هو {0}. تنتهي صلاحيته خلال {1} دقائق. إذا لم تطلب هذا الرمز، فتجاهل الرسالة.</value></data>
+<data name="ActivationEmailSubject" xml:space="preserve"><value>تفعيل حسابك في NEXT</value></data>
+<data name="ActivationEmailBody" xml:space="preserve"><value>اسم المستخدم: {0}. رمز التفعيل: {1}. أدخله في حقل كلمة المرور لاختيار كلمة مرورك. تنتهي صلاحية الرمز خلال {2} دقائق. لا تشاركه.</value></data>
+<data name="InvalidSecurityToken" xml:space="preserve"><value>إذن التحقق غير صالح أو انتهت صلاحيته.</value></data>
+<data name="InvalidPasswordSetup" xml:space="preserve"><value>تعذر تغيير كلمة المرور بهذه البيانات.</value></data>
+<data name="TemporaryPasswordNotAvailable" xml:space="preserve"><value>الحساب غير مؤهل لإصدار كلمة مرور مؤقتة.</value></data>
+<data name="PasswordTooShort" xml:space="preserve"><value>يجب ألا تقل كلمة المرور عن {0} أحرف.</value></data>
+<data name="PasswordRequiresNonAlphanumeric" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور رمزًا خاصًا.</value></data>
+<data name="PasswordRequiresDigit" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور رقمًا.</value></data>
+<data name="PasswordRequiresLower" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور حرفًا إنجليزيًا صغيرًا.</value></data>
+<data name="PasswordRequiresUpper" xml:space="preserve"><value>يجب أن تتضمن كلمة المرور حرفًا إنجليزيًا كبيرًا.</value></data>
+<data name="PasswordRequiresUniqueChars" xml:space="preserve"><value>استخدم {0} أحرف مختلفة على الأقل.</value></data>
+<data name="PasswordMismatch" xml:space="preserve"><value>كلمة المرور الحالية غير صحيحة.</value></data>
+<data name="InvalidToken" xml:space="preserve"><value>إذن التحقق غير صالح أو انتهت صلاحيته.</value></data>
+<data name="ConcurrencyFailure" xml:space="preserve"><value>تغيرت بيانات الحساب. أعد التحميل وحاول مجددًا.</value></data>
+<data name="InvalidEmail" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+<data name="DuplicateEmail" xml:space="preserve"><value>هذا البريد الإلكتروني مستخدم بالفعل.</value></data>
+<data name="InvalidUserName" xml:space="preserve"><value>أدخل اسم مستخدم صالحًا.</value></data>
+<data name="DuplicateUserName" xml:space="preserve"><value>اسم المستخدم مستخدم بالفعل.</value></data>
+<data name="Wait before requesting another verification code." xml:space="preserve"><value>انتظر قليلًا قبل طلب رمز تحقق جديد.</value></data>
+<data name="The account is not eligible for this verification." xml:space="preserve"><value>الحساب غير مؤهل لإجراء هذا التحقق.</value></data>
+<data name="Administrator access is required." xml:space="preserve"><value>هذه العملية تتطلب صلاحية مشرف النظام.</value></data>
+<data name="User not found." xml:space="preserve"><value>لم يتم العثور على المستخدم.</value></data>
+<data name="The account changed concurrently or failed identity validation." xml:space="preserve"><value>تغيرت بيانات الحساب أو تعذر التحقق منها. أعد المحاولة.</value></data>
+<data name="FieldTooLong" xml:space="preserve"><value>يجب ألا يتجاوز الحقل {1} حرفًا.</value></data>
+<data name="ActivationNotAvailable" xml:space="preserve"><value>الحساب غير مؤهل لإصدار رمز تفعيل.</value></data>
+<data name="ActivationLoginHint" xml:space="preserve"><value>عند الدخول لأول مرة، أدخل رمز التفعيل المكوّن من خمسة أرقام من بريدك في حقل كلمة المرور.</value></data>
+<data name="AccessDeniedTitle" xml:space="preserve"><value>الوصول غير مسموح</value></data>
+<data name="AccessDeniedDescription" xml:space="preserve"><value>ليس لديك صلاحية لعرض هذه الصفحة. تواصل مع مشرف النظام إذا كنت تحتاج إلى الوصول.</value></data>
+<data name="SignInRequired" xml:space="preserve"><value>يرجى تسجيل الدخول</value></data>
+<data name="SignInRequiredDetail" xml:space="preserve"><value>سجّل الدخول للمتابعة إلى هذه الصفحة.</value></data>
+<data name="BackToMyAccount" xml:space="preserve"><value>العودة إلى حسابي</value></data>
+<data name="CannotChangeOwnActivation" xml:space="preserve"><value>لا يمكنك تغيير حالة تنشيط حسابك الحالي.</value></data>
+<data name="CannotDeactivateLastAdministrator" xml:space="preserve"><value>لا يمكن إلغاء تنشيط آخر مشرف نشط.</value></data>
+<data name="UserActivationChanged" xml:space="preserve"><value>تغيرت حالة الحساب. حدّث القائمة وحاول مجددًا.</value></data>
+<data name="UserActivationRequired" xml:space="preserve"><value>حدد حالة حساب صالحة.</value></data>
+<data name="ToggleUserActivation" xml:space="preserve"><value>تغيير حالة حساب {0}</value></data>
+<data name="UserActivated" xml:space="preserve"><value>تم تنشيط الحساب.</value></data>
+<data name="UserDeactivated" xml:space="preserve"><value>تم إلغاء تنشيط الحساب.</value></data>
+<data name="ApplicationUser" xml:space="preserve"><value>المستخدمون</value></data>
 </root>

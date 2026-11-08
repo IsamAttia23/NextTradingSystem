@@ -30,6 +30,11 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
 
     public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
     {
+        if (context.Controller is AccountSecurityController)
+        {
+            await next();
+            return;
+        }
         if (context.Result is ObjectResult { Value: UserOperationResult operation })
         {
             if (!operation.Succeeded)

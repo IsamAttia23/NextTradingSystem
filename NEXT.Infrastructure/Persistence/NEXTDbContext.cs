@@ -60,6 +60,10 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     public DbSet<RecycleBinEntry> RecycleBinEntries => Set<RecycleBinEntry>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
+    public DbSet<AccountSecurityGrant> AccountSecurityGrants => Set<AccountSecurityGrant>();
+    public DbSet<SecurityRequestWindow> SecurityRequestWindows => Set<SecurityRequestWindow>();
+    public DbSet<SecurityEmailMessage> SecurityEmailMessages => Set<SecurityEmailMessage>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

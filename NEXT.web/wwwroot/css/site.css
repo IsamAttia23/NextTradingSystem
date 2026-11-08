@@ -2289,3 +2289,25 @@ a.page-number:hover {
         min-width: 165px;
     }
 }
+
+.user-activation-toggle { display: inline-flex; align-items: center; gap: 9px; border: 0; background: transparent; padding: 8px 5px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.activation-track { width: 40px; height: 24px; border-radius: 20px; background: #d8dfeb; padding: 3px; transition: background .22s; display: flex; direction: ltr; }
+.activation-knob { display: block; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 1px 4px #17345730; transition: transform .22s; }
+.user-activation-toggle[aria-checked="true"] { color: #087455; }
+.user-activation-toggle[aria-checked="true"] .activation-track { background: #087455; }
+.user-activation-toggle[aria-checked="true"] .activation-knob { transform: translateX(16px); }
+.user-activation-toggle:focus-visible { outline: 3px solid #91afe6; border-radius: 8px; outline-offset: 2px; }
+.user-activation-toggle[aria-busy="true"] { opacity: .6; cursor: wait; }
+@media (prefers-reduced-motion: reduce) { .activation-knob, .activation-track { transition: none; } }
+
+/* Newest notification is in front; hover or keyboard focus expands the cards. */
+.notification-stack { display: grid; gap: 0; padding-bottom: 42px; overflow: visible; isolation: isolate; }
+.notification-stack .app-notice { grid-area: 1 / 1; align-self: start; width: 100%; z-index: calc(4 - var(--notice-index, 0)); transform-origin: top center; transform: translateY(calc(var(--notice-index, 0) * 14px)) scale(calc(1 - var(--notice-index, 0) * .035)); transition: transform .2s ease, opacity .18s ease; }
+.notification-stack:not(:hover):not(:focus-within) .app-notice:not(:first-child) .notice-content,
+.notification-stack:not(:hover):not(:focus-within) .app-notice:not(:first-child) .notice-marker,
+.notification-stack:not(:hover):not(:focus-within) .app-notice:not(:first-child) .notice-close { visibility: hidden; }
+.notification-stack:hover, .notification-stack:focus-within { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-bottom: 0; pointer-events: auto; }
+.notification-stack:hover .app-notice, .notification-stack:focus-within .app-notice { transform: none; flex-shrink: 0; }
+.notice-progress { animation-duration: var(--notice-duration, 7000ms); }
+@keyframes notice-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .notification-stack .app-notice { animation: none; transition: none; } }

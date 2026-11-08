@@ -14,6 +14,10 @@ public static class PresentationRegistration
     {
         services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => options.MultipartBodyLengthLimit = 8 * 1024 * 1024);
         services.AddScoped<Filters.OperationNotificationFilter>();
+        services.AddScoped<Filters.AccountSecurityResultFilter>();
+        services.AddScoped<Services.AccountPresenter>();
+        services.AddScoped<Services.StatusPresenter>();
+        services.AddScoped<Services.AccountFlowCookies>();
         services.AddScoped(typeof(Services.EntityPresenter<,>));
         services.AddScoped<Services.InventoryPresenter>();
         services.AddScoped<Services.QueryFilterPresenter>();
@@ -30,11 +34,18 @@ public static class PresentationRegistration
             options.ModelBinderProviders.Insert(0, new Services.HtmlScalarModelBinderProvider());
             options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             options.Filters.AddService<Filters.OperationNotificationFilter>();
+            options.Filters.AddService<Filters.AccountSecurityResultFilter>();
         })
             .AddDataAnnotationsLocalization(options => options.DataAnnotationLocalizerProvider =
                 (_, factory) => factory.Create(typeof(Localization.UiText)));
         services.Configure<RequestLocalizationOptions>(options => options
             .SetDefaultCulture("ar").AddSupportedCultures("ar", "en").AddSupportedUICultures("ar", "en"));
+        services.Configure<RequestLocalizationOptions>(options => options.RequestCultureProviders =
+        [
+            new CookieRequestCultureProvider(),
+            new QueryStringRequestCultureProvider(),
+            new AcceptLanguageHeaderRequestCultureProvider()
+        ]);
         var roles = configuration.GetSection("Security:AdministratorRoles").Get<string[]>() ?? ["Admin"];
         services.AddAuthorizationBuilder().AddPolicy("ManageSecurity", policy =>
             policy.RequireAuthenticatedUser().RequireRole(roles));
@@ -42,9 +53,11 @@ public static class PresentationRegistration
         {
             options.Events.OnValidatePrincipal = async context =>
             {
-                await SecurityStampValidator.ValidatePrincipalAsync(context);
+                var sessionUser = await context.HttpContext.RequestServices
+                    .GetRequiredService<SignInManager<NEXT.Domain.Entities.ApplicationUser>>()
+                    .ValidateSecurityStampAsync(context.Principal);
                 var id = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(id, out var userId)
+                if (sessionUser is null || !Guid.TryParse(id, out var userId)
                     || !await context.HttpContext.RequestServices
                         .GetRequiredService<ILoginAccessPolicy>()
                         .CanSignInAsync(userId))
@@ -62,7 +75,8 @@ public static class PresentationRegistration
     }
     private static Task RedirectOrStatus(RedirectContext<CookieAuthenticationOptions> context, int status)
     {
-        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        if (context.Request.Path.StartsWithSegments("/api") ||
+            context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
         {
             context.Response.StatusCode = status;
         }

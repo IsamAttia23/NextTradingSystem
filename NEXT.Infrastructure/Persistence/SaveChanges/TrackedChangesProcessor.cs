@@ -53,7 +53,8 @@ public sealed class TrackedChangesProcessor(
         entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted;
 
     private static bool ShouldSkip(EntityEntry entry) =>
-        entry.Entity is AuditLog or RecycleBinEntry or UserRole or
+        entry.Entity is AuditLog or RecycleBinEntry or UserRole or OtpChallenge or
+            AccountSecurityGrant or SecurityRequestWindow or SecurityEmailMessage or
             IdentityUserToken<Guid> or IdentityUserLogin<Guid> or
             IdentityUserClaim<Guid> or IdentityRoleClaim<Guid> or
             IdentityUserRole<Guid> ||

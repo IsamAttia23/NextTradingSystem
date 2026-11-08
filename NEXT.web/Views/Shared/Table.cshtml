@@ -28,6 +28,10 @@
     <partial name="_QueryFilters" model="Model" />
 }
 <section class="content-card">
+    @if (Model.Rows.Any(row => row.Activation is not null))
+    {
+        <div hidden data-user-activation-token>@Html.AntiForgeryToken()</div>
+    }
     <div class="table-toolbar">
         <div>
             <strong>@L["AllRecords"]</strong>
@@ -66,6 +70,10 @@
                                 else if (Model.Columns[i] == "Name" && row.Identity is {} identity)
                                 {
                                     <partial name="_RecordIdentity" model="identity" />
+                                }
+                                else if (Model.Columns[i] == "Status" && row.Activation is {} activation)
+                                {
+                                    <partial name="_UserActivationToggle" model="activation" />
                                 }
                                 else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
                                 {
