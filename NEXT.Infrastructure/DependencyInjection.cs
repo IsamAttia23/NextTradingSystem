@@ -46,6 +46,10 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.Configure<SmtpEmailOptions>(configuration.GetSection("Email:Smtp"));
         services.Configure<ResendEmailOptions>(configuration.GetSection("Email:Resend"));
+        services.AddOptions<GmailEmailOptions>().Bind(configuration.GetSection("Email:Gmail"))
+            .Validate(x => !x.IsEnabled || x.IsConfigured && System.Net.Mail.MailAddress.TryCreate(x.From, out _),
+                "Configure Email:Gmail with ClientId, ClientSecret, RefreshToken and a valid From address.")
+            .ValidateOnStart();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<SecuritySecrets>();
         services.AddScoped<SecurityTransactions>();
@@ -56,6 +60,9 @@ public static class DependencyInjection
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<SmtpEmailTransport>();
         services.AddHttpClient<ResendEmailTransport>(client => client.Timeout = TimeSpan.FromSeconds(30));
+        services.AddHttpClient(GmailAccessTokenProvider.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(30));
+        services.AddSingleton<GmailAccessTokenProvider>();
+        services.AddHttpClient<GmailEmailTransport>(client => client.Timeout = TimeSpan.FromSeconds(30));
         services.AddScoped<IEmailTransport, ConfiguredEmailTransport>();
         services.AddScoped<SecurityEmailDispatcher>();
         services.AddScoped<SecurityMaintenance>();

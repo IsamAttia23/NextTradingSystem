@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 namespace NEXT.Infrastructure.Identity.Security.Email;
 
 public sealed class SecurityEmailWorker(IServiceScopeFactory scopes, IOptions<SmtpEmailOptions> smtp,
-    IOptions<ResendEmailOptions> api, ILogger<SecurityEmailWorker> logger) : BackgroundService
+    IOptions<ResendEmailOptions> api, IOptions<GmailEmailOptions> gmail, ILogger<SecurityEmailWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var deliveryEnabled = !string.IsNullOrWhiteSpace(api.Value.ApiKey) || !string.IsNullOrWhiteSpace(smtp.Value.Host);
+        var deliveryEnabled = gmail.Value.IsConfigured || !string.IsNullOrWhiteSpace(api.Value.ApiKey) || !string.IsNullOrWhiteSpace(smtp.Value.Host);
         if (!deliveryEnabled)
         {
-            logger.LogWarning("Security email delivery is disabled until Email:Resend or Email:Smtp is configured.");
+            logger.LogWarning("Security email delivery is disabled until Email:Gmail, Email:Resend or Email:Smtp is configured.");
         }
         var nextCleanup = DateTimeOffset.MinValue;
         while (!stoppingToken.IsCancellationRequested)
