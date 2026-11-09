@@ -10,6 +10,7 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
     {
         builder.ToTable("Customers");
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.HasOne(x => x.Tag).WithMany(x => x.Customers).HasForeignKey(x => x.TagId).IsRequired(false);
         builder.Property(x => x.CreditLimit).HasPrecision(15, 2);
         builder.Property(x => x.CurrentBalance).HasPrecision(15, 2);
         builder.Property(x => x.RowVersion).IsConcurrencyToken().ValueGeneratedNever();

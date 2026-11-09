@@ -7,6 +7,8 @@ using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.DTOs.Tags;
+using NEXT.Application.DTOs.Customers;
+using NEXT.Application.DTOs.CustomerContacts;
 
 namespace NEXT.web.Services;
 
@@ -17,7 +19,8 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
     {
         var pagedList = await sender.Send(new GetEntitiesQuery<TDto>(query), ct);
         var columns = typeof(TInput).GetProperties()
-            .Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "IsActive" or "Symbol" or "Color").Take(5).ToArray();
+            .Where(p => p.Name is "Name" or "Code" or "Phone" or "Email" or "IsActive" or "Symbol" or "Color")
+            .Where(p => typeof(TDto) != typeof(TagDto) || p.Name != "Color").Take(5).ToArray();
         var tagged = typeof(ITaggedRecordDto).IsAssignableFrom(typeof(TDto));
         var labels = columns.Select(x => x.Name == "IsActive" ? "Status" : x.Name).ToList();
         if (tagged)
@@ -41,17 +44,31 @@ public sealed class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter
     {
         var item = await FindAsync(id, ct);
         var details = await fields.DetailsAsync(item, ct);
-        var activity = await sender.Send(new GetEntityActivityQuery<TDto>(id, kind, page), ct);
+        var showActivity = item is not CustomerContactDto;
+        var activity = showActivity
+            ? await sender.Send(new GetEntityActivityQuery<TDto>(id, kind, page), ct)
+            : new ActivityPageDto([], null, [], 1, 0, 0);
         return new(section, Name(item), details, Identity(item, route), Badge(item), activity,
             route("Edit", new
             {
                 id
-            }), route("Index", null));
+            }), route("Index", null),
+            item is CustomerDto ? new("AddContact", route("Create", new { controller = "CustomersContact", customerId = id })) : null,
+            showActivity);
     }
 
-    public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct)
+    public async Task<ModalForm> FormAsync(string title, string action, Guid? id, CancellationToken ct, Guid? customerId = null)
     {
         TInput input = id is { } key ? await FindAsync(key, ct, forEdit: true) : new TInput();
+        if (!id.HasValue && input is CustomerContactInputDto contact && customerId.HasValue)
+        {
+            var options = await fields.OptionsAsync("Customers", ct);
+            if (!options.Any(option => option.Value == customerId.Value.ToString()))
+            {
+                throw new NotFoundException("Customer was not found.");
+            }
+            contact.CustomerId = customerId;
+        }
         var formFields = (await fields.FormAsync(input, ct, id)).ToList();
         if (input is NEXT.Application.DTOs.Products.ProductInputDto productInput)
         {

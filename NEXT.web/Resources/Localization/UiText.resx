@@ -616,4 +616,8 @@
 <data name="UserActivated" xml:space="preserve"><value>The account has been activated.</value></data>
 <data name="UserDeactivated" xml:space="preserve"><value>The account has been deactivated.</value></data>
 <data name="ApplicationUser" xml:space="preserve"><value>Users</value></data>
+  <data name="AddContact" xml:space="preserve"><value>Add contact</value></data>
+  <data name="SearchCustomer" xml:space="preserve"><value>Search for a customer</value></data>
+  <data name="NoResults" xml:space="preserve"><value>No matching results</value></data>
+  <data name="The field CompanyName must be a string with a maximum length of 200." xml:space="preserve"><value>The company name must not exceed 200 characters.</value></data>
 </root>

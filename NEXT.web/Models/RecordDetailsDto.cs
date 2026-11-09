@@ -9,5 +9,7 @@ public sealed record RecordDetailsDto(
     ColorBadgeDto? Badge,
     ActivityPageDto Activity,
     string EditUrl,
-    string BackUrl
+    string BackUrl,
+    UiAction? CreateContact = null,
+    bool ShowActivity = true
     );

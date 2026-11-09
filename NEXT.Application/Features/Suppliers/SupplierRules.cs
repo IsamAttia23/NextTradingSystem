@@ -1,7 +1,6 @@
 using NEXT.Application.DTOs.Suppliers;
 using NEXT.Application.Abstractions.Persistence;
 
-using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Features.Common.Validation;
@@ -15,7 +14,7 @@ public sealed class SupplierRules(IRepository<Tag> tags, IRepository<Supplier> s
     public async Task ValidateAsync(Guid? id, SupplierInputDto input, CancellationToken ct)
     {
         var normalized = string.IsNullOrWhiteSpace(input.Code) ? null : input.Code.Trim();
-        await ReferenceGuard.Require(tags, x => x.Id == input.TagId, "TagId", ct);
+        await ReferenceGuard.Optional(tags, input.TagId, nameof(input.TagId), ct);
         if (normalized is not null
             && await suppliers.AnyAsync(x => x.Id != id
             && x.Code == normalized, ct))

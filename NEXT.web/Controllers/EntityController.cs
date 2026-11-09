@@ -26,7 +26,8 @@ public abstract class EntityController<TDto, TInput, TQuery>(ISender sender, Ent
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create(CancellationToken ct) => Form(await presenter.FormAsync("Create", Route("Create"), null, ct));
+    public async Task<IActionResult> Create(CancellationToken ct, Guid? customerId = null) =>
+        Form(await presenter.FormAsync("Create", Route("Create"), null, ct, customerId));
 
     [HttpPost]
     public async Task<IActionResult> Create(TInput input, IFormFile? avatar, CancellationToken ct)

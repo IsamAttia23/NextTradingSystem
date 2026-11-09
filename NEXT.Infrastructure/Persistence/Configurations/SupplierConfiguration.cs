@@ -10,6 +10,7 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
     {
         builder.ToTable("Suppliers");
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.HasOne(x => x.Tag).WithMany(x => x.Suppliers).HasForeignKey(x => x.TagId).IsRequired(false);
         builder.Property(x => x.Code).HasMaxLength(40);
         builder.HasIndex(x => x.Code).IsUnique().HasFilter("\"Code\" IS NOT NULL");
         builder.Property(x => x.CurrentBalance).HasPrecision(15, 2);

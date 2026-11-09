@@ -5,6 +5,9 @@ using System.Reflection;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.DTOs.Common;
 using NEXT.Application.DTOs.Presentation;
+using NEXT.Application.DTOs.Customers;
+using NEXT.Application.DTOs.CustomerContacts;
+using NEXT.Domain.Enums;
 
 namespace NEXT.web.Services;
 
@@ -23,7 +26,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
     }
 
     private async Task<IReadOnlyList<FieldOption>> LoadOptionsAsync(string key, CancellationToken ct) =>
-        (await references.GetAsync(key, ct)).Select(x => new FieldOption(x.Value, x.Label)).ToArray();
+        (await references.GetAsync(key, ct)).Select(x => new FieldOption(x.Value, x.Label, x.Color)).ToArray();
 
     public async Task<IReadOnlyList<FormField>> FormAsync<TInput>(TInput input, CancellationToken ct,
         Guid? excludedId = null, params string[] includedFields) where TInput : class
@@ -48,7 +51,16 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
                     property.Name is "RetailPrice" or "WholesalePrice" or "VipPrice"
                     ? property.Name + "Percent"
                     : null;
-                fields.Add(await FieldAsync(property, property.GetValue(input), false, ct, excludedId, label));
+                var field = await FieldAsync(property, property.GetValue(input), false, ct, excludedId, label);
+                if (input is CustomerInputDto && property.Name == "CompanyName")
+                {
+                    field = field with { MaxLength = 200, VisibleWhenField = "Type", VisibleWhenValue = nameof(CustomerType.Company) };
+                }
+                if (input is CustomerContactInputDto && property.Name == "CustomerId")
+                {
+                    field = field with { Type = "reference" };
+                }
+                fields.Add(field);
             }
         }
         return fields;
@@ -62,7 +74,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         IReadOnlyList<FieldOption>? options = null;
         if (ReferenceKey(property.Name) is { } key)
         {
-            kind = "select";
+            kind = !filter && property.Name == "TagId" ? "reference" : "select";
             options = await OptionsAsync(key, ct);
             if (!filter
                 && excludedId.HasValue
@@ -120,6 +132,11 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
                 continue;
             }
             var value = property.GetValue(item);
+            if (item is CustomerInputDto { Type: CustomerType.Individual }
+                && property.Name == "CompanyName")
+            {
+                continue;
+            }
             if (ReferenceKey(property.Name) is { } key && value is Guid selected)
             {
                 fields.Add(new(property.Name, (await OptionsAsync(key, ct)).SingleOrDefault(x => x.Value == selected.ToString())?.Label ?? "—"));

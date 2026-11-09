@@ -16,8 +16,8 @@ public sealed class RecordMappingRegister : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<Customer, CustomerDto>().Map(d => d.TagName, s => s.Tag.Name).Map(d => d.TagColor, s => s.Tag.Color);
-        config.NewConfig<Supplier, SupplierDto>().Map(d => d.TagName, s => s.Tag.Name).Map(d => d.TagColor, s => s.Tag.Color);
+        config.NewConfig<Customer, CustomerDto>().Map(d => d.TagName, s => s.Tag == null ? null : s.Tag.Name).Map(d => d.TagColor, s => s.Tag == null ? null : s.Tag.Color);
+        config.NewConfig<Supplier, SupplierDto>().Map(d => d.TagName, s => s.Tag == null ? null : s.Tag.Name).Map(d => d.TagColor, s => s.Tag == null ? null : s.Tag.Color);
         ConfigureStockMapping(config, stock => stock.Product.CostPrice);
         config.NewConfig<StockMovement, StockMovementDto>()
             .Map(d => d.Type, s => s.Type.ToString());
@@ -28,6 +28,7 @@ public sealed class RecordMappingRegister : IRegister
         {
             config.ForType(type, typeof(ReferenceOptionDto)).Map("Value", "Id").Map("Label", "Name");
         }
+        config.ForType<Tag, ReferenceOptionDto>().Map(d => d.Color, s => s.Color);
         config.NewConfig<Permission, ReferenceOptionDto>()
                     .Map(d => d.Value, s => s.Id.ToString())
                     .Map(d => d.Label, s => s.Module + " / " + s.Code);

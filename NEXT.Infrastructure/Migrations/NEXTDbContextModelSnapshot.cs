@@ -528,7 +528,7 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
-                    b.Property<Guid>("TagId")
+                    b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TaxNumber")
@@ -562,7 +562,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CustomerId")
+                    b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Email")
@@ -573,6 +573,7 @@ namespace NEXT.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Position")
@@ -1774,7 +1775,7 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
-                    b.Property<Guid>("TagId")
+                    b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TaxNumber")
@@ -2077,9 +2078,7 @@ namespace NEXT.Infrastructure.Migrations
                 {
                     b.HasOne("NEXT.Domain.Entities.Tag", "Tag")
                         .WithMany("Customers")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TagId");
 
                     b.Navigation("Tag");
                 });
@@ -2089,8 +2088,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
                         .WithMany("Contacts")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Customer");
                 });
@@ -2409,9 +2407,7 @@ namespace NEXT.Infrastructure.Migrations
                 {
                     b.HasOne("NEXT.Domain.Entities.Tag", "Tag")
                         .WithMany("Suppliers")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TagId");
 
                     b.Navigation("Tag");
                 });

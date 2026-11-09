@@ -77,7 +77,7 @@
                                 }
                                 else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
                                 {
-                                    <span class="status-tag @(row.Cells[i] == "Inactive" ? "muted-tag" : "")">@L[row.Cells[i]]</span>
+                                    <span class="status-tag @(row.Cells[i] == "Inactive" ? (Model.Title == "Customers" ? "inactive-tag" : "muted-tag") : "")">@L[row.Cells[i]]</span>
                                 }
                                 else
                                 {

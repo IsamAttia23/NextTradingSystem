@@ -20,8 +20,8 @@ public class Customer : IsDeletableEntity<Guid>, IHasProfileImage
     public int PaymentTermsDays { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
-    public Guid TagId { get; set; }
-    public Tag Tag { get; set; } = null!;
+    public Guid? TagId { get; set; }
+    public Tag? Tag { get; set; }
     public byte[] RowVersion { get; set; } = [];
 
     public ICollection<CustomerContact> Contacts { get; set; } = new List<CustomerContact>();

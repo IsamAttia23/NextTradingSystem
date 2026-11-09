@@ -215,7 +215,7 @@ test("Image picker validates the server-supplied limit before creating previews"
     const notices = [];
     const revoked = [];
     let created = 0;
-    const preview = { src: "", dataset: { placeholder: "placeholder" } };
+    const preview = { src: "", dataset: { placeholder: "placeholder", originalSrc: "saved-photo" } };
     const filename = {};
     const picker = {
         querySelector: (selector) => (selector.includes("preview") ? preview : filename),
@@ -247,9 +247,12 @@ test("Image picker validates the server-supplied limit before creating previews"
     input.files = [{ name: "too-large.png", size: 21 }];
     change();
     assert.equal(input.value, "");
-    assert.equal(preview.src, "placeholder");
+    assert.equal(preview.src, "saved-photo");
     assert.equal(filename.textContent, "");
     assert.equal(created, 1);
     assert.deepEqual(revoked, ["preview-1"]);
     assert.deepEqual(notices, [["Size error", "error"]]);
+    input.files = [];
+    change();
+    assert.equal(preview.src, "saved-photo");
 });

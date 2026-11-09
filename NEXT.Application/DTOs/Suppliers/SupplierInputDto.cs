@@ -25,7 +25,6 @@ public class SupplierInputDto : IProfileImageInput
     [StringLength(2000)]
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
-    [Required]
     [NEXT.Application.Validation.NotEmptyGuid]
-    public Guid TagId { get; set; }
+    public Guid? TagId { get; set; }
 }

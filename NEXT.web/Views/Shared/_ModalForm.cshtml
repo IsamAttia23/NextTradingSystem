@@ -22,7 +22,10 @@
             <input type="hidden" name="@field.Name" value="@field.Value" />
             continue;
         }
-        <div class="mb-3">
+        var dependent = field.VisibleWhenField is {} dependency
+            ? Model.Fields.FirstOrDefault(item => item.Name == dependency) : null;
+        var visible = dependent is null || dependent.Value == field.VisibleWhenValue;
+        <div class="mb-3" data-visible-when-field="@field.VisibleWhenField" data-visible-when-value="@field.VisibleWhenValue" hidden="@(!visible)">
             @if (field.Type == "checkbox")
             {
                 <div class="form-check form-switch">
@@ -50,7 +53,7 @@
                 }
                 else
                 {
-                    <partial name="_FieldControl" model='@(new NEXT.web.Models.FieldControlModel(field, id, "Choose"))' />
+                    <partial name="_FieldControl" model='@(new FieldControlModel(visible ? field : field with { Value = null }, id, "Choose", Disabled: !visible))' />
                 }
             }
         </div>

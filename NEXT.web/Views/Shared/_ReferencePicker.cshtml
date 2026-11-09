@@ -1,0 +1,53 @@
+@model FieldControlModel
+@{
+    var searchable = Model.Field.Name == "CustomerId";
+    var options = Model.Field.Options ?? [];
+    var selected = options.FirstOrDefault(option => option.Value == Model.Field.Value);
+    var listId = Model.Id + "-options";
+}
+<div class="reference-picker" data-reference-picker>
+    <input type="hidden" name="@Model.Field.Name" value="@Model.Field.Value" data-reference-value />
+    @if (searchable)
+    {
+        <input class="form-control" id="@Model.Id" type="text" role="combobox" autocomplete="off"
+               value="@selected?.Label" placeholder="@L["SearchCustomer"]" aria-expanded="false"
+               aria-controls="@listId" aria-autocomplete="list" data-reference-control data-reference-search />
+    }
+    else
+    {
+        <button class="form-select reference-trigger" id="@Model.Id" type="button" role="combobox"
+                aria-expanded="false" aria-controls="@listId" aria-haspopup="listbox" data-reference-control>
+            <span data-reference-display>
+                @if (selected?.Color is {} color)
+                {
+                    <partial name="_ColorBadge" model="@(new ColorBadgeDto(selected.Label, color))" />
+                }
+                else
+                {
+                    @L[Model.EmptyOption]
+                }
+            </span>
+        </button>
+    }
+    <div class="reference-options" id="@listId" role="listbox" aria-label="@L[Model.Field.Label]" hidden>
+        <button type="button" class="reference-option" role="option" id="@(listId + "-empty")"
+                aria-selected="@(selected is null ? "true" : "false")" data-reference-option data-value="" data-label="" tabindex="-1">@L[Model.EmptyOption]</button>
+        @for (var i = 0; i < options.Count; i++)
+        {
+            var option = options[i];
+            <button type="button" class="reference-option" role="option" id="@(listId + "-" + i)"
+                    aria-selected="@(option.Value == Model.Field.Value ? "true" : "false")"
+                    data-reference-option data-value="@option.Value" data-label="@option.Label" tabindex="-1">
+                @if (option.Color is {} optionColor)
+                {
+                    <partial name="_ColorBadge" model="@(new ColorBadgeDto(option.Label, optionColor))" />
+                }
+                else
+                {
+                    @option.Label
+                }
+            </button>
+        }
+        <p class="reference-empty text-muted" data-reference-empty role="status" hidden>@L["NoResults"]</p>
+    </div>
+</div>

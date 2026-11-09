@@ -6,10 +6,11 @@ const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../NEXT.web/wwwroot/js/product-pricing.js"), "utf8");
 
 function setup() {
+    class HTMLInputElement {}
     const events = new Map();
     const inputs = Object.fromEntries([
         ["CostPrice", 200], ["RetailPrice", 25], ["WholesalePrice", 15], ["VipPrice", 10]
-    ].map(([name, value]) => [name, { name, valueAsNumber: value, validity: { valid: true } }]));
+    ].map(([name, value]) => [name, Object.assign(new HTMLInputElement(), { name, valueAsNumber: value, validity: { valid: true } })]));
     const outputs = ["RetailPrice", "WholesalePrice", "VipPrice"].map((name) => ({
         dataset: { pricePreview: name }, textContent: ""
     }));
@@ -23,7 +24,7 @@ function setup() {
         querySelectorAll: () => [form],
         addEventListener: (name, handler) => events.set(name, handler)
     };
-    vm.runInNewContext(source, { document, Intl });
+    vm.runInNewContext(source, { document, Intl, HTMLInputElement });
     return {
         inputs, outputs, events,
         change: (name, value) => {

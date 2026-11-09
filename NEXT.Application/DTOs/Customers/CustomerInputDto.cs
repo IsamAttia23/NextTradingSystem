@@ -4,7 +4,7 @@ using NEXT.Domain.Enums;
 
 namespace NEXT.Application.DTOs.Customers;
 
-public class CustomerInputDto : IProfileImageInput
+public class CustomerInputDto : IProfileImageInput, IValidatableObject
 {
     [EnumDataType(typeof(CustomerType))]
     public CustomerType Type { get; set; } = CustomerType.Individual;
@@ -12,7 +12,6 @@ public class CustomerInputDto : IProfileImageInput
     public bool RemoveAvatar { get; set; }
     [Required, StringLength(200)]
     public string Name { get; set; } = "";
-    [StringLength(200)]
     public string? CompanyName { get; set; }
     [StringLength(100)]
     public string? TaxNumber { get; set; }
@@ -33,7 +32,14 @@ public class CustomerInputDto : IProfileImageInput
     [StringLength(2000)]
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
-    [Required]
     [NEXT.Application.Validation.NotEmptyGuid]
-    public Guid TagId { get; set; }
+    public Guid? TagId { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Type != CustomerType.Individual && CompanyName?.Length > 200)
+        {
+            yield return new ValidationResult("The field CompanyName must be a string with a maximum length of 200.", [nameof(CompanyName)]);
+        }
+    }
 }

@@ -9,7 +9,8 @@ public sealed class CustomerContactConfiguration : IEntityTypeConfiguration<Cust
     public void Configure(EntityTypeBuilder<CustomerContact> builder)
     {
         builder.ToTable("CustomerContacts");
+        builder.Property(x => x.Phone).IsRequired();
         builder.HasOne(x => x.Customer).WithMany(x => x.Contacts)
-                    .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Cascade);
+                    .HasForeignKey(x => x.CustomerId).IsRequired(false).OnDelete(DeleteBehavior.Cascade);
     }
 }

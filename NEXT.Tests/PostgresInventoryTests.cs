@@ -224,7 +224,8 @@ public sealed class PostgresInventoryTests
         var delete = new DeleteEntityCommandHandler<Customer, CustomerDto>(repository, new UnitOfWork(f.Db));
         await Assert.ThrowsAsync<AppValidationException>(() => create.Handle(new(new CustomerInputDto
         {
-            Name = "No tag"
+            Name = "Unknown tag",
+            TagId = Guid.NewGuid()
         }), default));
         var customer = await create.Handle(new(new CustomerInputDto
         {

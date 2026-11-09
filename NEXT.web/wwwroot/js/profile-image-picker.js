@@ -30,7 +30,7 @@
         filename.textContent = file?.name ?? "";
         preview.onerror = null;
         if (!file) {
-            preview.src = preview.dataset.placeholder;
+            preview.src = preview.dataset.originalSrc;
             return;
         }
         const url = URL.createObjectURL(file);

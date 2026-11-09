@@ -71,6 +71,13 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
                 });
             }
         }
+        else if (context.Controller is WorkspaceController && context.Result is ObjectResult { Value: ValidationProblemDetails validation })
+        {
+            foreach (var field in validation.Errors.Keys.ToArray())
+            {
+                validation.Errors[field] = validation.Errors[field].Select(message => text[message].Value).ToArray();
+            }
+        }
         else if (context.Controller is WorkspaceController && context.Result is OkResult)
         {
             var action = context.RouteData.Values["action"]?.ToString();

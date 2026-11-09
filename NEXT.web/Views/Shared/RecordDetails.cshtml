@@ -9,6 +9,10 @@
         <p>@L["RecordDetailsHint"]</p>
     </div>
     <div class="details-actions">
+        @if (Model.CreateContact is {} contact)
+        {
+            <button class="btn btn-primary" data-modal-url="@contact.Url"><partial name="_Icon" model='@("plus")' /> @L[contact.Label]</button>
+        }
         <a class="btn btn-light" href="@Model.BackUrl">@L["BackToList"]</a>
         <button class="btn btn-primary" data-modal-url="@Model.EditUrl"><partial name="_Icon" model='@("edit")' /> @L["Edit"]</button>
     </div>
@@ -21,10 +25,12 @@
             <partial name="_ColorBadge" model="badge" />
         }
     </div>
-    <dl class="detail-grid">
+    <dl class="detail-grid @(Model.CreateContact is not null ? "customer-detail-grid" : null)">
         <partial name="_DetailFields" model="Model.Fields" />
     </dl>
 </section>
+@if (Model.ShowActivity)
+{
 <section class="content-card related-card">
     <div class="card-heading">
         <h2><partial name="_Icon" model='@("transfer")' /> @L["RelatedRecords"]</h2>
@@ -59,3 +65,4 @@
     }
     <partial name="_Pagination" model='@(new PagerDto(Model.Activity.Page, Model.Activity.TotalPages, Model.Activity.TotalCount, "activityPage"))' />
 </section>
+}

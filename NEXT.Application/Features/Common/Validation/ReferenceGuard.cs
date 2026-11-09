@@ -8,6 +8,10 @@ namespace NEXT.Application.Features.Common.Validation;
 
 internal static class ReferenceGuard
 {
+    public static Task Optional<T>(IRepository<T> repository, Guid? id, string field, CancellationToken ct)
+        where T : NEXT.Domain.Common.Entities.AuditableEntity<Guid> =>
+        id is { } selected ? Require(repository, x => x.Id == selected, field, ct) : Task.CompletedTask;
+
     public static async Task Require<T>(IRepository<T> repository, System.Linq.Expressions.Expression<Func<T, bool>> predicate,
         string field, CancellationToken ct) where T : class
     {

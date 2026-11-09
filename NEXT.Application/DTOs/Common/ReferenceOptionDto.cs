@@ -1,3 +1,3 @@
 namespace NEXT.Application.DTOs.Common;
 
-public sealed record ReferenceOptionDto(string Value, string Label);
+public sealed record ReferenceOptionDto(string Value, string Label, string? Color = null);

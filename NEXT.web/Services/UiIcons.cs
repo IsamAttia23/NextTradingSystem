@@ -22,7 +22,7 @@ public static class UiIcons
         "Delete" or "Purge" or "RecycleBin" => "trash",
         "Edit" => "edit",
         "Restore" => "restore",
-        "Details" => "contact",
+        "Details" => "eye",
         "Receive" or "Create" or "CreateUser" or "CreateRole" or "CreatePermission" => "plus",
         "AssignPermission" => "link",
         "Dashboard" => "home",

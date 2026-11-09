@@ -1,7 +1,11 @@
 @model NEXT.web.Models.FieldControlModel
-@if (Model.Field.Type == "select")
+@if (Model.Field.Type == "reference")
 {
-    <select class="form-select" id="@Model.Id" name="@Model.Field.Name" required="@Model.Field.Required">
+    <partial name="_ReferencePicker" model="Model" />
+}
+else if (Model.Field.Type == "select")
+{
+    <select class="form-select" id="@Model.Id" name="@Model.Field.Name" required="@Model.Field.Required" disabled="@Model.Disabled">
         <option value="">@L[Model.EmptyOption]</option>
         @foreach (var option in Model.Field.Options ?? [])
         {
@@ -19,7 +23,7 @@ else
 {
     <input class="form-control" id="@Model.Id" name="@Model.Field.Name" type="@Model.Field.Type"
            step="@(Model.Field.Type == "number" ? "any" : null)" value="@Model.Field.Value"
-           required="@Model.Field.Required" maxlength="@Model.Field.MaxLength" placeholder="@Model.Placeholder"
+           required="@Model.Field.Required" maxlength="@Model.Field.MaxLength" placeholder="@Model.Placeholder" disabled="@Model.Disabled"
            minlength="@(Model.Field.Type == "password" && Model.Field.Name != "CurrentPassword" ? 10 : (int?)null)"
            autocomplete="@(Model.Field.Type == "password" ? Model.Field.Name == "CurrentPassword" ? "current-password" : "new-password" : "off")" />
 }

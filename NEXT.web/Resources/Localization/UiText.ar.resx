@@ -616,4 +616,8 @@
 <data name="UserActivated" xml:space="preserve"><value>تم تنشيط الحساب.</value></data>
 <data name="UserDeactivated" xml:space="preserve"><value>تم إلغاء تنشيط الحساب.</value></data>
 <data name="ApplicationUser" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="AddContact" xml:space="preserve"><value>إضافة جهة اتصال</value></data>
+  <data name="SearchCustomer" xml:space="preserve"><value>ابحث عن العميل</value></data>
+  <data name="NoResults" xml:space="preserve"><value>لا توجد نتائج مطابقة</value></data>
+  <data name="The field CompanyName must be a string with a maximum length of 200." xml:space="preserve"><value>يجب ألا يتجاوز اسم الشركة 200 حرف.</value></data>
 </root>
