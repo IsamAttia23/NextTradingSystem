@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.web.Models;
 using System.Net;
 using System.Text.RegularExpressions;

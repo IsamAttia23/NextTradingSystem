@@ -45,6 +45,8 @@ public sealed class SalesInvoiceDetailsTests
         var details = await new SalesInvoiceRepository(db).GetDetailsAsync(invoice.Id);
 
         Assert.NotNull(details);
+        Assert.Equal(user.Id, details.User.Id);
+        Assert.Equal(user.FullName, details.User.FullName);
         Assert.Equal(2, details.Items.Count);
         Assert.Equal(60m, details.Items.Sum(x => x.TotalAmount));
         Assert.All(details.Items, item =>

@@ -620,4 +620,7 @@
   <data name="SearchCustomer" xml:space="preserve"><value>ابحث عن العميل</value></data>
   <data name="NoResults" xml:space="preserve"><value>لا توجد نتائج مطابقة</value></data>
   <data name="The field CompanyName must be a string with a maximum length of 200." xml:space="preserve"><value>يجب ألا يتجاوز اسم الشركة 200 حرف.</value></data>
+  <data name="TaxRatePrecision" xml:space="preserve"><value>استخدم منزلتين عشريتين كحد أقصى لنسبة الضريبة.</value></data>
+  <data name="StockQuantityPrecision" xml:space="preserve"><value>استخدم ثلاث منازل عشرية كحد أقصى لكميات المخزون.</value></data>
+  <data name="Maximum stock must be at least the minimum." xml:space="preserve"><value>يجب أن يكون الحد الأعلى للمخزون أكبر من الحد الأدنى أو مساويًا له.</value></data>
 </root>

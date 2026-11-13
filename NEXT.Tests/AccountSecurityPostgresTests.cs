@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Infrastructure.Identity.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -62,12 +63,13 @@ public sealed class AccountSecurityPostgresTests
         Assert.True(await users.CheckPasswordAsync(user, "Updated!12345"));
 
         var branchId = await db.Branches.Select(x => x.Id).FirstAsync();
-        var created = new ApplicationUser { UserName = "pg-temporary", FullName = "PostgreSQL temporary user",
+        var created = new UserAccount { UserName = "pg-temporary", FullName = "PostgreSQL temporary user",
             Email = "pg-temporary@example.test", BranchId = branchId, IsActive = true };
         Assert.True((await management.CreateWithActivationOtpAsync(created)).Succeeded);
         Assert.True(await db.SecurityEmailMessages.AnyAsync(x => x.UserId == created.Id));
-        Assert.True((await db.Users.SingleAsync(x => x.Id == created.Id)).MustChangePassword);
-        Assert.False(await users.HasPasswordAsync(created));
+        var stored = await db.Users.SingleAsync(x => x.Id == created.Id);
+        Assert.True(stored.MustChangePassword);
+        Assert.False(await users.HasPasswordAsync(stored));
         var activationMail = await db.SecurityEmailMessages.SingleAsync(x => x.UserId == created.Id);
         var activationBody = scope.ServiceProvider.GetRequiredService<SecuritySecrets>().Decrypt(activationMail.EncryptedBody);
         var activationCode = System.Text.RegularExpressions.Regex.Match(activationBody, @"\b[0-9]{5}\b").Value;
@@ -78,7 +80,7 @@ public sealed class AccountSecurityPostgresTests
         Assert.True((await management.CompleteFirstLoginAsync(activation.SetupToken!, "Activated!12345")).Succeeded);
 
         fault.FailEmailQueue = true;
-        var failedUser = new ApplicationUser { UserName = "rollback-activation", FullName = "Rollback",
+        var failedUser = new UserAccount { UserName = "rollback-activation", FullName = "Rollback",
             Email = "rollback@example.test", BranchId = branchId, IsActive = true };
         await Assert.ThrowsAsync<InvalidOperationException>(() => management.CreateWithActivationOtpAsync(failedUser));
         db.ChangeTracker.Clear();

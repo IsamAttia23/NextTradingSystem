@@ -3,7 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
+using System.Net;
+using System.Text.Json;
 using NEXT.Application.DTOs.Products;
+using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Features.Currencies;
 using NEXT.Application.QueryModels;
@@ -16,6 +20,89 @@ namespace NEXT.Tests;
 
 public sealed class ProductPercentageTests
 {
+    [Theory]
+    [InlineData("MinStock", "0.0004")]
+    [InlineData("MaxStock", "2.0004")]
+    [InlineData("TaxRate", "1.234")]
+    public async Task UnsupportedDecimalPrecisionCannotCreateOrChangeAProduct(string field, string value)
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        await using var scope = app.Services.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        var input = new ProductInputDto { Name = "Precision product", MinStock = 0.001m, MaxStock = 2.001m, TaxRate = 1.23m };
+        var saved = await sender.Send(new CreateEntityCommand<ProductDto, ProductInputDto>(input));
+        var invalid = decimal.Parse(value, CultureInfo.InvariantCulture);
+        switch (field)
+        {
+            case "MinStock": input.MinStock = invalid; break;
+            case "MaxStock": input.MaxStock = invalid; break;
+            case "TaxRate": input.TaxRate = invalid; break;
+        }
+
+        var createError = await Assert.ThrowsAsync<AppValidationException>(() =>
+            sender.Send(new CreateEntityCommand<ProductDto, ProductInputDto>(input)));
+        Assert.True(createError.Errors.ContainsKey(field));
+        var updateError = await Assert.ThrowsAsync<AppValidationException>(() =>
+            sender.Send(new UpdateEntityCommand<ProductDto, ProductInputDto>(saved.Id, input, saved.RowVersion)));
+        Assert.True(updateError.Errors.ContainsKey(field));
+        var stored = Assert.Single(await db.Products.AsNoTracking().ToListAsync());
+        Assert.Equal(0.001m, stored.MinStock);
+        Assert.Equal(2.001m, stored.MaxStock);
+        Assert.Equal(1.23m, stored.TaxRate);
+    }
+
+    [Theory]
+    [InlineData("ar")]
+    [InlineData("en")]
+    public async Task ProductPrecisionAndStockRangeErrorsAreLocalizedOverHttp(string culture)
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        var token = WorkspaceUiTests.Token(await client.GetStringAsync($"/Products/Create?culture={culture}"));
+        var arabic = culture == "ar";
+        foreach (var (field, value, message) in new[]
+        {
+            ("MinStock", "0.0004", arabic ? "استخدم ثلاث منازل عشرية كحد أقصى لكميات المخزون." : "Use at most three decimal places for stock quantities."),
+            ("MaxStock", "0.0004", arabic ? "استخدم ثلاث منازل عشرية كحد أقصى لكميات المخزون." : "Use at most three decimal places for stock quantities."),
+            ("TaxRate", "1.234", arabic ? "استخدم منزلتين عشريتين كحد أقصى لنسبة الضريبة." : "Use at most two decimal places for the tax rate."),
+            ("MinStock", "10", arabic ? "يجب أن يكون الحد الأعلى للمخزون أكبر من الحد الأدنى أو مساويًا له." : "Maximum stock must be at least the minimum.")
+        })
+        {
+            var fields = new Dictionary<string, string> { ["Name"] = "Invalid precision", ["MinStock"] = "0", ["MaxStock"] = "5", ["TaxRate"] = "0" };
+            fields[field] = value;
+            using var response = await WorkspaceUiTests.Post(client, $"/Products/Create?culture={culture}", token,
+                fields.Select(pair => (pair.Key, pair.Value)).ToArray());
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var errorField = value == "10" ? "MaxStock" : field;
+            Assert.Equal(message, problem.RootElement.GetProperty("errors").GetProperty(errorField)[0].GetString());
+        }
+        await using var scope = app.Services.CreateAsyncScope();
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<NEXTDbContext>().Products.ToListAsync());
+    }
+
+    [PostgresFact]
+    public async Task SupportedProductDecimalPrecisionSurvivesPostgresAndInvalidUpdatesLeaveItUnchanged()
+    {
+        await using var database = await PostgresInventoryTests.Database.Create(migrate: true);
+        await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: database.TestConnection);
+        await using var scope = app.Services.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var input = new ProductInputDto { Name = "Postgres precision", MinStock = 0.001000m, MaxStock = 2.001000m, TaxRate = 1.23000m };
+        var saved = await sender.Send(new CreateEntityCommand<ProductDto, ProductInputDto>(input));
+        var updated = await sender.Send(new UpdateEntityCommand<ProductDto, ProductInputDto>(saved.Id, input, saved.RowVersion));
+        input.MinStock = 0.0004m;
+        await Assert.ThrowsAsync<AppValidationException>(() =>
+            sender.Send(new UpdateEntityCommand<ProductDto, ProductInputDto>(saved.Id, input, updated.RowVersion)));
+        var stored = await database.Db.Products.AsNoTracking().SingleAsync(row => row.Id == saved.Id);
+        Assert.Equal(0.001m, stored.MinStock);
+        Assert.Equal(2.001m, stored.MaxStock);
+        Assert.Equal(1.23m, stored.TaxRate);
+    }
+
     [Fact]
     public async Task ComputedPricesAreSortedAndFilteredBeforePagingAndEditReadsPercentages()
     {
@@ -49,7 +136,7 @@ public sealed class ProductPercentageTests
         {
             Assert.Equal(second.Id, Assert.Single((await sender.Send(new GetEntitiesQuery<ProductDto>(filter))).Data).Id);
         }
-        var edit = await sender.Send(new GetEntityByIdQuery<ProductDto>(second.Id, ForEdit: true));
+        var edit = await sender.Send(new GetEntityByIdQuery<ProductEditDto>(second.Id));
         Assert.Equal(10, edit.RetailPrice);
         Assert.Equal(10, edit.WholesalePrice);
         Assert.Equal(10, edit.VipPrice);
@@ -110,7 +197,7 @@ public sealed class ProductPercentageTests
             PageSize = 1
         }));
         Assert.Equal(250, Assert.Single(result.Data).RetailPrice);
-        Assert.Equal(25, (await sender.Send(new GetEntityByIdQuery<ProductDto>(stored.Id, true))).RetailPrice);
+        Assert.Equal(25, (await sender.Send(new GetEntityByIdQuery<ProductEditDto>(stored.Id))).RetailPrice);
     }
 
     [PostgresFact]

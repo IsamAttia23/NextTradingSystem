@@ -11,7 +11,7 @@ public class SalesInvoice : AuditableEntity<Guid>
     public Guid WarehouseId { get; set; }
     public Warehouse Warehouse { get; set; } = null!;
     public Guid UserId { get; set; }
-    public ApplicationUser User { get; set; } = null!;
+    public UserAccount User { get; set; } = null!;
     public DateTimeOffset InvoiceDate { get; set; } = DateTimeOffset.UtcNow;
     public InvoiceType InvoiceType { get; set; } = InvoiceType.Sale;
     public decimal SubTotal { get; set; }

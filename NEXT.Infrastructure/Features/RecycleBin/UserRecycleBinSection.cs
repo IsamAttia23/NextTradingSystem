@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NEXT.Application.Abstractions.Context;
@@ -18,7 +19,7 @@ public sealed class UserRecycleBinSection(NEXTDbContext db, UserManager<Applicat
     IUnitOfWork unitOfWork, IPaginationServices pagination, ICurrentUserService current,
     IUserDeletionPolicy deletionPolicy, SecurityTransactions transactions) : IRecycleBinSection
 {
-    public string Name => nameof(ApplicationUser);
+    public string Name => RecycleBinSectionNames.UserAccounts;
 
     public Task<TPaginationQueryModel<RecycleBinItemDto<Guid>>> List(PaginationQuery query, CancellationToken ct = default) =>
         StorageErrors.ExecuteAsync(() => pagination.GetPagedList(
@@ -26,7 +27,7 @@ public sealed class UserRecycleBinSection(NEXTDbContext db, UserManager<Applicat
                 .OrderByDescending(user => user.DeletedAt).ThenBy(user => user.Id),
             source => source.Select(user => new RecycleBinItemDto<Guid>
             {
-                EntityId = user.Id, EntityType = nameof(ApplicationUser),
+                EntityId = user.Id, EntityType = RecycleBinSectionNames.UserAccounts,
                 DisplayName = user.FullName + " (" + user.UserName + ")",
                 DeletedOn = user.DeletedAt!.Value, DeletionReason = user.DeletionReason
             }), query, ct));

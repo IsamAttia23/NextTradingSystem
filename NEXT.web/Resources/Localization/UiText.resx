@@ -620,4 +620,7 @@
   <data name="SearchCustomer" xml:space="preserve"><value>Search for a customer</value></data>
   <data name="NoResults" xml:space="preserve"><value>No matching results</value></data>
   <data name="The field CompanyName must be a string with a maximum length of 200." xml:space="preserve"><value>The company name must not exceed 200 characters.</value></data>
+  <data name="TaxRatePrecision" xml:space="preserve"><value>Use at most two decimal places for the tax rate.</value></data>
+  <data name="StockQuantityPrecision" xml:space="preserve"><value>Use at most three decimal places for stock quantities.</value></data>
+  <data name="Maximum stock must be at least the minimum." xml:space="preserve"><value>Maximum stock must be at least the minimum.</value></data>
 </root>

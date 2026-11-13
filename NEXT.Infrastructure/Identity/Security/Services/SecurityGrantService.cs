@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Infrastructure.Identity.Security.Storage;
 using NEXT.Infrastructure.Identity.Security.Cryptography;
 using NEXT.Infrastructure.Identity.Security.Options;

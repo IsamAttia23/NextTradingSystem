@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Infrastructure.Identity.Security.Storage;
 using NEXT.Infrastructure.Identity.Security.Options;
 using Microsoft.AspNetCore.Identity;
@@ -21,9 +22,21 @@ public sealed class UserManagementService(NEXTDbContext db, UserManager<Applicat
     IRequestMetadataService metadata, IConfiguration configuration,
     IStringLocalizer<SecurityMessages> text, IAdministratorLookup administrators) : IUserManagementService
 {
-    public async Task<UserOperationResult> CreateWithActivationOtpAsync(ApplicationUser user, CancellationToken ct = default)
+    public async Task<UserOperationResult> CreateWithActivationOtpAsync(UserAccount account, CancellationToken ct = default)
     {
-        if (user.Id == Guid.Empty) user.Id = Guid.NewGuid();
+        if (account.Id == Guid.Empty) account.Id = Guid.NewGuid();
+        var user = new ApplicationUser
+        {
+            Id = account.Id,
+            UserName = account.UserName,
+            Email = account.Email,
+            PhoneNumber = account.PhoneNumber,
+            FullName = account.FullName,
+            IsActive = account.IsActive,
+            BranchId = account.BranchId,
+            AvatarUrl = account.AvatarUrl,
+            CreatedOn = account.CreatedOn
+        };
         return await transactions.RunAsync("user:" + user.Id, async () =>
         {
             PrepareActivation(user);

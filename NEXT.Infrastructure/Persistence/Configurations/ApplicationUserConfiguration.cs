@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NEXT.Domain.Entities;
@@ -12,7 +13,7 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
         builder.Property(x => x.FullName).HasMaxLength(150).IsRequired();
         builder.HasIndex(x => x.NormalizedUserName).IsUnique();
         builder.HasIndex(x => x.NormalizedEmail).IsUnique();
-        builder.HasOne(x => x.Branch).WithMany(x => x.Users)
+        builder.HasOne(x => x.Branch).WithMany()
             .HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
     }
 }

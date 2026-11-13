@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NEXT.Domain.Entities;
@@ -9,7 +10,7 @@ public sealed class RolePermissionConfiguration : IEntityTypeConfiguration<RoleP
     public void Configure(EntityTypeBuilder<RolePermission> builder)
     {
         builder.ToTable("RolePermissions", "security").HasKey(x => new { x.RoleId, x.PermissionId });
-        builder.HasOne(x => x.Role).WithMany(x => x.RolePermissions)
+        builder.HasOne<Role>().WithMany(x => x.RolePermissions)
                     .HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.Permission).WithMany(x => x.RolePermissions)
                     .HasForeignKey(x => x.PermissionId).OnDelete(DeleteBehavior.Cascade);

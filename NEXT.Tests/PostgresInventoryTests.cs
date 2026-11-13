@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using NEXT.web.Models;
 using NEXT.Application.Features.Common.CQRS;
@@ -472,7 +473,7 @@ public sealed class PostgresInventoryTests
         Assert.Equal(1, supplierActivity.Sections.Single(x => x.Key == "PurchaseOrder").Count);
         // Server-side filters/sorting execute on PostgreSQL, not on the current page in memory.
         var customers = new CustomerRepository(f.Db);
-        var filtered = customers.FindAsync(customers.BuildFilterExpression(
+        var filtered = customers.Query(customers.BuildFilterExpression(
             new NEXT.Application.QueryModels.CustomerQueryModel
             {
                 SearchTerm = "Customer",
@@ -542,7 +543,7 @@ public sealed class PostgresInventoryTests
         });
         await f.Db.SaveChangesAsync();
         var productRepository = new ProductRepository(f.Db);
-        var products = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
+        var products = productRepository.Query(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
         {
             MinCostPrice = 9,
             MaxRetailPrice = 30,
@@ -552,9 +553,9 @@ public sealed class PostgresInventoryTests
         }));
         Assert.Single(await products.ToListAsync());
         var stockRepository = new StockRepository(f.Db);
-        var stocks = stockRepository.ApplySorting(stockRepository.FindAsync(stockRepository.BuildFilterExpression(new PaginationQuery())), "Quantity", SortDirection.Descending);
+        var stocks = stockRepository.ApplySorting(stockRepository.Query(stockRepository.BuildFilterExpression(new PaginationQuery())), "Quantity", SortDirection.Descending);
         Assert.Equal(14, (await stocks.SingleAsync()).Quantity - (await stocks.SingleAsync()).ReservedQuantity);
-        var excluded = productRepository.FindAsync(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
+        var excluded = productRepository.Query(productRepository.BuildFilterExpression(new NEXT.Application.QueryModels.ProductQueryModel
         {
             MinCostPrice = 11
         }));

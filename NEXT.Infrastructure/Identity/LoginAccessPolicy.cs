@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;

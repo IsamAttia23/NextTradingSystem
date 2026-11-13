@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NEXT.Domain.Entities;

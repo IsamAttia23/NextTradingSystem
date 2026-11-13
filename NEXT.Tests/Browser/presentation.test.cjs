@@ -6,6 +6,77 @@ const vm = require("node:vm");
 const source = (name) =>
     fs.readFileSync(path.join(__dirname, "../../NEXT.web/wwwroot/js", name), "utf8");
 
+test("SPA culture changes update retained accessible names without resetting live controls", async () => {
+    const element = (html = "", attrs = {}) => {
+        const attributes = new Map(Object.entries(attrs));
+        return {
+            innerHTML: html, childNodes: [{ html }], dataset: {}, scrollTop: 0,
+            get attributes() { return [...attributes].map(([name, value]) => ({ name, value })); },
+            getAttribute: name => attributes.get(name),
+            setAttribute: (name, value) => attributes.set(name, value),
+            removeAttribute: name => attributes.delete(name),
+            replaceChildren(...nodes) { this.childNodes = nodes; this.innerHTML = nodes.map(node => node.html).join(""); },
+            querySelector: () => null, querySelectorAll: () => [], focus() {},
+            classList: { contains: () => false, toggle() {} }
+        };
+    };
+    const page = (language, labels) => {
+        const nodes = new Map([
+            [".app-shell", element()], ["#main", element("Main")],
+            [".skip-link", element(labels.skip)], [".breadcrumb-label", element("Breadcrumb")],
+            [".app-footer", element("Footer")],
+            [".mobile-menu", element("Icon", { "aria-label": labels.menu, "aria-expanded": "false" })],
+            ["#notifications", element("Notice", { "aria-label": labels.notices, "data-close": labels.close })],
+            ["#workspaceModal", element("Modal", { "aria-hidden": "true", "data-loading": labels.loading })],
+            ["#workspaceModal .btn-close", element("", { "aria-label": labels.close })]
+        ]);
+        const actions = element();
+        const topbar = element();
+        topbar.querySelector = selector => selector === ".mobile-menu" ? nodes.get(selector)
+            : selector === ".topbar-actions" ? actions : null;
+        nodes.set(".topbar", topbar);
+        return {
+            nodes, documentElement: { lang: language, dir: language === "ar" ? "rtl" : "ltr" },
+            body: element(), querySelector: selector => nodes.get(selector) ?? null,
+            getElementById: id => nodes.get("#" + id) ?? null,
+            activeElement: null, importNode: node => ({ ...node }), addEventListener() {}, dispatchEvent() {}
+        };
+    };
+    const arabic = { skip: "الانتقال إلى المحتوى", menu: "القائمة الرئيسية", notices: "الإشعارات", close: "إغلاق", loading: "جار التحميل" };
+    const english = { skip: "Skip to content", menu: "Main navigation", notices: "Notifications", close: "Close", loading: "Loading" };
+    const document = page("ar", arabic);
+    const modal = document.nodes.get("#workspaceModal");
+    const menu = document.nodes.get(".mobile-menu");
+    menu.setAttribute("aria-expanded", "true");
+    modal.setAttribute("aria-hidden", "false");
+    let responseDocument;
+    const history = { state: {}, replaceState() {}, pushState() {} };
+    const window = {
+        history, fetch() {}, DOMParser: class {}, addEventListener() {},
+        NextHttp: { request: async () => ({ status: 200, url: "http://localhost/Products",
+            headers: { get: () => "text/html" }, text: async () => "HTML" }) }
+    };
+    vm.runInNewContext(source("navigation.js"), {
+        document, window, history, location: new URL("http://localhost/Products"), URL, AbortController,
+        DOMParser: class { parseFromString() { return responseDocument; } },
+        CustomEvent: class {}
+    });
+    for (const [language, labels] of [["en", english], ["ar", arabic]]) {
+        responseDocument = page(language, labels);
+        assert.equal(await window.NextNavigation.navigate("/Products", { history: false }), true);
+        assert.equal(document.documentElement.lang, language);
+        assert.equal(document.documentElement.dir, language === "ar" ? "rtl" : "ltr");
+        assert.equal(document.nodes.get(".skip-link").innerHTML, labels.skip);
+        assert.equal(menu.getAttribute("aria-label"), labels.menu);
+        assert.equal(document.nodes.get("#notifications").getAttribute("aria-label"), labels.notices);
+        assert.equal(document.nodes.get("#workspaceModal .btn-close").getAttribute("aria-label"), labels.close);
+        assert.equal(modal.getAttribute("data-loading"), labels.loading);
+        assert.equal(menu.getAttribute("aria-expanded"), "true");
+        assert.equal(modal.getAttribute("aria-hidden"), "false");
+        assert.strictEqual(document.nodes.get("#workspaceModal"), modal);
+    }
+});
+
 test("Inline profile saves clear passwords and follow the sign-in redirect without opening a modal", async () => {
     const handlers = new Map();
     const notices = [];

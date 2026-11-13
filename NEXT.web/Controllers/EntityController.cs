@@ -11,7 +11,7 @@ using NEXT.web.Services;
 namespace NEXT.web.Controllers;
 
 public abstract class EntityController<TDto, TInput, TQuery>(ISender sender, EntityPresenter<TDto, TInput> presenter)
-    : WorkspaceController where TDto : class, TInput, IRecordDto where TInput : class, new() where TQuery : PaginationQuery, new()
+    : WorkspaceController where TDto : class, IRecordDto where TInput : class, new() where TQuery : PaginationQuery, new()
 {
     private string Section => ControllerContext.ActionDescriptor.ControllerName;
 

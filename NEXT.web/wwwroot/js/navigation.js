@@ -22,12 +22,12 @@
     }
     function syncAttributes(target, source) {
         for (const attribute of [...target.attributes]) {
-            if (attribute.name.startsWith("data-")) {
+            if (attribute.name.startsWith("data-") || attribute.name === "aria-label") {
                 target.removeAttribute(attribute.name);
             }
         }
         for (const attribute of source.attributes) {
-            if (attribute.name.startsWith("data-")) {
+            if (attribute.name.startsWith("data-") || attribute.name === "aria-label") {
                 target.setAttribute(attribute.name, attribute.value);
             }
         }
@@ -35,8 +35,11 @@
     function updatePart(selector, documentSource) {
         const old = document.querySelector(selector);
         const fresh = documentSource.querySelector(selector);
-        if (old && fresh && old.innerHTML !== fresh.innerHTML) {
-            old.replaceChildren(...[...fresh.childNodes].map((n) => document.importNode(n, true)));
+        if (old && fresh) {
+            syncAttributes(old, fresh);
+            if (old.innerHTML !== fresh.innerHTML) {
+                old.replaceChildren(...[...fresh.childNodes].map((n) => document.importNode(n, true)));
+            }
         }
     }
     function updateHeader(source) {
@@ -49,6 +52,8 @@
             oldMenu.remove();
         } else if (!oldMenu && newMenu) {
             topbar.prepend(document.importNode(newMenu, true));
+        } else if (oldMenu && newMenu) {
+            updatePart(".mobile-menu", source);
         }
         const actions = topbar.querySelector(".topbar-actions");
         const nextActions = next.querySelector(".topbar-actions");
@@ -109,6 +114,8 @@
             document.querySelector(".app-shell").prepend(document.importNode(newSidebar, true));
         }
         updateHeader(source);
+        updatePart(".skip-link", source);
+        updatePart("#workspaceModal .btn-close", source);
         updatePart(".app-footer", source);
         const oldDrawer = document.getElementById("mobileNavigation");
         const newDrawer = source.getElementById("mobileNavigation");

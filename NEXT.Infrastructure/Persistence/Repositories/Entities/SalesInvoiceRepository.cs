@@ -13,18 +13,32 @@ public sealed class SalesInvoiceRepository(NEXTDbContext context) : KeyRepositor
     public Task<SalesInvoice?> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
         => StorageErrors.ExecuteAsync(async () =>
         {
-            var invoice = await Context.SalesInvoices.AsNoTracking()
+            var invoices = Context.SalesInvoices.AsNoTracking()
                 .Include(x => x.Customer)
                 .Include(x => x.Warehouse)
-                .Include(x => x.User)
-                .Include(x => x.Items)
-                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+                .Include(x => x.Items);
+            var result = await (from row in invoices
+                                join user in Context.Users on row.UserId equals user.Id
+                                where row.Id == id
+                                select new
+                                {
+                                    Invoice = row,
+                                    User = new UserAccount
+                                    {
+                                        Id = user.Id, FullName = user.FullName, UserName = user.UserName,
+                                        Email = user.Email, PhoneNumber = user.PhoneNumber, IsActive = user.IsActive,
+                                        CreatedOn = user.CreatedOn, UpdatedOn = user.UpdatedOn, BranchId = user.BranchId,
+                                        AvatarUrl = user.AvatarUrl, DeletionReason = user.DeletionReason
+                                    }
+                                }).FirstOrDefaultAsync(cancellationToken);
 
-            if (invoice is null)
+            if (result is null)
             {
                 return null;
             }
 
+            var invoice = result.Invoice;
+            invoice.User = result.User;
             var productIds = invoice.Items.Select(x => x.ProductId).Distinct().ToArray();
             var products = await ReadProductsAsync(productIds, cancellationToken);
             AttachProducts(invoice, products);

@@ -96,10 +96,11 @@ public sealed class ProjectionReadTests
             .UseNpgsql("Host=localhost;Database=translation_only;Username=unused;Password=unused").Options, null!, null!);
         var mapping = new TypeAdapterConfig();
         mapping.Scan(typeof(ApplicationRegistrationExtensions).Assembly);
+        new NEXT.Infrastructure.Identity.IdentityMappingRegister().Register(mapping);
         var profile = db.Users.AsNoTracking().Where(x => x.Id == Guid.NewGuid()).ProjectToType<UserDto>(mapping).ToQueryString();
         var users = db.Users.AsNoTracking().ProjectToType<UserResponseDto>(mapping).ToQueryString();
         var roles = db.Roles.AsNoTracking().ProjectToType<RoleDto>(mapping).ToQueryString();
-        var assignments = db.RolePermissions.AsNoTracking().ProjectToType<RolePermissionDto>(mapping).ToQueryString();
+        var assignments = new NEXT.Infrastructure.Services.RolePermissionService(db).ReadAssignments().ToQueryString();
         var branches = db.Branches.AsNoTracking().ProjectToType<BranchOption>(mapping).ToQueryString();
         foreach (var sql in new[] { profile, users, roles, assignments, branches })
         {
@@ -133,7 +134,7 @@ public sealed class ProjectionReadTests
     }
 
     [Fact]
-    public async Task UserAndRoleQueriesReturnDetachedDtosWhileCommandLookupsStayTracked()
+    public async Task UserAndRoleQueriesReturnIndependentModelsWhileIdentityRowsStayTracked()
     {
         await using var app = await WorkspaceUiTests.StartAsync();
         await using var scope = app.Services.CreateAsyncScope();
@@ -163,10 +164,17 @@ public sealed class ProjectionReadTests
         Assert.Null(await users.FindUserByEmailAsync<UserDto>("missing@example.test"));
         Assert.Null(await roles.FindByIdAsync<RoleDto>(Guid.NewGuid()));
         Assert.Empty(db.ChangeTracker.Entries());
-        var entity = await users.FindUserAsync(id.ToString());
-        var roleEntity = await roles.FindByIdAsync(roleId);
-        Assert.Equal(EntityState.Unchanged, db.Entry(entity!).State);
-        Assert.Equal(EntityState.Unchanged, db.Entry(roleEntity!).State);
-        Assert.Equal(2, db.ChangeTracker.Entries().Count());
+        var account = Assert.IsType<UserAccount>(await users.FindUserAsync(id.ToString()));
+        var role = Assert.IsType<AccessRole>(await roles.FindByIdAsync(roleId));
+        var userRow = Assert.Single(db.ChangeTracker.Entries<NEXT.Infrastructure.Identity.Entities.ApplicationUser>());
+        var roleRow = Assert.Single(db.ChangeTracker.Entries<NEXT.Infrastructure.Identity.Entities.Role>());
+        Assert.Equal(id, account.Id);
+        Assert.Equal(roleId, role.Id);
+        account.FullName = "Unpersisted profile";
+        role.Description = "Unpersisted role";
+        Assert.NotEqual(account.FullName, userRow.Entity.FullName);
+        Assert.NotEqual(role.Description, roleRow.Entity.Description);
+        Assert.Equal(EntityState.Unchanged, userRow.State);
+        Assert.Equal(EntityState.Unchanged, roleRow.State);
     }
 }

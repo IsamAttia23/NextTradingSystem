@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Infrastructure.Identity.Security.Email;
 using NEXT.Infrastructure.Identity.Security.Cryptography;
 using NEXT.Infrastructure.Identity.Security.Contracts;
@@ -682,7 +683,7 @@ public sealed class AccountSecurityTests
         {
             await using var scope = App.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-            var user = new ApplicationUser { Id = Guid.NewGuid(), UserName = "temporary", FullName = "Temporary",
+            var user = new UserAccount { Id = Guid.NewGuid(), UserName = "temporary", FullName = "Temporary",
                 Email = "temporary@example.test", IsActive = true, BranchId = await db.Branches.Select(x => x.Id).FirstAsync() };
             Assert.True((await scope.ServiceProvider.GetRequiredService<IUserManagementService>().CreateWithActivationOtpAsync(user)).Succeeded);
             Assert.True(await scope.ServiceProvider.GetRequiredService<SecurityEmailDispatcher>().DispatchOneAsync(default));

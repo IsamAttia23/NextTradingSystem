@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NEXT.Domain.Entities;
@@ -15,7 +16,8 @@ public sealed class SalesInvoiceConfiguration : IEntityTypeConfiguration<SalesIn
                     .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne(x => x.Warehouse).WithMany().HasForeignKey(x => x.WarehouseId)
                     .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+        builder.Ignore(x => x.User);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.InvoiceNumber).HasMaxLength(50).IsRequired();
         builder.HasIndex(x => x.InvoiceNumber).IsUnique();

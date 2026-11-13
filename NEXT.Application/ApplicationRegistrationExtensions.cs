@@ -27,9 +27,16 @@ public static class ApplicationRegistrationExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
-        var mapping = new TypeAdapterConfig();
-        mapping.Scan(typeof(ApplicationUserMappingRegister).Assembly);
-        services.AddSingleton(mapping);
+        services.AddSingleton(sp =>
+        {
+            var mapping = new TypeAdapterConfig();
+            mapping.Scan(typeof(ApplicationUserMappingRegister).Assembly);
+            foreach (var registration in sp.GetServices<IRegister>())
+            {
+                registration.Register(mapping);
+            }
+            return mapping;
+        });
         services.AddMapster();
         services.AddScoped<NEXT.Application.Abstractions.Identity.IUserDeletionPolicy, NEXT.Application.Features.ApplicationUsers.UserDeletionPolicy>();
         services.AddScoped<IRecycleBinAccess, RecycleBinAccess>();

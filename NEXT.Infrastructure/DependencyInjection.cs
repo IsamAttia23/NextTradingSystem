@@ -25,6 +25,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<Mapster.IRegister, IdentityMappingRegister>();
+        services.AddScoped<NEXT.Application.Features.Dashboard.IDashboardAccountCounts, DashboardAccountCounts>();
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         var connectionString = configuration.GetConnectionString("NEXTDatabase");
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -80,6 +82,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IRequestMetadataService, RequestMetadataService>();
+        services.AddScoped(typeof(IReadRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -94,7 +97,8 @@ public static class DependencyInjection
             {
                 services.AddScoped(contract, implementation);
                 foreach (var generic in contract.GetInterfaces().Where(x => x.IsGenericType &&
-                    (x.GetGenericTypeDefinition() == typeof(IRepository<>) || x.GetGenericTypeDefinition() == typeof(IKeyRepository<,>))))
+                    (x.GetGenericTypeDefinition() == typeof(IReadRepository<>) || x.GetGenericTypeDefinition() == typeof(IRepository<>) ||
+                     x.GetGenericTypeDefinition() == typeof(IKeyRepository<,>))))
                 {
                     services.AddScoped(generic, sp => sp.GetRequiredService(contract));
                 }

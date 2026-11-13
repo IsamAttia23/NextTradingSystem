@@ -15,7 +15,9 @@ using NEXT.Application.DTOs.CustomerContacts;
 using NEXT.Application.DTOs.Common;
 using NEXT.Application.DTOs.Categories;
 using NEXT.Application.DTOs.Branches;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Services.ReferenceData;
 
@@ -40,7 +42,10 @@ public static class EntityFeatureRegistration
         services.AddEntityCqrs<Branch, BranchDto, BranchInputDto, BranchInputDto>();
         services.AddEntityCqrs<Warehouse, WarehouseDto, WarehouseInputDto, WarehouseInputDto>();
         services.AddScoped<IEntityRules<Warehouse, WarehouseInputDto>, WarehouseRules>();
-        services.AddEntityCqrs<Product, ProductDto, ProductInputDto, ProductInputDto>();
+        services.AddScoped<ProductPricing>();
+        services.AddScoped<IActivityPageEnricher>(sp => sp.GetRequiredService<ProductPricing>());
+        services.AddScoped<IRequestHandler<DeleteEntityCommand<ProductDto>>, DeleteEntityCommandHandler<Product, ProductDto>>();
+        services.AddScoped<IRequestHandler<GetEntityActivityQuery<ProductDto>, ActivityPageDto>, GetEntityActivityQueryHandler<Product, ProductDto>>();
         services.AddScoped<IEntityRules<Product, ProductInputDto>, ProductRules>();
         services.AddEntityCqrs<UnitOfMeasure, UnitOfMeasureDto, UnitOfMeasureInputDto, UnitOfMeasureInputDto>();
         services.AddScoped<IEntityRules<UnitOfMeasure, UnitOfMeasureInputDto>, UnitOfMeasureRules>();

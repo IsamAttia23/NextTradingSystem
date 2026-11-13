@@ -23,7 +23,7 @@ public sealed class CreateApplicationUserHandler(IUserCommandService commands, I
         validator.Validate(dto);
         await rules.BranchAsync(dto.BranchId, null, ct);
         await rules.UniqueAsync(dto.UserName, dto.Email, null, ct);
-        var user = mapper.Map<ApplicationUser>(dto);
+        var user = mapper.Map<UserAccount>(dto);
         user.AvatarUrl = dto.AvatarUrl is null ? null : await images.NormalizeAsync(dto.AvatarUrl, ct);
         var created = await UserOperationTransaction.ExecuteAsync(unitOfWork,
             token => commands.CreateUserAsync(user, dto.Password, token), ct);

@@ -16,7 +16,7 @@ public sealed class RelatedRecordMappingRegister : IRegister
         foreach (var type in typeof(Product).Assembly.GetTypes().Where(type =>
                      type.Namespace == typeof(Product).Namespace && !type.IsAbstract && !type.ContainsGenericParameters &&
                      type.GetProperty("Id")?.PropertyType == typeof(Guid) &&
-                     type != typeof(ApplicationUser) && type != typeof(UserRole) && type != typeof(RolePermission)))
+                     type != typeof(UserAccount) && type != typeof(AccessRole) && type != typeof(RolePermission)))
         {
             register.MakeGenericMethod(type).Invoke(null, [config]);
         }

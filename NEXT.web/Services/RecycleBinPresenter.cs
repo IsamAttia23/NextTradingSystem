@@ -13,7 +13,7 @@ public sealed class RecycleBinPresenter(IRecycleBinAccess access)
             PageNumber = page,
             PageSize = 20
         }, ct);
-        var users = section == nameof(NEXT.Domain.Entities.ApplicationUser);
+        var users = section == RecycleBinSectionNames.UserAccounts;
         return new("RecycleBin", "RecycleDescription", users ? ["FullName", "RecordId", "DeletedOn", "DeletionReason"] : ["RecordId", "DeletedOn", "DeletionReason"],
             result.Data.Select(x => new TableRow(users
                 ? [x.DisplayName ?? "—", x.EntityId.ToString(), x.DeletedOn.ToLocalTime().ToString("g"), x.DeletionReason ?? "—"]

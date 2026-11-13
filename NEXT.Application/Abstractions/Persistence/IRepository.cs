@@ -1,22 +1,12 @@
-using NEXT.Domain.Enums;
-using NEXT.Application.Common.QueryModels;
 using System.Linq.Expressions;
-using NEXT.Domain.Common.Entities;
 
 namespace NEXT.Application.Abstractions.Persistence;
 
-public interface IRepository<TEntity> where TEntity : class
+public interface IRepository<TEntity> : IReadRepository<TEntity> where TEntity : class
 {
-    Expression<Func<TEntity, bool>> BuildFilterExpression(PaginationQuery query);
-    IQueryable<TEntity> ApplySorting(IQueryable<TEntity> entities, string? sortBy, SortDirection? sortDirection);
     Task<TEntity?> FindTrackedAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
     IQueryable<TEntity> Query(bool asNoTracking = true);
     Task<TEntity?> GetByKeyAsync(object[] keyValues, CancellationToken cancellationToken = default);
-    IQueryable<TEntity> GetAllAsync(CancellationToken cancellationToken = default);
-    IQueryable<TEntity> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
-    Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
-    Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
-    Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null, CancellationToken cancellationToken = default);
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
     Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
     Task Update(TEntity entity);

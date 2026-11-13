@@ -23,7 +23,7 @@ public sealed class CreateRoleHandler(
                 [nameof(request.Data.Name)] = ["This role name already exists."]
             });
         }
-        var role = mapper.Map<Role>(request.Data);
+        var role = mapper.Map<AccessRole>(request.Data);
         role.IsSystem = false;
         var result = await roles.CreateAsync(role, cancellationToken);
         if (!result.Succeeded)

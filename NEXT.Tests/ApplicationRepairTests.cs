@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using System.Data.Common;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -21,6 +22,7 @@ using NEXT.Application.Exceptions;
 using NEXT.Application.Features.ApplicationUsers.Commands;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Features.Dashboard;
+using NEXT.Application.Features.Products;
 using NEXT.Application.QueryModels;
 using NEXT.Application.Services.ReferenceData;
 using NEXT.Application.Validation;
@@ -174,8 +176,10 @@ public sealed class ApplicationRepairTests
         var config = app.Configuration;
         first.AddApplicationServices(config);
         second.AddApplicationServices(config);
-        Assert.NotSame(first.Single(x => x.ServiceType == typeof(TypeAdapterConfig)).ImplementationInstance,
-            second.Single(x => x.ServiceType == typeof(TypeAdapterConfig)).ImplementationInstance);
+        using var firstProvider = first.BuildServiceProvider();
+        using var secondProvider = second.BuildServiceProvider();
+        Assert.NotSame(firstProvider.GetRequiredService<TypeAdapterConfig>(),
+            secondProvider.GetRequiredService<TypeAdapterConfig>());
     }
 
     [PostgresFact]
@@ -257,8 +261,10 @@ public sealed class ApplicationRepairTests
         });
         await db.SaveChangesAsync();
         counter.Reads = 0;
-        var handler = new GetEntityByIdQueryHandler<Product, ProductDto>(products, executor, exchangeRates: rateReader);
-        Assert.Equal(database.Product, (await handler.Handle(new(database.Product), default)).Id);
+        var config = new TypeAdapterConfig();
+        var handler = new ProductQueries(products, executor, new PaginationServices(),
+            new DataAnnotationsEntityValidator<PaginationQuery>(), new ProductPricing(rateReader, config), config);
+        Assert.Equal(database.Product, (await handler.Handle(new GetEntityByIdQuery<ProductDto>(database.Product), default)).Id);
         Assert.Equal(2, counter.Reads);
         counter.Reads = 0;
         var mapping = new TypeAdapterConfig();
@@ -268,7 +274,7 @@ public sealed class ApplicationRepairTests
         Assert.Equal(1, counter.Reads);
         counter.Reads = 0;
         counter.Commands.Clear();
-        var dashboard = new GetDashboardHandler(new TRepository<ApplicationUser>(db), new TRepository<Role>(db),
+        var dashboard = new GetDashboardHandler(new NEXT.Infrastructure.Identity.DashboardAccountCounts(db),
             new TRepository<RolePermission>(db), new TRepository<Permission>(db));
         await dashboard.Handle(new(), default);
         Assert.Equal(5, counter.Reads);
@@ -290,14 +296,14 @@ public sealed class ApplicationRepairTests
 
     private sealed class FailingRoleService(IUserCommandService inner, bool throwError) : IUserCommandService
     {
-        public Task<UserOperationResult> CreateUserAsync(ApplicationUser user, string password, CancellationToken ct = default) => inner.CreateUserAsync(user, password, ct);
-        public Task<UserOperationResult> UpdateUserAsync(ApplicationUser user, CancellationToken ct = default) => inner.UpdateUserAsync(user, ct);
-        public Task<UserOperationResult> DeleteUserAsync(ApplicationUser user, CancellationToken ct = default) => inner.DeleteUserAsync(user, ct);
-        public Task<UserOperationResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword, CancellationToken ct = default) => inner.ChangePasswordAsync(user, currentPassword, newPassword, ct);
-        public Task<UserOperationResult> SetUserNameAsync(ApplicationUser user, string userName, CancellationToken ct = default) => inner.SetUserNameAsync(user, userName, ct);
-        public Task<UserOperationResult> SetUserEmailAsync(ApplicationUser user, string email, CancellationToken ct = default) => inner.SetUserEmailAsync(user, email, ct);
-        public Task<UserOperationResult> SetPhoneNumberAsync(ApplicationUser user, string phoneNumber, CancellationToken ct = default) => inner.SetPhoneNumberAsync(user, phoneNumber, ct);
-        public Task<UserOperationResult> AddUserToRole(ApplicationUser user, string role, CancellationToken ct = default) => throwError
+        public Task<UserOperationResult> CreateUserAsync(UserAccount user, string password, CancellationToken ct = default) => inner.CreateUserAsync(user, password, ct);
+        public Task<UserOperationResult> UpdateUserAsync(UserAccount user, CancellationToken ct = default) => inner.UpdateUserAsync(user, ct);
+        public Task<UserOperationResult> DeleteUserAsync(UserAccount user, CancellationToken ct = default) => inner.DeleteUserAsync(user, ct);
+        public Task<UserOperationResult> ChangePasswordAsync(UserAccount user, string currentPassword, string newPassword, CancellationToken ct = default) => inner.ChangePasswordAsync(user, currentPassword, newPassword, ct);
+        public Task<UserOperationResult> SetUserNameAsync(UserAccount user, string userName, CancellationToken ct = default) => inner.SetUserNameAsync(user, userName, ct);
+        public Task<UserOperationResult> SetUserEmailAsync(UserAccount user, string email, CancellationToken ct = default) => inner.SetUserEmailAsync(user, email, ct);
+        public Task<UserOperationResult> SetPhoneNumberAsync(UserAccount user, string phoneNumber, CancellationToken ct = default) => inner.SetPhoneNumberAsync(user, phoneNumber, ct);
+        public Task<UserOperationResult> AddUserToRole(UserAccount user, string role, CancellationToken ct = default) => throwError
             ? throw new InvalidOperationException("Injected role storage failure.")
             : Task.FromResult(UserOperationResult.Failure([new("InjectedRoleFailure", "Role assignment failed.")]));
     }

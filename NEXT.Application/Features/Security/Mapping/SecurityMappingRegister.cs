@@ -18,18 +18,12 @@ public sealed class SecurityMappingRegister : IRegister
             .Ignore(d => d.Id)
             .Ignore(d => d.CreatedAt)
             .Ignore(d => d.CreatedBy);
-        config.NewConfig<Role, RoleDto>();
-        config.NewConfig<RoleCreationDto, Role>()
+        config.NewConfig<AccessRole, RoleDto>();
+        config.NewConfig<RoleCreationDto, AccessRole>()
+            .Map(d => d.Name, s => s.Name.Trim());
+        config.NewConfig<RoleUpdateDto, AccessRole>()
             .Map(d => d.Name, s => s.Name.Trim())
-            .Map(d => d.NormalizedName, s => s.Name.Trim().ToUpperInvariant());
-        config.NewConfig<RoleUpdateDto, Role>()
-            .Map(d => d.Name, s => s.Name.Trim())
-            .Map(d => d.NormalizedName, s => s.Name.Trim().ToUpperInvariant())
             .Ignore(d => d.Id)
-            .Ignore(d => d.ConcurrencyStamp);
-        config.NewConfig<RolePermission, RolePermissionDto>()
-            .Map(d => d.RoleName, s => s.Role.Name)
-            .Map(d => d.Code, s => s.Permission.Code)
-            .Map(d => d.Module, s => s.Permission.Module);
+            .Ignore(d => d.IsSystem);
     }
 }

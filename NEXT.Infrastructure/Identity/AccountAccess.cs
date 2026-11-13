@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Infrastructure.Identity.Security.Services;
 using NEXT.Infrastructure.Identity.Security.Storage;
 using Microsoft.AspNetCore.Identity;
@@ -73,6 +75,13 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
             return result.Succeeded ? LoginOutcome.Succeeded : LoginOutcome.Failed;
         }, CancellationToken.None);
     }
+    public Task<bool> IsSessionValidAsync(ClaimsPrincipal? principal) => StorageErrors.ExecuteAsync(async () =>
+    {
+        var user = await signIn.ValidateSecurityStampAsync(principal);
+        return user is not null && Guid.TryParse(principal?.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
+            && await policy.CanSignInAsync(id);
+    });
+
     public Task LogoutAsync() => StorageErrors.ExecuteAsync(() => signIn.SignOutAsync());
     public Task<byte[]?> AvatarAsync() => current.UserId is { } id
         ? StorageErrors.ExecuteAsync(() => signIn.UserManager.Users.AsNoTracking().Where(x => x.Id == id).Select(x => x.AvatarUrl).FirstOrDefaultAsync())

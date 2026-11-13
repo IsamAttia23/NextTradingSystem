@@ -85,7 +85,7 @@ public sealed class SharedCqrsRepositoryTests
             PageNumber = 2,
             PageSize = 1
         };
-        var entities = repository.FindAsync(repository.BuildFilterExpression(query));
+        var entities = repository.Query(repository.BuildFilterExpression(query));
         Assert.Equal(3, await entities.CountAsync());
         var ordered = repository.ApplySorting(entities, query.SortBy, query.SortDirection);
         Assert.Equal(new[] { "C", "B", "A" }, await ordered.Select(x => x.Code).ToArrayAsync());
@@ -219,7 +219,7 @@ public sealed class SharedCqrsRepositoryTests
             query.PageNumber = 2;
             query.PageSize = 1;
             var expression = repository.BuildFilterExpression(query);
-            var entities = repository.FindAsync(expression);
+            var entities = repository.Query(expression);
             var sql = entities.ToQueryString();
             Assert.Contains("needle", sql);
             Assert.DoesNotContain("LIMIT", sql);

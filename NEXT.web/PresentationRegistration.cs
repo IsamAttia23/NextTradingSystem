@@ -1,4 +1,8 @@
 using NEXT.web.Models;
+using NEXT.Application.DTOs.Products;
+using NEXT.Application.DTOs.Customers;
+using NEXT.Application.DTOs.CustomerContacts;
+using NEXT.Application.DTOs.Tags;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +23,10 @@ public static class PresentationRegistration
         services.AddScoped<Services.StatusPresenter>();
         services.AddScoped<Services.AccountFlowCookies>();
         services.AddScoped(typeof(Services.EntityPresenter<,>));
+        services.AddScoped<Services.EntityPresenter<ProductDto, ProductInputDto>, Services.ProductPresenter>();
+        services.AddScoped<Services.EntityPresenter<CustomerDto, CustomerInputDto>, Services.CustomerPresenter>();
+        services.AddScoped<Services.EntityPresenter<CustomerContactDto, CustomerContactInputDto>, Services.CustomerContactPresenter>();
+        services.AddScoped<Services.EntityPresenter<TagDto, TagInputDto>, Services.TagPresenter>();
         services.AddScoped<Services.InventoryPresenter>();
         services.AddScoped<Services.QueryFilterPresenter>();
         services.AddScoped<Services.FormFieldPresenter>();
@@ -53,14 +61,8 @@ public static class PresentationRegistration
         {
             options.Events.OnValidatePrincipal = async context =>
             {
-                var sessionUser = await context.HttpContext.RequestServices
-                    .GetRequiredService<SignInManager<NEXT.Domain.Entities.ApplicationUser>>()
-                    .ValidateSecurityStampAsync(context.Principal);
-                var id = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (sessionUser is null || !Guid.TryParse(id, out var userId)
-                    || !await context.HttpContext.RequestServices
-                        .GetRequiredService<ILoginAccessPolicy>()
-                        .CanSignInAsync(userId))
+                var access = context.HttpContext.RequestServices.GetRequiredService<IAccountAccess>();
+                if (!await access.IsSessionValidAsync(context.Principal))
                 {
                     context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);

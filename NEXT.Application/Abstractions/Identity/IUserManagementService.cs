@@ -4,7 +4,7 @@ namespace NEXT.Application.Abstractions.Identity;
 
 public interface IUserManagementService
 {
-    Task<UserOperationResult> CreateWithActivationOtpAsync(ApplicationUser user, CancellationToken ct = default);
+    Task<UserOperationResult> CreateWithActivationOtpAsync(UserAccount user, CancellationToken ct = default);
     Task<LoginPreparation> PrepareLoginAsync(string userName, string password, bool issueSetupToken = false,
         CancellationToken ct = default);
     Task<UserOperationResult> CompleteFirstLoginAsync(string setupToken, string newPassword, CancellationToken ct = default);

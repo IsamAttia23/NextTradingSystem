@@ -5,9 +5,6 @@ using System.Reflection;
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.DTOs.Common;
 using NEXT.Application.DTOs.Presentation;
-using NEXT.Application.DTOs.Customers;
-using NEXT.Application.DTOs.CustomerContacts;
-using NEXT.Domain.Enums;
 
 namespace NEXT.web.Services;
 
@@ -47,19 +44,8 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
             }
             else
             {
-                var label = input is NEXT.Application.DTOs.Products.ProductInputDto &&
-                    property.Name is "RetailPrice" or "WholesalePrice" or "VipPrice"
-                    ? property.Name + "Percent"
-                    : null;
+                var label = property.GetCustomAttribute<DisplayAttribute>()?.Name;
                 var field = await FieldAsync(property, property.GetValue(input), false, ct, excludedId, label);
-                if (input is CustomerInputDto && property.Name == "CompanyName")
-                {
-                    field = field with { MaxLength = 200, VisibleWhenField = "Type", VisibleWhenValue = nameof(CustomerType.Company) };
-                }
-                if (input is CustomerContactInputDto && property.Name == "CustomerId")
-                {
-                    field = field with { Type = "reference" };
-                }
                 fields.Add(field);
             }
         }
@@ -93,7 +79,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
             kind = filter ? "select" : "checkbox";
             if (filter)
             {
-                options = [new("true", property.Name == "IsActive" ? "Active" : "Yes"), new("false", property.Name == "IsActive" ? "Inactive" : "No")];
+                options = [new("true", Display(true, property.Name)), new("false", Display(false, property.Name))];
             }
         }
         else if (type == typeof(decimal) || type == typeof(int))
@@ -132,18 +118,13 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
                 continue;
             }
             var value = property.GetValue(item);
-            if (item is CustomerInputDto { Type: CustomerType.Individual }
-                && property.Name == "CompanyName")
-            {
-                continue;
-            }
             if (ReferenceKey(property.Name) is { } key && value is Guid selected)
             {
                 fields.Add(new(property.Name, (await OptionsAsync(key, ct)).SingleOrDefault(x => x.Value == selected.ToString())?.Label ?? "—"));
             }
             else
             {
-                fields.Add(new(property.Name, value is decimal number ? DisplayNumber(property.Name, number) : Display(value),
+                fields.Add(new(property.Name, value is decimal number ? DisplayNumber(property.Name, number) : Display(value, property.Name),
                                 (Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType).IsEnum || property.PropertyType == typeof(bool)));
             }
         }
@@ -162,11 +143,15 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         name is "Quantity" or "ReservedQuantity" or "AvailableQuantity" or "MinStock" or "MaxStock"
             ? Quantity(value) : value.ToString("N2", CultureInfo.CurrentCulture);
 
-    public static string Display(object? value)
+    public static string Display(object? value, string? name = null)
     {
         if (value is bool flag)
         {
-            return flag ? "Active" : "Inactive";
+            if (name == "IsActive")
+            {
+                return flag ? "Active" : "Inactive";
+            }
+            return flag ? "Yes" : "No";
         }
         var text = Convert.ToString(value, CultureInfo.InvariantCulture);
         return string.IsNullOrWhiteSpace(text) ? "—" : text;

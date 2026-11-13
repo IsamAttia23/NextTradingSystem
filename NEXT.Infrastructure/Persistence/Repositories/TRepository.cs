@@ -119,10 +119,7 @@ public class TRepository<TEntity>(NEXTDbContext context) : IRepository<TEntity>
         return entity is IIsDeletableEntity { DeletedAt: not null } ? null : entity;
     }
 
-    public IQueryable<TEntity> GetAllAsync(CancellationToken cancellationToken = default)
-        => _set.AsNoTracking().AsQueryable();
-
-    public IQueryable<TEntity> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    public IQueryable<TEntity> Query(Expression<Func<TEntity, bool>> predicate)
     {
         ArgumentNullException.ThrowIfNull(predicate);
         return _set.AsNoTracking().Where(predicate);

@@ -6,7 +6,6 @@ namespace NEXT.Domain.Entities;
 public class AuditLog : AuditableEntity<Guid>
 {
     public Guid? UserId { get; set; }
-    public ApplicationUser? User { get; set; }
     public AuditAction Action { get; set; }
     public string EntityType { get; set; } = string.Empty;
     public Guid? EntityId { get; set; }

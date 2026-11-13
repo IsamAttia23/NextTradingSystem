@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,18 +10,18 @@ namespace NEXT.Infrastructure.Persistence.UsersManagement;
 
 public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAdapterConfig mapping, NEXT.Application.Abstractions.Context.ICurrentUserService current) : IUserQueryService
 {
-    public Task<ApplicationUser?> FindUserAsync(string userId, CancellationToken ct = default) =>
-        Guid.TryParse(userId, out var id) ? StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, ct))
-            : Task.FromResult<ApplicationUser?>(null);
-    public Task<ApplicationUser?> FindUserByEmailAsync(string email, CancellationToken ct = default)
+    public Task<UserAccount?> FindUserAsync(string userId, CancellationToken ct = default) =>
+        Guid.TryParse(userId, out var id) ? ReadAccountAsync(x => x.Id == id && x.DeletedAt == null, ct)
+            : Task.FromResult<UserAccount?>(null);
+    public Task<UserAccount?> FindUserByEmailAsync(string email, CancellationToken ct = default)
     {
         var normalized = users.NormalizeEmail(email);
-        return StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(x => x.NormalizedEmail == normalized, ct));
+        return ReadAccountAsync(x => x.NormalizedEmail == normalized, ct);
     }
-    public Task<ApplicationUser?> FindUserByNameAsync(string userName, CancellationToken ct = default)
+    public Task<UserAccount?> FindUserByNameAsync(string userName, CancellationToken ct = default)
     {
         var normalized = users.NormalizeName(userName);
-        return StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(x => x.NormalizedUserName == normalized, ct));
+        return ReadAccountAsync(x => x.NormalizedUserName == normalized, ct);
     }
     public Task<bool> IsUserNameTakenAsync(string userName, string? excludingUserId = null, CancellationToken ct = default)
     {
@@ -56,10 +57,22 @@ public sealed class UserQueryService(UserManager<ApplicationUser> users, TypeAda
         await StorageErrors.ExecuteAsync(() => users.Users.AsNoTracking().Where(x => x.DeletedAt == null && (!current.UserId.HasValue || x.Id != current.UserId.Value))
             .OrderBy(x => x.FullName).ThenBy(x => x.Id).ProjectToType<UserResponseDto>(mapping)
             .ToListAsync(cancellationToken));
-    public Task<bool> CheckPasswordAsync(ApplicationUser user, string password, CancellationToken ct = default) =>
-        IdentityCall.CompleteAsync(() => users.CheckPasswordAsync(user, password), ct);
-    public async Task<IEnumerable<Claim>> GetUserClaims(ApplicationUser user, CancellationToken ct = default) =>
-        await IdentityCall.CompleteAsync(() => users.GetClaimsAsync(user), ct);
-    public Task<IList<string>> GetUserRoles(ApplicationUser user, CancellationToken ct = default) =>
-        IdentityCall.CompleteAsync(() => users.GetRolesAsync(user), ct);
+    private async Task<UserAccount?> ReadAccountAsync(System.Linq.Expressions.Expression<Func<ApplicationUser, bool>> predicate, CancellationToken ct)
+    {
+        var account = await StorageErrors.ExecuteAsync(() => users.Users.FirstOrDefaultAsync(predicate, ct));
+        return account?.Adapt<UserAccount>(mapping);
+    }
+
+    public Task<bool> CheckPasswordAsync(UserAccount user, string password, CancellationToken ct = default) =>
+        WithAccountAsync(user.Id, account => users.CheckPasswordAsync(account, password), ct);
+    public async Task<IEnumerable<Claim>> GetUserClaims(UserAccount user, CancellationToken ct = default) =>
+        await WithAccountAsync(user.Id, users.GetClaimsAsync, ct);
+    public Task<IList<string>> GetUserRoles(UserAccount user, CancellationToken ct = default) =>
+        WithAccountAsync(user.Id, users.GetRolesAsync, ct);
+
+    private async Task<T> WithAccountAsync<T>(Guid id, Func<ApplicationUser, Task<T>> operation, CancellationToken ct)
+    {
+        var account = await IdentityCall.RequireAccountAsync(users, id, ct);
+        return await IdentityCall.CompleteAsync(() => operation(account), ct);
+    }
 }

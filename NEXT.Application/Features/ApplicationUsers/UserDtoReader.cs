@@ -7,7 +7,7 @@ namespace NEXT.Application.Features.ApplicationUsers;
 
 public sealed class UserDtoReader(IUserQueryService users)
 {
-    public async Task<ApplicationUser> RequireAsync(Guid userId, CancellationToken ct)
+    public async Task<UserAccount> RequireAsync(Guid userId, CancellationToken ct)
     {
         RequestValidation.Identifier(userId, "UserId");
         return await users.FindUserAsync(userId.ToString(), ct) ?? throw new NotFoundException("User was not found.");

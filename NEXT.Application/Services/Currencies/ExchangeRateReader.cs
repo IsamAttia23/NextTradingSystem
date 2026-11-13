@@ -5,7 +5,7 @@ using NEXT.Domain.Entities;
 
 namespace NEXT.Application.Services.Currencies;
 
-// Shared lookup only. Product price calculations belong to the command/query handlers.
+// Shared lookup for the configured exchange rate.
 public sealed class ExchangeRateReader(ISystemSettingRepository settings)
 {
     public const string SettingKey = "Currency.UsdToSdg";

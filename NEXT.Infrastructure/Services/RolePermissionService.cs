@@ -4,16 +4,14 @@ using NEXT.Application.DTOs.Security;
 using NEXT.Application.Exceptions;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
-using Mapster;
 
 namespace NEXT.Infrastructure.Services;
 
 /// <summary>Persistence adapter for the RolePermission composite key.</summary>
-public sealed class RolePermissionService(NEXTDbContext context, TypeAdapterConfig mapping) : IRolePermissionService
+public sealed class RolePermissionService(NEXTDbContext context) : IRolePermissionService
 {
     public async Task<IReadOnlyList<RolePermissionDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        await StorageErrors.ExecuteAsync(() => context.RolePermissions.AsNoTracking().OrderBy(x => x.Role.Name).ThenBy(x => x.Permission.Code)
-            .ProjectToType<RolePermissionDto>(mapping).ToListAsync(cancellationToken));
+        await StorageErrors.ExecuteAsync(() => ReadAssignments().OrderBy(x => x.RoleName).ThenBy(x => x.Code).ToListAsync(cancellationToken));
 
     public async Task<IReadOnlyList<RolePermissionDto>> GetByRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
     {
@@ -21,9 +19,15 @@ public sealed class RolePermissionService(NEXTDbContext context, TypeAdapterConf
         {
             throw new NotFoundException($"Role '{roleId}' was not found.");
         }
-        return await StorageErrors.ExecuteAsync(() => context.RolePermissions.AsNoTracking().Where(x => x.RoleId == roleId)
-                    .OrderBy(x => x.Permission.Code).ProjectToType<RolePermissionDto>(mapping).ToListAsync(cancellationToken));
+        return await StorageErrors.ExecuteAsync(() => ReadAssignments().Where(x => x.RoleId == roleId)
+                    .OrderBy(x => x.Code).ToListAsync(cancellationToken));
     }
+
+    public IQueryable<RolePermissionDto> ReadAssignments() =>
+        from assignment in context.RolePermissions.AsNoTracking()
+        join role in context.Roles on assignment.RoleId equals role.Id
+        select new RolePermissionDto(assignment.RoleId, assignment.PermissionId, role.Name,
+            assignment.Permission.Code, assignment.Permission.Module);
 
     public async Task AddAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default)
     {

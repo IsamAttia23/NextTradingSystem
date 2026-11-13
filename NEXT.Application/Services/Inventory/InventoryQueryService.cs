@@ -24,7 +24,7 @@ public sealed class InventoryQueryService(IStockRepository stocks, IStockMovemen
         GetPagedList<ProductBatch, ProductBatchDto>(batches, query, ct);
 
     private async Task<TPaginationQueryModel<TDto>> GetPagedList<TEntity, TDto>(
-        IRepository<TEntity> repository, PaginationQuery query, CancellationToken ct)
+        IReadRepository<TEntity> repository, PaginationQuery query, CancellationToken ct)
         where TEntity : class where TDto : class
     {
         if (query is null)
@@ -33,7 +33,7 @@ public sealed class InventoryQueryService(IStockRepository stocks, IStockMovemen
         }
         validator.Validate(query);
         var expression = repository.BuildFilterExpression(query);
-        var entities = repository.FindAsync(expression, ct);
+        var entities = repository.Query(expression);
         var orderedEntities = repository.ApplySorting(entities, query.SortBy, query.SortDirection);
         var readMapping = await CreateReadMappingAsync<TDto>(ct);
         return await pagination.GetPagedList(orderedEntities,

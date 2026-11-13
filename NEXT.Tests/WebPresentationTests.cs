@@ -8,6 +8,9 @@ using NEXT.Application.DTOs.Customers;
 using NEXT.Application.DTOs.Presentation;
 using NEXT.Application.Features.ApplicationUsers.Queries;
 using NEXT.Application.DTOs.ApplicationUsers;
+using NEXT.Application.DTOs.Products;
+using System.Net;
+using System.Text.RegularExpressions;
 using NEXT.Application.QueryModels;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
@@ -18,6 +21,54 @@ namespace NEXT.Tests;
 
 public sealed class WebPresentationTests
 {
+    [Theory]
+    [InlineData(true, "Yes", "Active")]
+    [InlineData(false, "No", "Inactive")]
+    public async Task BooleanDetailsAndFiltersDistinguishFlagsFromRecordStatus(bool value, string flag, string status)
+    {
+        var presenter = new FormFieldPresenter(new CountingReferences());
+        var product = new ProductDto { HasExpiry = value, IsActive = value };
+        var details = await presenter.DetailsAsync(product, default);
+        Assert.Equal(flag, details.Single(field => field.Label == "HasExpiry").Value);
+        Assert.Equal(status, details.Single(field => field.Label == "IsActive").Value);
+        var filters = await new QueryFilterPresenter(presenter).FieldsAsync(new ProductQueryModel(), default);
+        foreach (var (name, expected) in new[] { ("HasExpiry", flag), ("IsActive", status) })
+        {
+            var options = filters.Single(field => field.Name == name).Options!;
+            Assert.Equal(expected, options.Single(option => option.Value == value.ToString().ToLowerInvariant()).Label);
+        }
+        var related = RelatedRecordPresenter.Fields(new(Guid.NewGuid(), new Dictionary<string, object?>
+        {
+            ["HasExpiry"] = value,
+            ["IsActive"] = value
+        }));
+        Assert.Equal(flag, related.Single(field => field.Label == "HasExpiry").Value);
+        Assert.Equal(status, related.Single(field => field.Label == "IsActive").Value);
+    }
+
+    [Theory]
+    [InlineData("ar", "تتبع الصلاحية والدفعات", "لا", "نشط", "غير نشط")]
+    [InlineData("en", "Has Expiry", "No", "Is Active", "Inactive")]
+    public async Task ProductDetailBooleansUseLocalizedFlagAndStatusLabels(string culture, string expiryLabel,
+        string no, string statusLabel, string inactive)
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        var product = new Product { Name = "Boolean details", HasExpiry = false, IsActive = false };
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            db.Add(product);
+            await db.SaveChangesAsync();
+        }
+        var html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Products/Details/{product.Id}?culture={culture}"));
+        var fields = Regex.Matches(html, @"<dt>\s*(.*?)\s*</dt>\s*<dd>\s*<bdi>(.*?)</bdi>", RegexOptions.Singleline)
+            .ToDictionary(match => match.Groups[1].Value, match => match.Groups[2].Value);
+        Assert.Equal(no, fields[expiryLabel]);
+        Assert.Equal(inactive, fields[statusLabel]);
+    }
+
     [Theory]
     [InlineData("500.000", "500")]
     [InlineData("500.250", "500.25")]

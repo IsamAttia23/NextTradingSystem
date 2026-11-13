@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using NEXT.Domain.Entities;
 using NEXT.Domain.Common.Entities;
 
-namespace NEXT.Domain.Entities
+namespace NEXT.Infrastructure.Identity.Entities
 {
     public class ApplicationUser : IdentityUser<Guid>, IIsDeletableEntity
     {

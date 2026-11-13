@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

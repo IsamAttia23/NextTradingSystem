@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Identity.Entities;
 using System.Data.Common;
 using System.Globalization;
 using System.Net;
@@ -239,7 +240,9 @@ public sealed class InfrastructureRepairTests
         Assert.True((await manager.CreateAsync(user, "Test-only!2026")).Succeeded);
         var reader = services.GetRequiredService<IUserQueryService>();
         var commands = services.GetRequiredService<IUserCommandService>();
-        Assert.True((await commands.DeleteUserAsync(user)).Succeeded);
+        var account = await reader.FindUserAsync(user.Id.ToString());
+        Assert.NotNull(account);
+        Assert.True((await commands.DeleteUserAsync(account)).Succeeded);
         Assert.True(await reader.IsEmailTakenAsync("reserved@example.test"));
         var duplicate = new ApplicationUser
         {
@@ -449,7 +452,7 @@ public sealed class InfrastructureRepairTests
         fixture.Db.AddRange(products);
         await fixture.Db.SaveChangesAsync();
         var repository = new ProductRepository(fixture.Db);
-        var source = repository.FindAsync(x => x.Name == "Sort item");
+        var source = repository.Query(x => x.Name == "Sort item");
         var ascending = products.Select(x => x.Id).ToArray();
         var descending = ascending.Reverse().ToArray();
         foreach (var field in new[] { "Name", "Barcode", "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice" })

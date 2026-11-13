@@ -8,22 +8,25 @@ using NEXT.Application.Features.Common.Validation;
 
 namespace NEXT.Application.Features.Products;
 
-public sealed class ProductRules(IRepository<Category> categories, IRepository<UnitOfMeasure> units, IRepository<Product> products) : IEntityRules<Product, ProductInputDto>
+public sealed class ProductRules(IReadRepository<Category> categories, IReadRepository<UnitOfMeasure> units, IReadRepository<Product> products) : IEntityRules<Product, ProductInputDto>
 {
     public void Normalize(ProductInputDto input) => input.Barcode = string.IsNullOrWhiteSpace(input.Barcode) ? null : input.Barcode.Trim();
 
     public async Task ValidateAsync(Guid? id, ProductInputDto input, CancellationToken ct)
     {
-        foreach (var (field, value) in new[]
+        foreach (var (field, value, precision, message) in new[]
         {
-            (nameof(input.RetailPrice), input.RetailPrice),
-            (nameof(input.WholesalePrice), input.WholesalePrice),
-            (nameof(input.VipPrice), input.VipPrice)
+            (nameof(input.RetailPrice), input.RetailPrice, 12, "PercentagePrecision"),
+            (nameof(input.WholesalePrice), input.WholesalePrice, 12, "PercentagePrecision"),
+            (nameof(input.VipPrice), input.VipPrice, 12, "PercentagePrecision"),
+            (nameof(input.TaxRate), input.TaxRate, 2, "TaxRatePrecision"),
+            (nameof(input.MinStock), input.MinStock, 3, "StockQuantityPrecision"),
+            (nameof(input.MaxStock), input.MaxStock.GetValueOrDefault(), 3, "StockQuantityPrecision")
         })
         {
-            if (decimal.Round(value, 12) != value)
+            if (decimal.Round(value, precision) != value)
             {
-                ReferenceGuard.Fail(field, "PercentagePrecision");
+                ReferenceGuard.Fail(field, message);
             }
         }
         var normalized = string.IsNullOrWhiteSpace(input.Barcode) ? null : input.Barcode.Trim();
