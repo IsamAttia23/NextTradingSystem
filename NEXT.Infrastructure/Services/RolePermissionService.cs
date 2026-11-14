@@ -24,10 +24,16 @@ public sealed class RolePermissionService(NEXTDbContext context) : IRolePermissi
     }
 
     public IQueryable<RolePermissionDto> ReadAssignments() =>
-        from assignment in context.RolePermissions.AsNoTracking()
-        join role in context.Roles on assignment.RoleId equals role.Id
-        select new RolePermissionDto(assignment.RoleId, assignment.PermissionId, role.Name,
-            assignment.Permission.Code, assignment.Permission.Module);
+     from assignment in context.RolePermissions.AsNoTracking()
+     join role in context.Roles on assignment.RoleId equals role.Id
+     select new RolePermissionDto
+     {
+         RoleId = assignment.RoleId,
+         PermissionId = assignment.PermissionId,
+         RoleName = role.Name,
+         Code = assignment.Permission.Code,
+         Module = assignment.Permission.Module
+     };
 
     public async Task AddAsync(Guid roleId, Guid permissionId, CancellationToken cancellationToken = default)
     {
