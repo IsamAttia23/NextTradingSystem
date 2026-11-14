@@ -11,19 +11,19 @@
     let trigger;
     let saving = false;
     const messageFor = (status) => window.NextHttp.messageFor(status, modalElement.dataset);
-    function showError(message, container = body) {
-        let panel = container.querySelector("[data-form-errors]");
-        if (!panel) {
-            panel = document.createElement("div");
-            panel.className = "alert alert-danger";
-            panel.setAttribute("role", "alert");
-            panel.tabIndex = -1;
-            container.append(panel);
+    const firstControl = "input:not([type=hidden]):not([data-checklist-option]),select,textarea,[data-bs-toggle=dropdown],button[type=submit]";
+    document.addEventListener("change", (event) => {
+        const checklist = event.target.closest("[data-checklist]");
+        if (!checklist || !body.contains(checklist)) {
+            return;
         }
+        const toggle = checklist.querySelector("[data-bs-toggle=dropdown]");
+        const count = checklist.querySelectorAll("input:checked").length;
+        toggle.querySelector("[data-checklist-summary]").textContent =
+            count === 0 ? toggle.dataset.choose : toggle.dataset.count.replace("{0}", count);
+    });
+    function showError(message) {
         window.NextNotifications?.show(message, "error");
-        panel.textContent = message;
-        panel.hidden = false;
-        panel.focus();
     }
     document.addEventListener("click", async (event) => {
         const button = event.target.closest("[data-modal-url]");
@@ -43,9 +43,7 @@
             const response = await window.NextHttp.request(url, { signal: request.signal });
             if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
                 body.replaceChildren();
-                title.textContent = modalElement.dataset.error;
                 showError(messageFor(response.status));
-                modal.show();
                 return;
             }
             // Only server-rendered, Razor-encoded same-origin partial views enter this container.
@@ -57,24 +55,20 @@
                 return;
             }
             title.textContent = form.dataset.title;
-            document.dispatchEvent(new CustomEvent("next:formloaded"));
+            document.dispatchEvent(new CustomEvent("next:formloaded", { detail: { form } }));
             modal.show();
             if (modalElement.classList.contains("show")) {
-                form.querySelector(
-                    "input:not([type=hidden]),select,textarea,button[type=submit]",
-                )?.focus();
+                form.querySelector(firstControl)?.focus();
             }
         } catch (error) {
             if (error.name !== "AbortError") {
                 body.replaceChildren();
-                title.textContent = modalElement.dataset.error;
                 showError(modalElement.dataset.error);
-                modal.show();
             }
         }
     });
     modalElement.addEventListener("shown.bs.modal", () =>
-        body.querySelector("input:not([type=hidden]),select,textarea,button[type=submit]")?.focus(),
+        body.querySelector(firstControl)?.focus(),
     );
     modalElement.addEventListener("hide.bs.modal", (event) => {
         if (saving) {
@@ -91,12 +85,8 @@
         }
     });
     document.addEventListener("submit", async (event) => {
-        const form = event.target.closest('[data-modal-form], [data-profile-form="true"]');
-        if (!form) {
-            return;
-        }
-        const inline = form.matches('[data-profile-form="true"]');
-        if (!inline && !body.contains(form)) {
+        const form = event.target.closest("[data-modal-form]");
+        if (!form || !body.contains(form)) {
             return;
         }
         event.preventDefault();
@@ -104,7 +94,7 @@
             return;
         }
         saving = true;
-        const buttons = [...(inline ? form : modalElement).querySelectorAll("button")];
+        const buttons = [...modalElement.querySelectorAll("button")];
         window.NextHttp.setBusy(form, true, buttons);
         try {
             const response = await window.NextHttp.request(form.action, {
@@ -112,26 +102,22 @@
                 body: new FormData(form),
             });
             if (!response.ok) {
-                showError(
-                    await window.NextHttp.problemMessage(response, modalElement.dataset),
-                    form,
-                );
+                showError(await window.NextHttp.problemMessage(response, modalElement.dataset));
+                if (response.status === 409 && form.querySelector('[name="RoleSelection"]')) {
+                    saving = false;
+                    modal.hide();
+                    await window.NextNavigation?.refresh();
+                }
                 return;
             }
             const result = await response.json().catch(() => null);
             // Clear secrets even if refreshing the successfully saved page fails.
-            if (inline) {
-                form.querySelectorAll('input[type="password"]').forEach(
-                    (input) => (input.value = ""),
-                );
-            }
+            form.querySelectorAll('input[type="password"]').forEach((input) => (input.value = ""));
             const updated = result?.redirectUrl
                 ? await window.NextNavigation?.navigate(result.redirectUrl, { replace: true })
                 : await window.NextNavigation?.refresh();
             saving = false;
-            if (!inline) {
-                modal.hide();
-            }
+            modal.hide();
             window.NextNotifications?.show(
                 result?.notification?.message ?? modalElement.dataset.success,
                 result?.notification?.kind ?? "info",
@@ -141,7 +127,7 @@
                 window.NextNotifications?.show(modalElement.dataset.refreshError, "warning");
             }
         } catch {
-            showError(modalElement.dataset.error, form);
+            showError(modalElement.dataset.error);
         } finally {
             saving = false;
             window.NextHttp.setBusy(form, false);

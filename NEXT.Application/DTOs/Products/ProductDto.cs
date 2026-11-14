@@ -19,6 +19,7 @@ public sealed class ProductDto : IVersionedRecordDto
     public decimal WholesalePrice { get; set; }
     public decimal VipPrice { get; set; }
     public decimal TaxRate { get; set; }
+    public decimal AvailableQuantity { get; set; }
     public decimal MinStock { get; set; }
     public decimal? MaxStock { get; set; }
     public bool HasExpiry { get; set; }

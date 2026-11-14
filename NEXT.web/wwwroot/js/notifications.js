@@ -8,6 +8,7 @@
     const duration = 7000;
     const maximumNotices = 4;
     const dismissals = new WeakMap();
+    const shownForms = new WeakSet();
 
     function arrange() {
         [...stack.children].forEach((notice, index) => notice.style.setProperty("--notice-index", index));
@@ -119,6 +120,17 @@
     if (stack.dataset.initialError) {
         show(stack.dataset.initialError, "error");
     }
+    function showFormNotice(form) {
+        if (!form?.dataset.formNotice || shownForms.has(form)) return;
+        shownForms.add(form);
+        show(form.dataset.formNotice, form.dataset.formNoticeKind);
+    }
+    function showInlineFormNotices() {
+        document.querySelectorAll('main [data-form-notice]').forEach(showFormNotice);
+    }
+    showInlineFormNotices();
+    document.addEventListener("next:navigated", showInlineFormNotices);
+    document.addEventListener("next:formloaded", (event) => showFormNotice(event.detail?.form));
     window.addEventListener("offline", () => show(stack.dataset.offline, "warning"));
     window.addEventListener("online", () => show(stack.dataset.online, "info"));
     document.addEventListener("next:notify", (event) =>
@@ -128,9 +140,12 @@
         "invalid",
         (event) => {
             const form = event.target.form;
-            if (form && !form.dataset.notifiedInvalid) {
-                show(stack.dataset.validation, "error");
+            if (!form) return;
+            event.preventDefault();
+            if (!form.dataset.notifiedInvalid) {
                 form.dataset.notifiedInvalid = "true";
+                show(event.target.validationMessage || stack.dataset.validation, "error");
+                event.target.focus();
                 setTimeout(() => delete form.dataset.notifiedInvalid, 0);
             }
         },

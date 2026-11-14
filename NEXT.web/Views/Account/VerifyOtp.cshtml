@@ -15,7 +15,6 @@
               data-expires-at="@Model.ExpiresAt.ToString("O")" data-resend-at="@Model.ResendAt.ToString("O")"
               data-continue="@L["ContinueToPassword"]" data-resend-label="@L["ResendCode"]"
               data-attempts-ended="@L["OtpAttemptsEnded"]" data-resend-action="@Url.Action("ResendOtp")">
-            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
             <label for="otp-code" class="visually-hidden">@L["OtpFiveDigits"]</label>
             <div class="otp-input" data-otp-input>
                 <div class="otp-boxes" aria-hidden="true">
@@ -26,9 +25,8 @@
                 </div>
                 <input id="otp-code" name="Code" type="text" inputmode="numeric" autocomplete="one-time-code"
                        autocapitalize="none" spellcheck="false" maxlength="5" pattern="[0-9]{5}"
-                       aria-describedby="otp-message otp-expiry" aria-invalid="false" required />
+                       aria-describedby="otp-expiry" aria-invalid="false" required />
             </div>
-            <p class="auth-feedback" id="otp-message" data-otp-message role="status" aria-live="polite"></p>
             <button type="submit" class="btn btn-primary w-100" data-otp-submit>@L["VerifyAndContinue"]</button>
             <p class="otp-validity" id="otp-expiry"><partial name="_Icon" model='@("clock")' />
                 @L["CodeExpiresIn"] <bdi dir="ltr" data-otp-expiry>05:00</bdi></p>

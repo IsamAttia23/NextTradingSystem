@@ -47,10 +47,10 @@ public sealed class WebPresentationTests
     }
 
     [Theory]
-    [InlineData("ar", "تتبع الصلاحية والدفعات", "لا", "نشط", "غير نشط")]
-    [InlineData("en", "Has Expiry", "No", "Is Active", "Inactive")]
-    public async Task ProductDetailBooleansUseLocalizedFlagAndStatusLabels(string culture, string expiryLabel,
-        string no, string statusLabel, string inactive)
+    [InlineData("ar", "تتبع الصلاحية والدفعات", "لا", "الحالة", "غير متوفر")]
+    [InlineData("en", "Has Expiry", "No", "Status", "Unavailable")]
+    public async Task ProductDetailsUseLocalizedExpiryAndAvailabilityLabels(string culture, string expiryLabel,
+        string no, string statusLabel, string unavailable)
     {
         await using var app = await WorkspaceUiTests.StartAsync();
         using var client = WorkspaceUiTests.Client(app);
@@ -66,7 +66,7 @@ public sealed class WebPresentationTests
         var fields = Regex.Matches(html, @"<dt>\s*(.*?)\s*</dt>\s*<dd>\s*<bdi>(.*?)</bdi>", RegexOptions.Singleline)
             .ToDictionary(match => match.Groups[1].Value, match => match.Groups[2].Value);
         Assert.Equal(no, fields[expiryLabel]);
-        Assert.Equal(inactive, fields[statusLabel]);
+        Assert.Equal(unavailable, fields[statusLabel]);
     }
 
     [Theory]

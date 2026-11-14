@@ -2,10 +2,29 @@ using NEXT.web.Models;
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using NEXT.Application.DTOs.ApplicationUsers;
+using NEXT.Application.DTOs.Products;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 namespace NEXT.web.Services;
 /// <summary>HTML number/date controls submit invariant decimal numbers and ISO dates in both Arabic and English UIs.</summary>
-public sealed class HtmlScalarModelBinderProvider : IModelBinderProvider
+public sealed class HtmlScalarModelBinderProvider : IModelBinderProvider, IBindingMetadataProvider
 {
+    public void CreateBindingMetadata(BindingMetadataProviderContext context)
+    {
+        if (context.Key.ContainerType is not { } type || !typeof(ProductInputDto).IsAssignableFrom(type))
+        {
+            return;
+        }
+        var required = context.Attributes.OfType<RequiredAttribute>()
+            .FirstOrDefault(attribute => attribute.ErrorMessage == "ProductPriceRequired");
+        if (required is null)
+        {
+            return;
+        }
+        context.BindingMetadata.IsBindingRequired = true;
+        context.BindingMetadata.ModelBindingMessageProvider?.SetMissingBindRequiredValueAccessor(_ => required.ErrorMessage!);
+    }
+
     public IModelBinder? GetBinder(ModelBinderProviderContext context)
     {
         if (context.Metadata.ContainerType == typeof(UserUpdateDto)
@@ -41,6 +60,11 @@ public sealed class HtmlScalarModelBinderProvider : IModelBinderProvider
                 && Nullable.GetUnderlyingType(context.ModelType)is not null)
             {
                 context.Result = ModelBindingResult.Success(null);
+            }
+            else if (string.IsNullOrWhiteSpace(value.FirstValue) && context.ModelMetadata.IsBindingRequired)
+            {
+                var message = context.ModelMetadata.ModelBindingMessageProvider.MissingBindRequiredValueAccessor(context.FieldName);
+                context.ModelState.TryAddModelError(context.ModelName, message);
             }
             else if (type == typeof(decimal)
                 && decimal.TryParse(value.FirstValue, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number))

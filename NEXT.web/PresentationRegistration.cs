@@ -39,7 +39,9 @@ public static class PresentationRegistration
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddControllersWithViews(options =>
         {
-            options.ModelBinderProviders.Insert(0, new Services.HtmlScalarModelBinderProvider());
+            var scalarBinding = new Services.HtmlScalarModelBinderProvider();
+            options.ModelBinderProviders.Insert(0, scalarBinding);
+            options.ModelMetadataDetailsProviders.Add(scalarBinding);
             options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             options.Filters.AddService<Filters.OperationNotificationFilter>();
             options.Filters.AddService<Filters.AccountSecurityResultFilter>();

@@ -5,9 +5,13 @@ function initializePage() {
     initialized.add(form);
     const password = form.elements.NewPassword;
     const confirmation = form.elements.ConfirmPassword;
-    const feedback = form.querySelector("[data-password-feedback]");
     const save = form.querySelector("[data-password-save]");
     for (const input of [password, confirmation]) input.addEventListener("input", validate);
+    confirmation.addEventListener("change", () => {
+        if (confirmation.validity.customError) {
+            window.NextNotifications?.show(form.dataset.mismatch, "error");
+        }
+    });
     form.addEventListener("submit", event => {
         if (!validate()) event.preventDefault();
     });
@@ -24,8 +28,6 @@ function initializePage() {
         form.querySelectorAll("[data-rule]").forEach(rule => rule.dataset.valid = String(rules[rule.dataset.rule]));
         const match = value === confirmation.value;
         const valid = Object.values(rules).every(Boolean) && match;
-        feedback.textContent = confirmation.value ? (match ? form.dataset.match : form.dataset.mismatch) : "";
-        feedback.dataset.state = confirmation.value ? (match ? "success" : "error") : "idle";
         confirmation.setCustomValidity(confirmation.value && !match ? form.dataset.mismatch : "");
         confirmation.setAttribute("aria-invalid", String(Boolean(confirmation.value) && !match));
         save.disabled = !valid;

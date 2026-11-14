@@ -6,8 +6,6 @@
     <h1>@L["Verification"]</h1>
     <p>@L["VerificationHint"]</p>
     <form asp-action="Verify" method="post">
-        <div asp-validation-summary="All" class="text-danger" role="alert">
-        </div>
         <input asp-for="ReturnUrl" type="hidden" />
         <input asp-for="RememberMe" type="hidden" />
         <div class="mb-3">

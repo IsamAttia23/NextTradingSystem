@@ -20,6 +20,11 @@ public class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter tables
     protected virtual IReadOnlyList<string> TableColumns =>
         ["Name", "Code", "Phone", "Email", "IsActive", "Symbol", "Color"];
 
+    protected virtual string DisplayCell(TDto item, PropertyInfo column) =>
+        FormFieldPresenter.Display(column.GetValue(item), column.Name);
+
+    protected virtual TableRow CustomizeRow(TDto item, TableRow row) => row;
+
     public async Task<TableModel> TableAsync(string title, Func<string, object?, string> route, PaginationQuery query, CancellationToken ct)
     {
         var pagedList = await sender.Send(new GetEntitiesQuery<TDto>(query), ct);
@@ -32,13 +37,13 @@ public class EntityPresenter<TDto, TInput>(ISender sender, TablePresenter tables
             labels.Add("TagId");
         }
         return await tables.BuildAsync(title, labels, pagedList, query,
-                    item => Row(item, columns, tagged, route, query),
+                    item => CustomizeRow(item, Row(item, columns, tagged, route, query)),
                     SortFields(query).Select(name => new FieldOption(name, name)).ToArray(), ct, new("Create", route("Create", null)));
     }
 
     private TableRow Row(TDto item, PropertyInfo[] columns, bool tagged,
         Func<string, object?, string> route, PaginationQuery query) =>
-        new(columns.Select(p => FormFieldPresenter.Display(p.GetValue(item), p.Name)).Concat(tagged ? [""] : Array.Empty<string>()).ToArray(),
+        new(columns.Select(p => DisplayCell(item, p)).Concat(tagged ? [""] : Array.Empty<string>()).ToArray(),
             [new("Details", route("Details", new { id = item.Id, returnUrl = route("Index", query) }), Modal: false),
              new("Edit", route("Edit", new { id = item.Id })), new("Delete", route("Delete", new { id = item.Id }), true)],
             Badge(item), Identity(item, route), BadgeColumn: BadgeColumn);

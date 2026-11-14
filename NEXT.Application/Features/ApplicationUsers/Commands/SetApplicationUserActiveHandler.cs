@@ -11,6 +11,6 @@ public sealed class SetApplicationUserActiveHandler(IUserManagementService users
         RequestValidation.Identifier(request.UserId);
         if (request.IsActive is null || request.ExpectedIsActive is null)
             RequestValidation.Fail("IsActive", "UserActivationRequired");
-        return users.SetActiveAsync(request.UserId, request.IsActive.Value, request.ExpectedIsActive.Value, ct);
+        return users.SetActiveAsync(request.UserId, request.IsActive.Value, request.ExpectedIsActive.Value, ct, request.ExpectedIsLocked);
     }
 }

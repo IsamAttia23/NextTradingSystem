@@ -53,6 +53,9 @@ public sealed class AccountController(AccountPresenter presenter, StatusPresente
     [Authorize, HttpGet]
     public Task<IActionResult> Profile(CancellationToken ct) => presenter.ProfilePageAsync(Url, ct);
 
+    [Authorize, HttpGet]
+    public Task<IActionResult> EditProfile(CancellationToken ct) => presenter.EditProfileFormAsync(Url, ct);
+
     [Authorize, HttpPost]
     public Task<UserOperationResult> Profile([FromForm] UserUpdateDto input, CancellationToken ct) => presenter.UpdateProfileAsync(input, ct);
 

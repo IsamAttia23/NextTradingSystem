@@ -11,30 +11,31 @@
             const fieldset = form.querySelector("fieldset");
             const rate = form.elements.namedItem("UsdToSdg");
             const version = form.elements.namedItem("RowVersion");
-            const message = form.querySelector("[data-currency-message]");
-            const initialNotice = form.querySelector("[data-currency-initial]");
             const reload = form.querySelector("[data-currency-reload]");
+            let initialNoticeShown = false;
 
             function showSetting(setting) {
                 rate.value = setting.usdToSdg > 0 ? String(setting.usdToSdg) : "";
                 version.value = setting.rowVersion;
-                initialNotice.hidden = Boolean(setting.rowVersion);
+                if (!setting.rowVersion && !initialNoticeShown) {
+                    initialNoticeShown = true;
+                    window.NextNotifications?.show(form.dataset.initial, "warning");
+                }
             }
 
             async function load() {
                 fieldset.disabled = true;
                 reload.disabled = true;
-                message.textContent = "";
                 try {
                     const response = await window.NextHttp.request(form.action, { cache: "no-store" });
                     if (!response.ok) {
-                        message.textContent = await window.NextHttp.problemMessage(response, form.dataset);
+                        window.NextNotifications?.show(await window.NextHttp.problemMessage(response, form.dataset), "error");
                         return;
                     }
                     showSetting(await response.json());
                     fieldset.disabled = false;
                 } catch {
-                    message.textContent = form.dataset.error;
+                    window.NextNotifications?.show(form.dataset.error, "error");
                 } finally {
                     reload.disabled = false;
                 }
@@ -47,18 +48,16 @@
                 }
                 const body = new FormData(form);
                 window.NextHttp.setBusy(form, true);
-                message.textContent = "";
                 try {
                     const response = await window.NextHttp.request(form.action, { method: "POST", body });
                     if (!response.ok) {
-                        message.textContent = await window.NextHttp.problemMessage(response, form.dataset);
+                        window.NextNotifications?.show(await window.NextHttp.problemMessage(response, form.dataset), "error");
                         return;
                     }
                     showSetting(await response.json());
-                    message.textContent = form.dataset.saved;
                     window.NextNotifications?.show(form.dataset.saved, "success");
                 } catch {
-                    message.textContent = form.dataset.error;
+                    window.NextNotifications?.show(form.dataset.error, "error");
                 } finally {
                     window.NextHttp.setBusy(form, false);
                 }

@@ -9,7 +9,9 @@ public interface IUserManagementService
         CancellationToken ct = default);
     Task<UserOperationResult> CompleteFirstLoginAsync(string setupToken, string newPassword, CancellationToken ct = default);
     Task<UserOperationResult> ReissueActivationOtpAsync(Guid userId, CancellationToken ct = default);
-    Task<UserOperationResult> SetActiveAsync(Guid userId, bool isActive, bool expectedIsActive, CancellationToken ct = default);
+    Task<UserOperationResult> SetActiveAsync(Guid userId, bool isActive, bool expectedIsActive, CancellationToken ct = default,
+        bool? expectedIsLocked = null);
+    Task<UserOperationResult> ReplaceRolesAsync(Guid userId, IReadOnlyList<string> roles, IReadOnlyList<string> expectedRoles, CancellationToken ct);
     Task<UserOperationResult> UnlockUserAsync(Guid userId, CancellationToken ct = default);
     Task<Guid> RequestPasswordResetAsync(string email, CancellationToken ct = default);
     Task<UserOperationResult> ResetPasswordAsync(string resetToken, string newPassword, CancellationToken ct = default);

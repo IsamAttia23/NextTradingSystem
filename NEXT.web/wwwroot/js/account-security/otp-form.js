@@ -4,7 +4,6 @@ export function initializeOtpForm(form, onVerified) {
     const input = form.elements.Code;
     const boxes = [...form.querySelectorAll(".otp-box")];
     const group = form.querySelector(".otp-boxes");
-    const message = form.querySelector("[data-otp-message]");
     const button = form.querySelector("[data-otp-submit]");
     const resendButton = form.querySelector("[data-otp-resend]");
     const countdown = form.querySelector("[data-resend-countdown]");
@@ -27,7 +26,7 @@ export function initializeOtpForm(form, onVerified) {
 
     function updateDigits() {
         input.value = normalizeDigits(input.value).slice(0, 5);
-        if (!destination) showState("idle", "");
+        if (!destination && Date.now() < expiresAt) showState("idle");
         paintDigits();
     }
 
@@ -72,7 +71,8 @@ export function initializeOtpForm(form, onVerified) {
             resendAt = Date.parse(result.resendAt);
             attempts = 0;
             input.value = "";
-            showState("idle", result.message);
+            showState("idle");
+            window.NextNotifications?.show(result.message, "success");
             paintDigits();
             updateClock();
             input.focus();
@@ -82,9 +82,11 @@ export function initializeOtpForm(form, onVerified) {
 
     function showState(state, text) {
         form.dataset.state = state;
-        message.textContent = text;
-        message.setAttribute("role", state === "error" ? "alert" : "status");
         input.setAttribute("aria-invalid", String(state === "error"));
+        if (text) {
+            const kind = state === "success" ? "success" : state === "expired" ? "warning" : "error";
+            window.NextNotifications?.show(text, kind);
+        }
     }
 
     function setBusy(value) {

@@ -1,10 +1,11 @@
 @model UserActivationToggle
 <button type="button" class="user-activation-toggle" role="switch"
-        aria-checked="@Model.IsActive.ToString().ToLowerInvariant()"
-        aria-label="@L["ToggleUserActivation", Model.UserName]"
+        aria-checked="@((Model.IsActive && !Model.IsLocked).ToString().ToLowerInvariant())"
+        aria-label="@(Model.IsLocked ? L["UnlockAndActivate", Model.UserName] : L["ToggleUserActivation", Model.UserName])"
         data-user-activation data-url="@Model.Url" data-active="@Model.IsActive.ToString().ToLowerInvariant()"
+        data-locked="@Model.IsLocked.ToString().ToLowerInvariant()" data-unlocked="@L["UserUnlocked"]"
         data-active-label="@L["Active"]" data-inactive-label="@L["Inactive"]"
         data-activated="@L["UserActivated"]" data-deactivated="@L["UserDeactivated"]">
     <span class="activation-track" aria-hidden="true"><span class="activation-knob"></span></span>
-    <span data-activation-label>@L[Model.IsActive ? "Active" : "Inactive"]</span>
+    <span data-activation-label>@L[Model.IsLocked ? "AccountLocked" : Model.IsActive ? "Active" : "Inactive"]</span>
 </button>

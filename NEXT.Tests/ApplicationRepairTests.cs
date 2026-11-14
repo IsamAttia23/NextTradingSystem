@@ -231,14 +231,19 @@ public sealed class ApplicationRepairTests
         var staleForm = await second.GetStringAsync(url);
         var expected = WorkspaceUiTests.RowVersion(staleForm);
         Assert.NotEmpty(expected);
+        (string, string)[] prices = [("CostPrice", "0"), ("RetailPrice", "0"), ("WholesalePrice", "0"), ("VipPrice", "0")];
         Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(first, url, WorkspaceUiTests.Token(firstForm),
-            ("Name", "First edit"), ("RowVersion", WorkspaceUiTests.RowVersion(firstForm)))).StatusCode);
+            [("Name", "First edit"), ("RowVersion", WorkspaceUiTests.RowVersion(firstForm)), ..prices])).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await WorkspaceUiTests.Post(second, url, WorkspaceUiTests.Token(staleForm),
-            ("Name", "Stale edit"), ("RowVersion", expected))).StatusCode);
+            [("Name", "Stale edit"), ("RowVersion", expected), ..prices])).StatusCode);
         using var missing = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = WorkspaceUiTests.Token(staleForm),
-            ["Name"] = "Missing version"
+            ["Name"] = "Missing version",
+            ["CostPrice"] = "0",
+            ["RetailPrice"] = "0",
+            ["WholesalePrice"] = "0",
+            ["VipPrice"] = "0"
         });
         Assert.Equal(HttpStatusCode.BadRequest, (await second.PostAsync(url, missing)).StatusCode);
         await using var verification = database.NewContext();
@@ -306,5 +311,7 @@ public sealed class ApplicationRepairTests
         public Task<UserOperationResult> AddUserToRole(UserAccount user, string role, CancellationToken ct = default) => throwError
             ? throw new InvalidOperationException("Injected role storage failure.")
             : Task.FromResult(UserOperationResult.Failure([new("InjectedRoleFailure", "Role assignment failed.")]));
+        public Task<UserOperationResult> AddUserToRoles(UserAccount user, IReadOnlyList<string> roles, CancellationToken ct = default) =>
+            AddUserToRole(user, roles[0], ct);
     }
 }

@@ -27,9 +27,9 @@ public sealed class InventoryPresenter(IInventoryQueryService queries, TablePres
             x => new TableRow([x.ProductName, x.WarehouseName, x.BatchNumber, x.ExpiryDate?.ToString("yyyy-MM-dd") ?? "—", FormFieldPresenter.Quantity(x.Quantity), x.CostPrice.ToString("N2")], []),
             [new("ExpiryDate", "ExpiryDate"), new("Quantity", "Quantity"), new("CostPrice", "UnitCost")], ct);
 
-    public async Task<ModalForm> ReceiveFormAsync(string action, CancellationToken ct)
+    public async Task<ModalForm> ReceiveFormAsync(string action, CancellationToken ct, Guid? productId = null)
     {
-        var formFields = await OperationFieldsAsync(null, ct);
+        var formFields = await OperationFieldsAsync(productId, ct);
         formFields.Add(new("WarehouseId", "Warehouse", Type: "select", Required: true, Options: await fields.OptionsAsync("Warehouses", ct)));
         formFields.Add(new("Quantity", "Quantity", Type: "number", Required: true));
         formFields.Add(new("UnitCost", "UnitCost", "0", "number", true));

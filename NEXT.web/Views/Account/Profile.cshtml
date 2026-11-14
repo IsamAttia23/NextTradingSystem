@@ -1,14 +1,21 @@
-@model ModalForm
+@model ProfileDetails
 @{
     ViewData["Title"] = L["MyProfile"];
 }
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">@L["AccountSettings"]</span>
-        <h1>@L["MyProfile"]</h1>
-        <p>@L["ProfileDescription"]</p>
-    </div>
-</section>
-<section class="content-card profile-settings">
-    <partial name="_ModalForm" model="Model" />
-</section>
+<div class="profile-overview">
+    <section class="page-heading">
+        <div>
+            <span class="eyebrow">@L["AccountSettings"]</span>
+            <h1>@L["MyProfile"]</h1>
+        </div>
+        <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("EditProfile", "Account")"><partial name="_Icon" model='@("edit")' /> @L["EditProfile"]</button>
+    </section>
+    <section class="content-card record-card">
+        <div class="record-card-header">
+            <partial name="_RecordIdentity" model="Model.Identity" />
+        </div>
+        <dl class="detail-grid profile-details">
+            <partial name="_DetailFields" model="Model.Fields" />
+        </dl>
+    </section>
+</div>

@@ -23,11 +23,16 @@ public sealed class CreateApplicationUserHandler(IUserCommandService commands, I
         validator.Validate(dto);
         await rules.BranchAsync(dto.BranchId, null, ct);
         await rules.UniqueAsync(dto.UserName, dto.Email, null, ct);
+        var selectedRoles = UserRoleAssignment.Normalize(dto.Roles);
+        if (selectedRoles.Length == 0 && !string.IsNullOrWhiteSpace(dto.Role))
+        {
+            selectedRoles = [dto.Role.Trim()];
+        }
         var user = mapper.Map<UserAccount>(dto);
         user.AvatarUrl = dto.AvatarUrl is null ? null : await images.NormalizeAsync(dto.AvatarUrl, ct);
         var created = await UserOperationTransaction.ExecuteAsync(unitOfWork,
             token => commands.CreateUserAsync(user, dto.Password, token), ct);
-        if (!created.Succeeded || string.IsNullOrWhiteSpace(dto.Role))
+        if (!created.Succeeded || selectedRoles.Length == 0)
         {
             return created;
         }
@@ -35,11 +40,14 @@ public sealed class CreateApplicationUserHandler(IUserCommandService commands, I
         {
             var assigned = await UserOperationTransaction.ExecuteAsync(unitOfWork, async token =>
             {
-                if (!await roles.NameExistsAsync(dto.Role.Trim(), cancellationToken: token))
+                foreach (var role in selectedRoles)
                 {
-                    return UserOperationResult.Failure([new UserOperationError("RoleNotFound", "The selected role no longer exists.")]);
+                    if (!await roles.NameExistsAsync(role, cancellationToken: token))
+                    {
+                        return UserOperationResult.Failure([new UserOperationError("RoleNotFound", "The selected role no longer exists.")]);
+                    }
                 }
-                return await commands.AddUserToRole(user, dto.Role.Trim(), token);
+                return await commands.AddUserToRoles(user, selectedRoles, token);
             }, ct);
             return assigned.Succeeded ? created : RoleWarning();
         }

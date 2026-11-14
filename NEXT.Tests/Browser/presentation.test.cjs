@@ -77,21 +77,22 @@ test("SPA culture changes update retained accessible names without resetting liv
     }
 });
 
-test("Inline profile saves clear passwords and follow the sign-in redirect without opening a modal", async () => {
+test("Profile modal saves clear passwords, follow the sign-in redirect and close the modal", async () => {
     const handlers = new Map();
     const notices = [];
     const navigation = [];
     const busy = [];
+    let closed = false;
     const passwords = [{ value: "old-secret" }, { value: "new-secret" }, { value: "new-secret" }];
     const form = {
         action: "/Account/Profile",
-        matches: () => true,
         reportValidity: () => true,
         querySelectorAll: (selector) => (selector.includes("password") ? passwords : []),
     };
-    const modalElement = { dataset: {}, addEventListener() {} };
+    const modalElement = { dataset: {}, addEventListener() {}, querySelectorAll: () => [] };
+    const modalBody = { contains: (element) => element === form };
     const document = {
-        getElementById: (id) => (id === "workspaceModal" ? modalElement : {}),
+        getElementById: (id) => (id === "workspaceModal" ? modalElement : modalBody),
         addEventListener: (event, handler) => handlers.set(event, handler),
     };
     vm.runInNewContext(source("site.js"), {
@@ -101,7 +102,7 @@ test("Inline profile saves clear passwords and follow the sign-in redirect witho
             Modal: {
                 getOrCreateInstance: () => ({
                     hide() {
-                        throw new Error("Unexpected modal");
+                        closed = true;
                     },
                 }),
             },
@@ -139,30 +140,27 @@ test("Inline profile saves clear passwords and follow the sign-in redirect witho
         ["", "", ""],
     );
     assert.deepEqual(navigation, ["/Account/Login"]);
+    assert.equal(closed, true);
     assert.deepEqual(notices, [["Saved", "success"]]);
     assert.deepEqual(busy, [true, false]);
 });
 
-test("Inline profile errors stay in the form and do not refresh the page", async () => {
+test("Profile modal errors only show a floating notice and leave the modal open", async () => {
     const handlers = new Map();
     const notices = [];
     const busy = [];
-    const panel = {
-        hidden: true,
-        focus() {
-            this.focused = true;
-        },
-    };
     const form = {
         action: "/Account/Profile",
-        matches: () => true,
         reportValidity: () => true,
         querySelectorAll: () => [],
-        querySelector: () => panel,
+        querySelector() {
+            throw new Error("Unexpected inline error panel");
+        },
     };
     const document = {
         getElementById: (id) =>
-            id === "workspaceModal" ? { dataset: {}, addEventListener() {} } : {},
+            id === "workspaceModal" ? { dataset: {}, addEventListener() {}, querySelectorAll: () => [] }
+                : { contains: (element) => element === form },
         addEventListener: (event, handler) => handlers.set(event, handler),
     };
     vm.runInNewContext(source("site.js"), {
@@ -184,9 +182,6 @@ test("Inline profile errors stay in the form and do not refresh the page", async
         },
     });
     await handlers.get("submit")({ target: { closest: () => form }, preventDefault() {} });
-    assert.equal(panel.hidden, false);
-    assert.equal(panel.focused, true);
-    assert.equal(panel.textContent, "Password mismatch");
     assert.deepEqual(notices, [["Password mismatch", "error"]]);
     assert.deepEqual(busy, [true, false]);
 });

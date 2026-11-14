@@ -1,6 +1,7 @@
 using NEXT.Application.DTOs.Suppliers;
 using NEXT.Application.DTOs.Customers;
 using NEXT.Application.DTOs.Inventory;
+using NEXT.Application.DTOs.Products;
 using NEXT.Application.DTOs.Common;
 using NEXT.Application.Features.RecycleBin;
 using NEXT.Application.Features.ApplicationUsers.Queries;
@@ -19,6 +20,8 @@ public sealed class RecordMappingRegister : IRegister
         config.NewConfig<Customer, CustomerDto>().Map(d => d.TagName, s => s.Tag == null ? null : s.Tag.Name).Map(d => d.TagColor, s => s.Tag == null ? null : s.Tag.Color);
         config.NewConfig<Supplier, SupplierDto>().Map(d => d.TagName, s => s.Tag == null ? null : s.Tag.Name).Map(d => d.TagColor, s => s.Tag == null ? null : s.Tag.Color);
         ConfigureStockMapping(config, stock => stock.Product.CostPrice);
+        config.NewConfig<Product, ProductDto>()
+            .Map(d => d.AvailableQuantity, s => s.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity));
         config.NewConfig<StockMovement, StockMovementDto>()
             .Map(d => d.Type, s => s.Type.ToString());
         config.NewConfig<ProductBatch, ProductBatchDto>();

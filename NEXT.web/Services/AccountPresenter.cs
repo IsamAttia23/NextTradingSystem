@@ -135,9 +135,33 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
         return Redirect("PasswordChanged");
     }
 
-    public async Task<IActionResult> ProfilePageAsync(IUrlHelper url, CancellationToken ct) => View("Profile",
-        await users.FormAsync(await sender.Send(new GetApplicationUserByIdQuery(
-            HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!), ct), (_, _) => url.Action("Profile", "Account")!, ct, true));
+    public async Task<IActionResult> ProfilePageAsync(IUrlHelper url, CancellationToken ct)
+    {
+        var user = await ReadCurrentUserAsync(ct);
+        if (user is null)
+        {
+            return new NotFoundResult();
+        }
+        return View("Profile", await users.ProfileAsync(user, HttpContext.User, url.Action("Avatar", "Account")!, ct));
+    }
+
+    public async Task<IActionResult> EditProfileFormAsync(IUrlHelper url, CancellationToken ct)
+    {
+        var user = await ReadCurrentUserAsync(ct);
+        if (user is null)
+        {
+            return new NotFoundResult();
+        }
+        var form = await users.FormAsync(user, (_, _) => url.Action("Profile", "Account")!, ct, profileOnly: true);
+        return new PartialViewResult
+        {
+            ViewName = "~/Views/Shared/_ModalForm.cshtml",
+            ViewData = new ViewDataDictionary<ModalForm>(metadata, new ModelStateDictionary()) { Model = form }
+        };
+    }
+
+    private Task<UserDto?> ReadCurrentUserAsync(CancellationToken ct) =>
+        sender.Send(new GetApplicationUserByIdQuery(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!), ct);
 
     public Task<UserOperationResult> UpdateProfileAsync(UserUpdateDto input, CancellationToken ct) =>
         sender.Send(new UpdateApplicationUserCommand("", input, ProfileOnly: true), ct);

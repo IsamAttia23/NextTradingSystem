@@ -19,18 +19,22 @@ public class ProductInputDto
     [NEXT.Application.Validation.NotEmptyGuid]
     public Guid? UnitOfMeasureId { get; set; }
     [Range(typeof(decimal), "0", "9999999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
+    [Required(ErrorMessage = "ProductPriceRequired")]
     public decimal CostPrice { get; set; }
     [Range(typeof(decimal), "0", "9999999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     // Markup percentage, for example 25 means cost plus 25%.
     [Display(Name = "RetailPricePercent")]
+    [Required(ErrorMessage = "ProductPriceRequired")]
     public decimal RetailPrice { get; set; }
     [Range(typeof(decimal), "0", "9999999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     // Markup percentage, for example 25 means cost plus 25%.
     [Display(Name = "WholesalePricePercent")]
+    [Required(ErrorMessage = "ProductPriceRequired")]
     public decimal WholesalePrice { get; set; }
     [Range(typeof(decimal), "0", "9999999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     // Markup percentage, for example 25 means cost plus 25%.
     [Display(Name = "VipPricePercent")]
+    [Required(ErrorMessage = "ProductPriceRequired")]
     public decimal VipPrice { get; set; }
     [Range(0, 100)]
     public decimal TaxRate { get; set; }

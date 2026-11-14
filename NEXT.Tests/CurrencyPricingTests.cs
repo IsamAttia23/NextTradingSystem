@@ -116,7 +116,9 @@ public sealed class CurrencyPricingTests
         Assert.Contains("name=\"UsdToSdg\"", html);
         Assert.Contains("currency-settings.js", html);
         Assert.Contains("/Currency/Settings", html);
-        Assert.Contains("data-currency-initial", html);
+        Assert.Contains("data-initial=", html);
+        Assert.Contains("data-form-notice=", html);
+        Assert.DoesNotContain("data-currency-message", html);
         var arabic = await admin.GetStringAsync("/Currency/Settings?culture=ar");
         Assert.Contains("إعدادات العملات", System.Net.WebUtility.HtmlDecode(arabic));
         var token = WorkspaceUiTests.Token(html);

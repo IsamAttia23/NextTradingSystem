@@ -1,5 +1,6 @@
 using NEXT.Infrastructure.Identity.Entities;
 using System.Net;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +20,17 @@ public sealed class CurrentProfileTests
         using var client = WorkspaceUiTests.Client(app);
         await WorkspaceUiTests.Login(client, "ui-reader");
         var html = await client.GetStringAsync("/Account/Profile");
-        Assert.Contains("data-profile-form=\"true\"", html);
         Assert.Contains("href=\"/Account/Profile\"", html);
+        Assert.Contains("data-modal-url=\"/Account/EditProfile\"", html);
+        Assert.Contains("UI test ui-reader", html);
+        Assert.Contains("ui-reader@example.test", html);
+        Assert.Contains("profile-details", html);
+        Assert.DoesNotContain("name=\"CurrentPassword\"", html);
+        html = await client.GetStringAsync("/Account/EditProfile");
+        Assert.Contains("data-modal-form=\"true\"", html);
+        Assert.Contains("data-profile-upload", html);
+        Assert.Contains("profile-picker-circle", html);
+        Assert.DoesNotContain("id=\"workspaceModal\"", html);
         foreach (var field in new[] { "FullName", "UserName", "Email", "PhoneNumber", "Avatar", "CurrentPassword", "NewPassword", "ConfirmPassword" })
         {
             Assert.Contains("name=\"" + field + "\"", html);
@@ -58,7 +68,7 @@ public sealed class CurrentProfileTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("success", json.RootElement.GetProperty("notification").GetProperty("kind").GetString());
-        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("redirectUrl").ValueKind);
+        Assert.Equal("/Account/Profile", json.RootElement.GetProperty("redirectUrl").GetString());
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -73,10 +83,98 @@ public sealed class CurrentProfileTests
         }
         var avatar = await client.GetByteArrayAsync("/Account/Avatar");
         html = await client.GetStringAsync("/Account/Profile");
+        Assert.Contains("Updated reader", html);
+        Assert.Contains("src=\"/Account/Avatar\"", html);
         response = await WorkspaceUiTests.Post(client, "/Account/Profile", WorkspaceUiTests.Token(html),
             ("FullName", "Preserved photo"), ("UserName", "ui-reader"), ("Email", "ui-reader@example.test"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(avatar, await client.GetByteArrayAsync("/Account/Avatar"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProfileShowsRecordedLoginHistoryAfterAuthenticationCompletes(bool useTwoFactor)
+    {
+        var firstLogin = new DateTimeOffset(2026, 11, 14, 9, 0, 0, TimeSpan.Zero);
+        var clock = new ProfileClock { UtcNow = firstLogin.AddMinutes(-10) };
+        await using var app = await WorkspaceUiTests.StartAsync(configureServices: services =>
+            services.AddSingleton<TimeProvider>(clock));
+        using var firstClient = WorkspaceUiTests.Client(app);
+        using var secondClient = WorkspaceUiTests.Client(app);
+        var recoveryCodes = Array.Empty<string>();
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = (await users.FindByNameAsync("ui-reader"))!;
+            Assert.Null(user.LastLogin);
+            if (useTwoFactor)
+            {
+                user.EmailConfirmed = true;
+                Assert.True((await users.UpdateAsync(user)).Succeeded);
+                Assert.True((await users.ResetAuthenticatorKeyAsync(user)).Succeeded);
+                Assert.True((await users.SetTwoFactorEnabledAsync(user, true)).Succeeded);
+                recoveryCodes = (await users.GenerateNewTwoFactorRecoveryCodesAsync(user, 2))!.ToArray();
+            }
+        }
+
+        var login = await firstClient.GetStringAsync("/Account/Login");
+        var failed = await WorkspaceUiTests.Post(firstClient, "/Account/Login", WorkspaceUiTests.Token(login),
+            ("UserName", "ui-reader"), ("Password", "Wrong!12345"));
+        Assert.Equal(HttpStatusCode.OK, failed.StatusCode);
+
+        clock.UtcNow = firstLogin;
+        await SignIn(firstClient, 0, null);
+        var firstSession = await Profile(firstClient);
+        Assert.Contains("Last sign-in <bdi>—</bdi>", firstSession);
+
+        clock.UtcNow = firstLogin.AddHours(4);
+        await SignIn(secondClient, 1, firstLogin.UtcDateTime);
+        var secondSession = await Profile(secondClient);
+        var expectedPrevious = firstLogin.LocalDateTime.ToString("g", CultureInfo.GetCultureInfo("en"));
+        var expectedFailure = firstLogin.AddMinutes(-10).LocalDateTime.ToString("g", CultureInfo.GetCultureInfo("en"));
+        Assert.Contains($"Last sign-in <bdi>{expectedPrevious}</bdi>", secondSession);
+        Assert.Contains($"Last failed sign-in attempt <bdi>{expectedFailure}</bdi>", secondSession);
+        var details = secondSession.Split("class=\"detail-grid profile-details\"", StringSplitOptions.None)[1];
+        Assert.Contains($"<bdi>{expectedPrevious}</bdi>", details);
+        Assert.DoesNotContain(clock.UtcNow.LocalDateTime.ToString("g", CultureInfo.GetCultureInfo("en")), secondSession);
+        Assert.Contains("Last sign-in <bdi>—</bdi>", await Profile(firstClient));
+        Assert.Equal(clock.UtcNow.UtcDateTime, await ReadLastLogin());
+
+        static async Task<string> Profile(HttpClient client) =>
+            WebUtility.HtmlDecode(await client.GetStringAsync("/Account/Profile?culture=en"));
+
+        async Task<DateTime?> ReadLastLogin()
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            return await db.Users.Where(user => user.UserName == "ui-reader").Select(user => user.LastLogin).SingleAsync();
+        }
+
+        async Task SignIn(HttpClient client, int codeIndex, DateTime? previousLogin)
+        {
+            if (!useTwoFactor)
+            {
+                await WorkspaceUiTests.Login(client, "ui-reader");
+                return;
+            }
+            var form = await client.GetStringAsync("/Account/Login");
+            var result = await WorkspaceUiTests.Post(client, "/Account/Login", WorkspaceUiTests.Token(form),
+                ("UserName", "ui-reader"), ("Password", "Test-only!2026"));
+            Assert.Equal(HttpStatusCode.Redirect, result.StatusCode);
+            Assert.Contains("/Account/Verify", result.Headers.Location!.OriginalString);
+            Assert.Equal(previousLogin, await ReadLastLogin());
+            var verify = await client.GetStringAsync("/Account/Verify");
+            var verified = await WorkspaceUiTests.Post(client, "/Account/Verify", WorkspaceUiTests.Token(verify),
+                ("Code", recoveryCodes[codeIndex]), ("UseRecoveryCode", "true"));
+            Assert.Equal(HttpStatusCode.Redirect, verified.StatusCode);
+        }
+    }
+
+    private sealed class ProfileClock : TimeProvider
+    {
+        public DateTimeOffset UtcNow { get; set; }
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
     [Fact]
@@ -86,6 +184,7 @@ public sealed class CurrentProfileTests
         using var anonymous = WorkspaceUiTests.Client(app);
         anonymous.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
         Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/Account/Profile")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/Account/EditProfile")).StatusCode);
         using var client = WorkspaceUiTests.Client(app);
         await WorkspaceUiTests.Login(client, "ui-reader");
         client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");

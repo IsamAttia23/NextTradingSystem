@@ -7,4 +7,6 @@ public sealed record UserResponseDto(
     string? Email,
     bool IsActive,
     Guid BranchId,
-    bool HasRole = false);
+    bool HasRole = false,
+    bool RequiresAdministratorUnlock = false,
+    DateTimeOffset? LockoutEnd = null);

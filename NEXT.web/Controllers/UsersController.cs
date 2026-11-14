@@ -46,7 +46,7 @@ public sealed class UsersController(ISender sender, UsersPresenter presenter) : 
     }
     [HttpPost]
     public async Task<IActionResult> SetActive(Guid id, UserActivationInput input, CancellationToken ct) =>
-        Operation(await sender.Send(new SetApplicationUserActiveCommand(id, input.IsActive, input.ExpectedIsActive), ct));
+        Operation(await sender.Send(new SetApplicationUserActiveCommand(id, input.IsActive, input.ExpectedIsActive, input.ExpectedIsLocked), ct));
 
     [HttpGet] public IActionResult Delete(Guid id) => Confirm("Delete", "Delete", new { id });
     [HttpPost, ActionName("Delete")]
@@ -66,13 +66,17 @@ public sealed class UsersController(ISender sender, UsersPresenter presenter) : 
             id
         }), ct));
     [HttpPost]
-    public async Task<IActionResult> AssignRole(Guid id, string role, CancellationToken ct)
+    public async Task<IActionResult> AssignRole(Guid id, string[] roles, string[] expectedRoles, bool roleSelection, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
+        if (!roleSelection || !ModelState.IsValid)
         {
+            if (!roleSelection)
+            {
+                ModelState.AddModelError(nameof(roles), "ValidationFailed");
+            }
             return ValidationProblem(ModelState);
         }
-        return Operation(await sender.Send(new AssignUserRoleCommand(id, role), ct));
+        return Operation(await sender.Send(new ReplaceUserRolesCommand(id, roles, expectedRoles), ct));
     }
 
 }

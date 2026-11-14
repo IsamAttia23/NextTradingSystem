@@ -571,6 +571,8 @@ public sealed class AccountSecurityTests
         var locked = await check.ServiceProvider.GetRequiredService<NEXTDbContext>().Users.SingleAsync(x => x.Id == userId);
         Assert.True(locked.RequiresAdministratorUnlock);
         Assert.Equal(3, locked.AccessFailedCount);
+        Assert.NotNull(locked.LastInvalidLoginAttempt);
+        Assert.Null(locked.LastLogin);
         Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync("/Account/Profile")).StatusCode);
     }
 

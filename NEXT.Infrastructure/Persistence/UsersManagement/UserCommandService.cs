@@ -39,6 +39,8 @@ public sealed class UserCommandService(UserManager<ApplicationUser> users, IUser
         ExecuteAsync(user.Id, account => users.SetPhoneNumberAsync(account, phoneNumber), ct);
     public Task<UserOperationResult> AddUserToRole(UserAccount user, string role, CancellationToken ct = default) =>
         ExecuteAsync(user.Id, account => users.AddToRoleAsync(account, role), ct);
+    public Task<UserOperationResult> AddUserToRoles(UserAccount user, IReadOnlyList<string> roles, CancellationToken ct = default) =>
+        ExecuteAsync(user.Id, account => users.AddToRolesAsync(account, roles), ct);
 
     private async Task<UserOperationResult> ExecuteAsync(Guid id, Func<ApplicationUser, Task<IdentityResult>> action, CancellationToken ct)
     {

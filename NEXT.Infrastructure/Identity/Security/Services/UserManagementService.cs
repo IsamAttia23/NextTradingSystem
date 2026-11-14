@@ -93,18 +93,32 @@ public sealed class UserManagementService(NEXTDbContext db, UserManager<Applicat
         CancellationToken ct = default) => grants.UseAsync(setupToken, SecurityGrantService.PasswordSetup,
             user => SetPasswordAsync(user, newPassword, true, ct), ct);
 
-    public async Task<UserOperationResult> SetActiveAsync(Guid userId, bool isActive, bool expectedIsActive, CancellationToken ct = default)
+    public async Task<UserOperationResult> SetActiveAsync(Guid userId, bool isActive, bool expectedIsActive, CancellationToken ct = default,
+        bool? expectedIsLocked = null)
     {
         await RequireAdministratorAsync(ct);
         if (currentUser.UserId == userId)
             throw new UnprocessableEntityException("CannotChangeOwnActivation");
-        return await transactions.RunAsync("administrator-activation", async () =>
+        return await ChangeAccessAsync(userId, async () =>
         {
             var user = await RequireUserAsync(userId, ct);
-            if (user.IsActive != expectedIsActive) throw new ConflictException("UserActivationChanged");
-            if (user.IsActive == isActive) return UserOperationResult.Success;
+            var isLocked = user.RequiresAdministratorUnlock || user.LockoutEnd > clock.GetUtcNow();
+            if (user.IsActive != expectedIsActive || (expectedIsLocked.HasValue && isLocked != expectedIsLocked.Value))
+            {
+                throw new ConflictException("UserActivationChanged");
+            }
+            if (user.IsActive == isActive && (!isActive || !isLocked))
+            {
+                return UserOperationResult.Success;
+            }
             if (!isActive && await administrators.IsLastActiveAsync(userId, ct))
+            {
                 throw new UnprocessableEntityException("CannotDeactivateLastAdministrator");
+            }
+            if (isActive)
+            {
+                ClearAccountLock(user);
+            }
             user.IsActive = isActive;
             // Old sessions remain invalid even after a later reactivation.
             user.SecurityStamp = Guid.NewGuid().ToString("N");
@@ -119,12 +133,55 @@ public sealed class UserManagementService(NEXTDbContext db, UserManager<Applicat
         return await transactions.RunAsync("user:" + userId, async () =>
         {
             var user = await RequireUserAsync(userId, ct);
-            user.RequiresAdministratorUnlock = false;
-            user.AccessFailedCount = 0;
-            user.LockoutEnd = null;
+            ClearAccountLock(user);
             return ConvertResult(await users.UpdateAsync(user));
         }, ct);
     }
+
+    private static void ClearAccountLock(ApplicationUser user)
+    {
+        user.RequiresAdministratorUnlock = false;
+        user.AccessFailedCount = 0;
+        user.LockoutEnd = null;
+    }
+
+    public Task<UserOperationResult> ReplaceRolesAsync(Guid userId, IReadOnlyList<string> roles,
+        IReadOnlyList<string> expectedRoles, CancellationToken ct) =>
+        ChangeAccessAsync(userId, async () =>
+        {
+            await RequireAdministratorAsync(ct);
+            var user = await RequireUserAsync(userId, ct);
+            var currentRoles = await users.GetRolesAsync(user);
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            if (!currentRoles.ToHashSet(comparer).SetEquals(expectedRoles))
+            {
+                throw new ConflictException("UserRolesChanged");
+            }
+
+            var add = roles.Except(currentRoles, comparer).ToArray();
+            var remove = currentRoles.Except(roles, comparer).ToArray();
+            if (add.Length == 0 && remove.Length == 0)
+            {
+                return UserOperationResult.Success;
+            }
+            if (remove.Length > 0 && await administrators.WouldRemoveLastActiveAsync(userId, roles, ct))
+            {
+                return Failure("CannotRemoveLastAdministratorRole", "The last active administrator must keep an administrator role.");
+            }
+            if (add.Length > 0)
+            {
+                Ensure(await users.AddToRolesAsync(user, add));
+            }
+            if (remove.Length > 0)
+            {
+                Ensure(await users.RemoveFromRolesAsync(user, remove));
+            }
+            Ensure(await users.UpdateSecurityStampAsync(user));
+            return UserOperationResult.Success;
+        }, ct);
+
+    private Task<UserOperationResult> ChangeAccessAsync(Guid userId, Func<Task<UserOperationResult>> change, CancellationToken ct) =>
+        transactions.RunAsync("administrator-activation", () => transactions.RunAsync("user:" + userId, change, ct), ct);
 
     public async Task<UserOperationResult> ReissueActivationOtpAsync(Guid userId, CancellationToken ct = default)
     {

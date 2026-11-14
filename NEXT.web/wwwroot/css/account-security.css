@@ -51,9 +51,6 @@
 .password-rules li::before { content: "○"; margin-inline-end: 6px; }
 .password-rules li[data-valid="true"] { color: #128363; }
 .password-rules li[data-valid="true"]::before { content: "✓"; }
-.auth-feedback { font-size: 12px; min-height: 23px; margin: 0; }
-.auth-feedback[data-state="error"],.otp-form[data-state="error"] [data-otp-message] { color: #bd3045; }
-.auth-feedback[data-state="success"],.otp-form[data-state="success"] [data-otp-message] { color: #128363; }
 .otp-input { position: relative; padding: 7px 0; }
 .otp-boxes { display: flex; direction: ltr; justify-content: center; gap: 10px; }
 .otp-box { width: 50px; height: 58px; border: 1.5px solid var(--line); border-radius: 12px; display: grid; place-items: center; background: var(--canvas); font: 500 25px/1 "Segoe UI",sans-serif; position: relative; transition: border-color .2s,background .2s; }

@@ -40,7 +40,8 @@ public sealed class InventoryController(IInventoryService inventory, InventoryPr
     }
 
     [HttpGet]
-    public async Task<IActionResult> Receive(CancellationToken ct) => Form(await presenter.ReceiveFormAsync(Route("Receive"), ct));
+    public async Task<IActionResult> Receive(CancellationToken ct, Guid? productId = null) =>
+        Form(await presenter.ReceiveFormAsync(Route("Receive"), ct, productId));
 
     [HttpPost]
     public async Task<IActionResult> Receive(ReceiveStockDto input, CancellationToken ct)

@@ -21,9 +21,10 @@
           data-validation="@L["ValidationFailed"]"
           data-conflict="@L["CurrencyConflict"]"
           data-error="@L["CurrencyLoadError"]"
+          data-initial="@L["CurrencyInitialNotice"]"
+          data-form-notice="@L["CurrencyRateHint"]"
           data-saved="@L["CurrencySaved"]">
         @Html.AntiForgeryToken()
-        <p class="alert alert-info" data-currency-initial hidden>@L["CurrencyInitialNotice"]</p>
         <input type="hidden" name="RowVersion" />
         <fieldset disabled>
             <label class="form-label" for="usd-to-sdg">@L["UsdToSdg"]</label>
@@ -36,14 +37,11 @@
                        min="0.00000001"
                        max="1000000000000"
                        step="any"
-                       aria-describedby="currency-rate-hint"
                        required />
                 <span class="input-group-text" aria-hidden="true">SDG</span>
             </div>
-            <p id="currency-rate-hint" class="form-hint">@L["CurrencyRateHint"]</p>
             <button type="submit" class="btn btn-primary">@L["CurrencySave"]</button>
         </fieldset>
-        <p data-currency-message role="status" aria-live="polite" class="currency-settings-message"></p>
         <button type="button" class="btn btn-outline-secondary" data-currency-reload>@L["CurrencyReload"]</button>
     </form>
 </section>

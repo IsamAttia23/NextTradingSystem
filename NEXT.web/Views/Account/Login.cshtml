@@ -9,8 +9,6 @@
         <h2>@L["Login"]</h2>
         <p>@L["LoginDescription"]</p>
         <form asp-action="Login" method="post" class="auth-form">
-            <div asp-validation-summary="All" class="text-danger" role="alert">
-            </div>
             <input asp-for="ReturnUrl" type="hidden" />
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label">@L["UserName"]</label>

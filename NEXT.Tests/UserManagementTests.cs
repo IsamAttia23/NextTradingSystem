@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
+using NEXT.Infrastructure.Identity.Entities;
 using NEXT.Domain.Entities;
 using NEXT.Infrastructure.Persistence;
 using Xunit;
@@ -10,6 +12,104 @@ namespace NEXT.Tests;
 
 public sealed class UserManagementTests
 {
+    [Fact]
+    public async Task LockedAccountCanBeRestoredFromItsActivationSwitch()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var admin = WorkspaceUiTests.Client(app);
+        using var reader = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(admin, "ui-admin");
+        var loginToken = WorkspaceUiTests.Token(await reader.GetStringAsync("/Account/Login"));
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(reader, "/Account/Login", loginToken,
+                ("UserName", "ui-reader"), ("Password", "Wrong!12345"))).StatusCode);
+        }
+        await using var scope = app.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        var target = await db.Users.AsNoTracking().SingleAsync(x => x.UserName == "ui-reader");
+        Assert.True(target.IsActive);
+        Assert.True(target.RequiresAdministratorUnlock);
+        var html = await admin.GetStringAsync("/Users?culture=en");
+        Assert.Contains("data-locked=\"true\"", html);
+        var token = WorkspaceUiTests.Token(html);
+        var path = $"/Users/SetActive/{target.Id}";
+        Assert.Equal(HttpStatusCode.Conflict, (await WorkspaceUiTests.Post(admin, path, token,
+            ("IsActive", "false"), ("ExpectedIsActive", "true"), ("ExpectedIsLocked", "false"))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(admin, path, token,
+            ("IsActive", "true"), ("ExpectedIsActive", "true"), ("ExpectedIsLocked", "true"))).StatusCode);
+        target = await db.Users.AsNoTracking().SingleAsync(x => x.Id == target.Id);
+        Assert.False(target.RequiresAdministratorUnlock);
+        Assert.Equal(0, target.AccessFailedCount);
+        Assert.Null(target.LockoutEnd);
+        await WorkspaceUiTests.Login(reader, "ui-reader");
+    }
+
+    [Fact]
+    public async Task RoleDropdownCreatesAndReplacesMultipleRolesAndRejectsStaleChanges()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var admin = WorkspaceUiTests.Client(app);
+        using var reader = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(admin, "ui-admin");
+        await WorkspaceUiTests.Login(reader, "ui-reader");
+        await using var setup = app.Services.CreateAsyncScope();
+        var roles = setup.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+        foreach (var name in new[] { "Sales", "Warehouse", "Accounting" })
+        {
+            Assert.True((await roles.CreateAsync(new Role { Name = name })).Succeeded);
+        }
+        var db = setup.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        var target = await db.Users.AsNoTracking().SingleAsync(x => x.UserName == "ui-reader");
+        var create = await admin.GetStringAsync("/Users/Create?culture=en");
+        Assert.Contains("data-bs-auto-close=\"outside\"", create);
+        Assert.Contains("name=\"Roles\"", create);
+        var created = await WorkspaceUiTests.Post(admin, "/Users/Create", WorkspaceUiTests.Token(create),
+            ("FullName", "Multiple roles"), ("UserName", "multi-role"),
+            ("Email", "multi-role@example.test"), ("BranchId", target.BranchId.ToString()),
+            ("Roles", "Sales"), ("Roles", "Warehouse"));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var createdId = await db.Users.Where(x => x.UserName == "multi-role").Select(x => x.Id).SingleAsync();
+        Assert.Equal(new[] { "Sales", "Warehouse" }, await Assigned(createdId));
+
+        var assign = $"/Users/AssignRole/{createdId}";
+        var edit = await admin.GetStringAsync(assign);
+        Assert.Matches("value=\"Sales\" checked=", edit);
+        Assert.Matches("value=\"Warehouse\" checked=", edit);
+        var token = WorkspaceUiTests.Token(edit);
+        Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(admin, assign, token,
+            ("RoleSelection", "true"), ("ExpectedRoles", "Sales"), ("ExpectedRoles", "Warehouse"),
+            ("Roles", "Sales"), ("Roles", "Accounting"))).StatusCode);
+        Assert.Equal(new[] { "Accounting", "Sales" }, await Assigned(createdId));
+        Assert.Equal(HttpStatusCode.Conflict, (await WorkspaceUiTests.Post(admin, assign, token,
+            ("RoleSelection", "true"), ("ExpectedRoles", "Sales"), ("ExpectedRoles", "Warehouse"))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await WorkspaceUiTests.Post(admin, assign, token,
+            ("RoleSelection", "true"), ("ExpectedRoles", "Accounting"), ("ExpectedRoles", "Sales"), ("Roles", "Missing"))).StatusCode);
+        Assert.Equal(new[] { "Accounting", "Sales" }, await Assigned(createdId));
+        Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(admin, assign, token,
+            ("RoleSelection", "true"), ("ExpectedRoles", "Accounting"), ("ExpectedRoles", "Sales"))).StatusCode);
+        Assert.Empty(await Assigned(createdId));
+
+        var administratorId = await db.Users.Where(x => x.UserName == "ui-admin").Select(x => x.Id).SingleAsync();
+        var removeAdmin = await WorkspaceUiTests.Post(admin, $"/Users/AssignRole/{administratorId}", token,
+            ("RoleSelection", "true"), ("ExpectedRoles", "Admin"));
+        Assert.Equal(HttpStatusCode.BadRequest, removeAdmin.StatusCode);
+        Assert.Contains("Admin", await Assigned(administratorId));
+
+        Assert.Equal(HttpStatusCode.OK, (await WorkspaceUiTests.Post(admin, $"/Users/AssignRole/{target.Id}", token,
+            ("RoleSelection", "true"), ("Roles", "Sales"))).StatusCode);
+        reader.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        Assert.Equal(HttpStatusCode.Unauthorized, (await reader.GetAsync("/Account/Profile")).StatusCode);
+
+        async Task<string[]> Assigned(Guid userId)
+        {
+            await using var read = app.Services.CreateAsyncScope();
+            var users = read.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var account = (await users.FindByIdAsync(userId.ToString()))!;
+            return (await users.GetRolesAsync(account)).Order().ToArray();
+        }
+    }
+
     [Theory]
     [InlineData("ar", "الحساب مقفل")]
     [InlineData("en", "Your account is locked")]

@@ -1,19 +1,18 @@
 @model ModalForm
 @{
     var productPricing = Model.Fields.Any(field => field.Name == "ExchangeRate");
+    var message = Model.Message;
+    if (productPricing && message is null)
+    {
+        message = "ProductMarkupHint";
+    }
 }
 <form action="@Model.Action" method="post" enctype="multipart/form-data"
       data-product-pricing="@(productPricing ? "true" : null)"
-      data-modal-form="@(Model.Inline ? null : "true")"
-      data-profile-form="@(Model.Inline ? "true" : null)"
-      data-native-navigation="@(Model.Inline ? "true" : null)" data-title="@L[Model.Title]">
+      data-modal-form="true" data-title="@L[Model.Title]"
+      data-form-notice="@(message is null ? null : L[message].Value)"
+      data-form-notice-kind="@(Model.Dangerous ? "warning" : "info")">
     @Html.AntiForgeryToken()
-    @if (Model.Message is not null)
-    {
-        <p class="form-hint @(Model.Dangerous ? "danger-note" : "")">@L[Model.Message]</p>
-    }
-    <div class="alert alert-danger" data-form-errors role="alert" tabindex="-1" hidden>
-    </div>
     @foreach (var field in Model.Fields)
     {
         var id = "field-" + field.Name.Replace(".", "-");
@@ -26,13 +25,39 @@
             ? Model.Fields.FirstOrDefault(item => item.Name == dependency) : null;
         var visible = dependent is null || dependent.Value == field.VisibleWhenValue;
         <div class="mb-3" data-visible-when-field="@field.VisibleWhenField" data-visible-when-value="@field.VisibleWhenValue" hidden="@(!visible)">
-            @if (field.Type == "checkbox")
+            @if (productPricing && field.Name is "RetailPrice" or "WholesalePrice" or "VipPrice")
+            {
+                <partial name="_ProductPricePreview" model='@(new FieldControlModel(field, id, "Choose"))' />
+            }
+            else if (field.Type == "checkbox")
             {
                 <div class="form-check form-switch">
                     <input class="form-check-input" id="@id" name="@field.Name" type="checkbox" value="true" checked="@(field.Value == "true")" />
                     <label class="form-check-label" for="@id">@L[field.Label]</label>
                     <input type="hidden" name="@field.Name" value="false" />
                 </div>
+            }
+            else if (field.Type == "checklist")
+            {
+                var selected = new HashSet<string>(field.SelectedValues ?? [], StringComparer.OrdinalIgnoreCase);
+                <fieldset class="dropdown" data-checklist>
+                    <legend class="form-label">@L[field.Label]</legend>
+                    <button class="form-select text-start" type="button" id="@id" data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside" aria-expanded="false" aria-controls="@(id + "-options")"
+                            data-choose="@L["ChooseRoles"]" data-count="@L["SelectedRolesCount", "{0}"]">
+                        <span data-checklist-summary aria-live="polite">@(selected.Count == 0 ? L["ChooseRoles"] : L["SelectedRolesCount", selected.Count])</span>
+                    </button>
+                    <div class="dropdown-menu w-100 px-3" id="@(id + "-options")">
+                        @foreach (var option in field.Options ?? [])
+                        {
+                            <label class="form-check py-2 mb-0">
+                                <input class="form-check-input" type="checkbox" name="@field.Name" data-checklist-option
+                                       value="@option.Value" checked="@selected.Contains(option.Value)" />
+                                <span class="form-check-label">@option.Label</span>
+                            </label>
+                        }
+                    </div>
+                </fieldset>
             }
             else
             {
@@ -58,15 +83,8 @@
             }
         </div>
     }
-    @if (productPricing)
-    {
-        <partial name="_ProductPricePreview" />
-    }
     <div class="modal-form-footer">
-        @if (!Model.Inline)
-        {
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
-        }
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
         <button type="submit" class="btn @(Model.Dangerous ? "btn-danger" : "btn-primary")">@L[Model.Submit]</button>
     </div>
 </form>

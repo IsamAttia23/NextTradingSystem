@@ -16,17 +16,13 @@ function setup(responses) {
     const fieldset = { disabled: true };
     const rate = { value: "" };
     const version = { value: "" };
-    const message = { textContent: "" };
-    const initial = { hidden: true };
     const reload = { disabled: false, addEventListener: (name, callback) => reloadEvents.set(name, callback) };
     const form = {
         action: "/Currency",
-        dataset: { error: "Network error", saved: "Saved", conflict: "Reload before saving" },
+        dataset: { error: "Network error", saved: "Saved", conflict: "Reload before saving", initial: "Review the initial rate" },
         elements: { namedItem: (name) => name === "UsdToSdg" ? rate : version },
         querySelector: (selector) => ({
             fieldset,
-            "[data-currency-message]": message,
-            "[data-currency-initial]": initial,
             "[data-currency-reload]": reload
         })[selector],
         addEventListener: (name, callback) => formEvents.set(name, callback),
@@ -61,7 +57,7 @@ function setup(responses) {
     }
     vm.runInNewContext(source, { document, window, FormData });
     return {
-        form, fieldset, rate, version, message, initial, reload, calls, notices,
+        form, fieldset, rate, version, reload, calls, notices,
         submit: () => formEvents.get("submit")({ preventDefault() {} }),
         reloadSetting: () => reloadEvents.get("click")(),
         navigate: () => events.get("next:navigated")(),
@@ -79,22 +75,21 @@ test("Currency settings load and save rate, version and antiforgery data", async
     assert.equal(ui.fieldset.disabled, false);
     assert.equal(ui.rate.value, "10");
     assert.equal(ui.version.value, "version-1");
-    assert.equal(ui.initial.hidden, true);
+    assert.deepEqual(ui.notices, []);
     ui.rate.value = "20";
     await ui.submit();
     assert.equal(ui.calls[1].options.method, "POST");
     assert.equal(ui.calls[1].options.body.values.RowVersion, "version-1");
     assert.equal(ui.calls[1].options.body.values.__RequestVerificationToken, "csrf");
     assert.equal(ui.version.value, "version-2");
-    assert.equal(ui.message.textContent, "Saved");
-    assert.equal(ui.notices.length, 1);
+    assert.deepEqual(ui.notices, [["Saved", "success"]]);
 });
 
 test("Currency setup shows first-save notice and avoids duplicate SPA bindings", async () => {
     const ui = setup([response(0, "")]);
     await flush();
     assert.equal(ui.rate.value, "");
-    assert.equal(ui.initial.hidden, false);
+    assert.deepEqual(ui.notices, [["Review the initial rate", "warning"]]);
     ui.navigate();
     ui.removeForm();
     ui.navigate();
@@ -105,7 +100,7 @@ test("A failed load leaves saving disabled and supports retry", async () => {
     const ui = setup([new Error("offline"), response(10, "reloaded")]);
     await flush();
     assert.equal(ui.fieldset.disabled, true);
-    assert.equal(ui.message.textContent, "Network error");
+    assert.deepEqual(ui.notices, [["Network error", "error"]]);
     await ui.submit();
     assert.equal(ui.calls.length, 1);
     ui.reloadSetting();
@@ -121,7 +116,7 @@ test("A stale save preserves the entered value until the user reloads", async ()
     await ui.submit();
     assert.equal(ui.rate.value, "20");
     assert.equal(ui.version.value, "old");
-    assert.equal(ui.message.textContent, "Reload before saving");
+    assert.deepEqual(ui.notices, [["Reload before saving", "error"]]);
     ui.reloadSetting();
     await flush();
     assert.equal(ui.rate.value, "30");

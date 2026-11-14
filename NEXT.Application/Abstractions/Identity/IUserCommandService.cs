@@ -12,4 +12,5 @@ public interface IUserCommandService
     Task<UserOperationResult> SetUserEmailAsync(UserAccount user, string email, CancellationToken ct = default);
     Task<UserOperationResult> SetPhoneNumberAsync(UserAccount user, string phoneNumber, CancellationToken ct = default);
     Task<UserOperationResult> AddUserToRole(UserAccount user, string role, CancellationToken ct = default);
+    Task<UserOperationResult> AddUserToRoles(UserAccount user, IReadOnlyList<string> roles, CancellationToken ct = default);
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using NEXT.Application.DTOs.Products;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
@@ -20,6 +21,90 @@ namespace NEXT.Tests;
 
 public sealed class ProductPercentageTests
 {
+    [Fact]
+    public async Task ProductFormsRequirePricesAndReadStockAfterReceivingInAnotherWarehouse()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        var form = await client.GetStringAsync("/Products/Create?culture=en");
+        var token = WorkspaceUiTests.Token(form);
+        var priceFields = new[] { "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice" };
+        foreach (var field in priceFields)
+        {
+            var input = Regex.Match(form, $"""<input\b[^>]*\bname="{field}"[^>]*>""").Value;
+            Assert.Contains("required", input);
+            Assert.DoesNotContain("value=\"0\"", input);
+        }
+        foreach (var field in priceFields.Skip(1))
+        {
+            Assert.Matches($"""(?s)name="{field}"[^>]*>\s*</div>\s*<div>.*?data-price-preview="{field}" """.TrimEnd(), form);
+        }
+        var absent = await WorkspaceUiTests.Post(client, "/Products/Create?culture=en", token, ("Name", "Missing prices"));
+        Assert.Equal(HttpStatusCode.BadRequest, absent.StatusCode);
+        using (var problem = JsonDocument.Parse(await absent.Content.ReadAsStringAsync()))
+        {
+            var errors = problem.RootElement.GetProperty("errors");
+            foreach (var field in priceFields)
+            {
+                Assert.Contains("Enter a cost or markup value", errors.GetProperty(field)[0].GetString());
+            }
+        }
+        var created = await WorkspaceUiTests.Post(client, "/Products/Create", token, ("Name", "Stock threshold product"),
+            ("MinStock", "4"), ("CostPrice", "100"), ("RetailPrice", "0"), ("WholesalePrice", "0"), ("VipPrice", "0"));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+
+        await using var scope = app.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var product = await db.Products.AsNoTracking().SingleAsync();
+        var warehouse = new Warehouse { Id = Guid.NewGuid(), Name = "First warehouse", Code = "FIRST" };
+        var second = new Warehouse { Id = Guid.NewGuid(), Name = "Second warehouse", Code = "SECOND" };
+        db.Warehouses.AddRange(warehouse, second);
+        db.Stocks.Add(new Stock { Id = Guid.NewGuid(), ProductId = product.Id, WarehouseId = warehouse.Id,
+            Quantity = 3, ReservedQuantity = 3 });
+        await db.SaveChangesAsync();
+
+        var list = await client.GetStringAsync("/Products?culture=en");
+        Assert.Contains("data-stock-level=\"empty\"", list);
+        Assert.Contains("stock-unavailable-tag\">Unavailable", list);
+        Assert.Contains($"/Inventory/Receive?productId={product.Id}", list);
+        var receive = await client.GetStringAsync($"/Inventory/Receive?productId={product.Id}");
+        Assert.Matches($"""<option value="{product.Id}" selected=""".TrimEnd(), receive);
+        var receiveToken = WorkspaceUiTests.Token(receive);
+        await Receive(4);
+        list = await client.GetStringAsync("/Products?culture=en");
+        Assert.Contains("data-stock-level=\"low\"", list);
+        Assert.Contains("stock-warning", list);
+        Assert.Contains(">Available</span>", list);
+        Assert.Equal(4m, (await sender.Send(new GetEntityByIdQuery<ProductDto>(product.Id))).AvailableQuantity);
+
+        await Receive(2);
+        list = await client.GetStringAsync("/Products?culture=en");
+        Assert.Contains("data-stock-level=\"normal\"", list);
+        Assert.DoesNotContain("stock-warning", list);
+        Assert.Equal(6m, (await sender.Send(new GetEntityByIdQuery<ProductDto>(product.Id))).AvailableQuantity);
+        Assert.True((await db.Products.AsNoTracking().SingleAsync()).IsActive);
+
+        var edit = await client.GetStringAsync($"/Products/Edit/{product.Id}?culture=en");
+        var editToken = WorkspaceUiTests.Token(edit);
+        var invalidEdit = await WorkspaceUiTests.Post(client, $"/Products/Edit/{product.Id}?culture=en", editToken,
+            ("Name", "Stock threshold product"), ("CostPrice", "100"), ("RetailPrice", ""),
+            ("WholesalePrice", "0"), ("VipPrice", "0"));
+        Assert.Equal(HttpStatusCode.BadRequest, invalidEdit.StatusCode);
+        using var editProblem = JsonDocument.Parse(await invalidEdit.Content.ReadAsStringAsync());
+        Assert.Contains("Enter a cost or markup value", editProblem.RootElement.GetProperty("errors").GetProperty("RetailPrice")[0].GetString());
+
+        async Task Receive(int quantity)
+        {
+            var response = await WorkspaceUiTests.Post(client, "/Inventory/Receive", receiveToken,
+                ("OperationId", Guid.NewGuid().ToString()), ("ProductId", product.Id.ToString()),
+                ("WarehouseId", second.Id.ToString()), ("Quantity", quantity.ToString(CultureInfo.InvariantCulture)), ("UnitCost", "100"));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+    }
+
     [Theory]
     [InlineData("MinStock", "0.0004")]
     [InlineData("MaxStock", "2.0004")]
@@ -71,7 +156,11 @@ public sealed class ProductPercentageTests
             ("MinStock", "10", arabic ? "يجب أن يكون الحد الأعلى للمخزون أكبر من الحد الأدنى أو مساويًا له." : "Maximum stock must be at least the minimum.")
         })
         {
-            var fields = new Dictionary<string, string> { ["Name"] = "Invalid precision", ["MinStock"] = "0", ["MaxStock"] = "5", ["TaxRate"] = "0" };
+            var fields = new Dictionary<string, string>
+            {
+                ["Name"] = "Invalid precision", ["MinStock"] = "0", ["MaxStock"] = "5", ["TaxRate"] = "0",
+                ["CostPrice"] = "0", ["RetailPrice"] = "0", ["WholesalePrice"] = "0", ["VipPrice"] = "0"
+            };
             fields[field] = value;
             using var response = await WorkspaceUiTests.Post(client, $"/Products/Create?culture={culture}", token,
                 fields.Select(pair => (pair.Key, pair.Value)).ToArray());

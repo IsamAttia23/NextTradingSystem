@@ -29,4 +29,5 @@ public sealed record UserCreationDto
 
     [StringLength(256)]
     public string? Role { get; init; }
+    public string[] Roles { get; init; } = [];
 }

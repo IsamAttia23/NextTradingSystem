@@ -1,4 +1,3 @@
-using Mapster;
 using MapsterMapper;
 using MediatR;
 using NEXT.Application.Abstractions.Persistence;
@@ -11,6 +10,7 @@ using NEXT.Domain.Entities;
 namespace NEXT.Application.Features.Products;
 
 public sealed class SaveProductHandler(IKeyRepository<Product, Guid> repository, IMapper mapper, IUnitOfWork unitOfWork,
+    IQueryExecutor executor,
     IEntityValidator<ProductInputDto> validator, IEnumerable<IEntityRules<Product, ProductInputDto>> rules, ProductPricing pricing)
     : IRequestHandler<CreateEntityCommand<ProductDto, ProductInputDto>, ProductDto>,
       IRequestHandler<UpdateEntityCommand<ProductDto, ProductInputDto>, ProductDto>
@@ -59,6 +59,7 @@ public sealed class SaveProductHandler(IKeyRepository<Product, Guid> repository,
             await repository.AddAsync(product, ct);
         }
         await unitOfWork.SaveChangesAsync(ct);
-        return product.Adapt<ProductDto>(pricing.ReadMapping(rate));
+        return await GetEntityByIdQueryHandler<Product, ProductDto>.ReadAsync(repository, executor,
+            product.Id, pricing.ReadMapping(rate), ct);
     }
 }

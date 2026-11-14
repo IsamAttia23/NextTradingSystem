@@ -15,7 +15,7 @@ namespace NEXT.Infrastructure.Identity;
 public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginAccessPolicy policy,
     ICurrentUserService current, IEntityValidator<LoginDto> loginValidator,
     IEntityValidator<VerifyLoginDto> verifyValidator, IUserManagementService management,
-    SecurityTransactions transactions, NEXTDbContext db) : IAccountAccess
+    SecurityTransactions transactions, NEXTDbContext db, TimeProvider clock) : IAccountAccess
 {
     public Task<LoginOutcome> LoginAsync(LoginDto input) => StorageErrors.ExecuteAsync(() => LoginCoreAsync(input));
     private async Task<LoginOutcome> LoginCoreAsync(LoginDto input)
@@ -33,12 +33,21 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
         if (prepared.Outcome != LoginOutcome.Succeeded)
             return prepared.Outcome;
 
-        if (!await policy.CanSignInAsync(user.Id))
-            return LoginOutcome.Failed;
-
-        var result = await signIn.PasswordSignInAsync(user, input.Password, input.RememberMe, false);
-        return result.Succeeded ? LoginOutcome.Succeeded
-            : result.RequiresTwoFactor ? LoginOutcome.RequiresTwoFactor : LoginOutcome.Failed;
+        return await transactions.RunAsync("user:" + user.Id, async () =>
+        {
+            await db.Entry(user).ReloadAsync();
+            if (!await policy.CanSignInAsync(user.Id))
+            {
+                return LoginOutcome.Failed;
+            }
+            var result = await SignInWithHistoryAsync(user,
+                () => signIn.PasswordSignInAsync(user, input.Password, input.RememberMe, false));
+            if (!result.Succeeded)
+            {
+                return result.RequiresTwoFactor ? LoginOutcome.RequiresTwoFactor : LoginOutcome.Failed;
+            }
+            return await RecordSuccessfulLoginAsync(user);
+        }, CancellationToken.None);
     }
     public Task<bool> HasChallengeAsync() => StorageErrors.ExecuteAsync(async () => await signIn.GetTwoFactorAuthenticationUserAsync() is not null);
     public Task<LoginOutcome> VerifyAsync(VerifyLoginDto input) => StorageErrors.ExecuteAsync(() => VerifyCoreAsync(input));
@@ -55,26 +64,53 @@ public sealed class AccountAccess(SignInManager<ApplicationUser> signIn, ILoginA
             await db.Entry(user).ReloadAsync();
             if (!await policy.CanSignInAsync(user.Id)) return LoginOutcome.Failed;
             var attemptsBefore = user.AccessFailedCount;
-            var result = input.UseRecoveryCode
-                ? await signIn.TwoFactorRecoveryCodeSignInAsync(input.Code.Replace(" ", ""))
-                : await signIn.TwoFactorAuthenticatorSignInAsync(input.Code.Replace(" ", "").Replace("-", ""), input.RememberMe, false);
-            if (!result.Succeeded)
+            var result = await SignInWithHistoryAsync(user, () => input.UseRecoveryCode
+                ? signIn.TwoFactorRecoveryCodeSignInAsync(input.Code.Replace(" ", ""))
+                : signIn.TwoFactorAuthenticatorSignInAsync(input.Code.Replace(" ", "").Replace("-", ""), input.RememberMe, false));
+            if (result.Succeeded)
             {
-                if (result.IsLockedOut)
-                {
-                    user.AccessFailedCount = 3;
-                }
-                else if (user.AccessFailedCount == attemptsBefore)
-                {
-                    // Identity does not count failed recovery-code attempts.
-                    user.AccessFailedCount++;
-                }
-                if (user.AccessFailedCount >= 3) user.RequiresAdministratorUnlock = true;
-                UserManagementService.Ensure(await signIn.UserManager.UpdateAsync(user));
+                return await RecordSuccessfulLoginAsync(user);
             }
-            return result.Succeeded ? LoginOutcome.Succeeded : LoginOutcome.Failed;
+            if (result.IsLockedOut)
+            {
+                user.AccessFailedCount = 3;
+            }
+            else if (user.AccessFailedCount == attemptsBefore)
+            {
+                // Identity does not count failed recovery-code attempts.
+                user.AccessFailedCount++;
+            }
+            if (user.AccessFailedCount >= 3)
+            {
+                user.RequiresAdministratorUnlock = true;
+            }
+            user.LastInvalidLoginAttempt = clock.GetUtcNow().UtcDateTime;
+            UserManagementService.Ensure(await signIn.UserManager.UpdateAsync(user));
+            return LoginOutcome.Failed;
         }, CancellationToken.None);
     }
+
+    private async Task<SignInResult> SignInWithHistoryAsync(ApplicationUser user, Func<Task<SignInResult>> authenticate)
+    {
+        var items = signIn.Context.Items;
+        items[AccountClaimTypes.PreviousLogin] = user.LastLogin;
+        try
+        {
+            return await authenticate();
+        }
+        finally
+        {
+            items.Remove(AccountClaimTypes.PreviousLogin);
+        }
+    }
+
+    private async Task<LoginOutcome> RecordSuccessfulLoginAsync(ApplicationUser user)
+    {
+        user.LastLogin = clock.GetUtcNow().UtcDateTime;
+        UserManagementService.Ensure(await signIn.UserManager.UpdateAsync(user));
+        return LoginOutcome.Succeeded;
+    }
+
     public Task<bool> IsSessionValidAsync(ClaimsPrincipal? principal) => StorageErrors.ExecuteAsync(async () =>
     {
         var user = await signIn.ValidateSecurityStampAsync(principal);

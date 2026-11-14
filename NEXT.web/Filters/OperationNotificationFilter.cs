@@ -67,7 +67,9 @@ public sealed class OperationNotificationFilter(IStringLocalizer<UiText> text, I
                                         {
                                             returnUrl = controller.Url.Action("Profile", "Account")
                                         })
-                                        : null
+                                        : context.Controller is AccountController
+                                            ? controller.Url.Action("Profile", "Account")
+                                            : null
                 });
             }
         }

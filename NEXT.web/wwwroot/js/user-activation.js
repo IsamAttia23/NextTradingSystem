@@ -4,11 +4,14 @@
         const button = event.target.closest("[data-user-activation]");
         if (!button || button.disabled) return;
         const active = button.dataset.active === "true";
+        const locked = button.dataset.locked === "true";
+        const activate = locked || !active;
         const messages = document.getElementById("workspaceModal").dataset;
         const token = button.closest(".content-card").querySelector('[data-user-activation-token] input').value;
         const body = new FormData();
-        body.set("IsActive", String(!active));
+        body.set("IsActive", String(activate));
         body.set("ExpectedIsActive", String(active));
+        body.set("ExpectedIsLocked", String(locked));
         body.set("__RequestVerificationToken", token);
         button.disabled = true;
         button.setAttribute("aria-busy", "true");
@@ -19,10 +22,15 @@
                 if (response.status === 409) await window.NextNavigation.refresh();
                 return;
             }
-            button.dataset.active = String(!active);
-            button.setAttribute("aria-checked", String(!active));
-            button.querySelector("[data-activation-label]").textContent = active ? button.dataset.inactiveLabel : button.dataset.activeLabel;
-            window.NextNotifications.show(active ? button.dataset.deactivated : button.dataset.activated, "success");
+            if (locked) {
+                await window.NextNavigation.refresh();
+                window.NextNotifications.show(button.dataset.unlocked, "success");
+                return;
+            }
+            button.dataset.active = String(activate);
+            button.setAttribute("aria-checked", String(activate));
+            button.querySelector("[data-activation-label]").textContent = activate ? button.dataset.activeLabel : button.dataset.inactiveLabel;
+            window.NextNotifications.show(activate ? button.dataset.activated : button.dataset.deactivated, "success");
         } catch {
             window.NextNotifications.show(messages.error, "error");
             // The server may have committed before the connection was lost.
