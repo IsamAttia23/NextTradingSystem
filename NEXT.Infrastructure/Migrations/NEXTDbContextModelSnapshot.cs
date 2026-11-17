@@ -199,7 +199,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("AccountSecurityGrants", "security");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -916,6 +916,9 @@ namespace NEXT.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("PackagingUnitId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("RetailPrice")
                         .HasPrecision(28, 12)
                         .HasColumnType("numeric(28,12)");
@@ -931,6 +934,9 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.Property<Guid?>("UnitOfMeasureId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("UnitsPerPackage")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -953,6 +959,8 @@ namespace NEXT.Infrastructure.Migrations
                         .HasFilter("\"Barcode\" IS NOT NULL");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("PackagingUnitId");
 
                     b.HasIndex("UnitOfMeasureId");
 
@@ -1306,7 +1314,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("RecycleBinEntries", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.Role", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1910,7 +1918,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("Units", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.UserRole", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.UserRole", b =>
                 {
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -1990,7 +1998,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.Role", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1999,7 +2007,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2008,7 +2016,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2017,7 +2025,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2036,17 +2044,17 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("NEXT.Domain.Entities.AccountSecurityGrant", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
                 {
                     b.HasOne("NEXT.Domain.Entities.Branch", "Branch")
-                        .WithMany("Users")
+                        .WithMany()
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
@@ -2056,12 +2064,10 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("NEXT.Domain.Entities.AuditLog", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Category", b =>
@@ -2114,7 +2120,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("NEXT.Domain.Entities.OtpChallenge", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2159,12 +2165,19 @@ namespace NEXT.Infrastructure.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("NEXT.Domain.Entities.UnitOfMeasure", "PackagingUnit")
+                        .WithMany()
+                        .HasForeignKey("PackagingUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NEXT.Domain.Entities.UnitOfMeasure", "UnitOfMeasure")
                         .WithMany("Products")
                         .HasForeignKey("UnitOfMeasureId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Category");
+
+                    b.Navigation("PackagingUnit");
 
                     b.Navigation("UnitOfMeasure");
                 });
@@ -2286,15 +2299,13 @@ namespace NEXT.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NEXT.Domain.Entities.Role", "Role")
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.Role", null)
                         .WithMany("RolePermissions")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Permission");
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoice", b =>
@@ -2309,7 +2320,7 @@ namespace NEXT.Infrastructure.Migrations
                         .HasForeignKey("ParentInvoiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2324,8 +2335,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("ParentInvoice");
-
-                    b.Navigation("User");
 
                     b.Navigation("Warehouse");
                 });
@@ -2358,7 +2367,7 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("NEXT.Domain.Entities.SecurityEmailMessage", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", null)
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2422,15 +2431,15 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("BaseUnit");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.UserRole", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.UserRole", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.Role", "Role")
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.Role", "Role")
                         .WithMany("UserRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NEXT.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", "User")
                         .WithMany("UserRoles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2458,15 +2467,13 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("JournalLines");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Branch", b =>
                 {
-                    b.Navigation("Users");
-
                     b.Navigation("Warehouses");
                 });
 
@@ -2517,7 +2524,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.Role", b =>
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
                 {
                     b.Navigation("RolePermissions");
 

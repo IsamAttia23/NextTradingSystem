@@ -152,7 +152,9 @@ public sealed class SharedCqrsRepositoryTests
             services.GetRequiredService<IStockMovementRepository>(), services.GetRequiredService<IProductBatchRepository>(),
             new PaginationServices(), new NEXT.Application.Validation.DataAnnotationsEntityValidator<PaginationQuery>(),
             services.GetRequiredService<Mapster.TypeAdapterConfig>(),
-            services.GetRequiredService<NEXT.Application.Services.Currencies.ExchangeRateReader>());
+            services.GetRequiredService<NEXT.Application.Services.Currencies.ExchangeRateReader>(),
+            services.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Product>>(),
+            services.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>());
         var stock = Assert.Single((await service.StocksAsync(new PaginationQuery
         {
             SearchTerm = "warehouse",

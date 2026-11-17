@@ -20,6 +20,7 @@ using NEXT.Application.DTOs.Inventory;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Features;
 using NEXT.Application.Services.Inventory;
+using NEXT.Application.Services.Currencies;
 using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
@@ -46,11 +47,12 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task ReceiptUpdatesWeightedCostAndRejectsDuplicateOperation()
     {
-        await using var fixture = await Database.Create();
+        await using var fixture = await Database.Create(withReceiptRate: true);
         var service = fixture.Service();
-        var first = fixture.Receipt(10, 4);
+        var first = fixture.Receipt(10);
         await service.ReceiveAsync(first);
-        await service.ReceiveAsync(fixture.Receipt(5, 10));
+        await fixture.SetProductCostAsync(10);
+        await service.ReceiveAsync(fixture.Receipt(5));
         fixture.Db.ChangeTracker.Clear();
         var stock = await fixture.Db.Stocks.SingleAsync();
         Assert.Equal(15m, stock.Quantity);
@@ -61,12 +63,40 @@ public sealed class PostgresInventoryTests
     }
 
     [PostgresFact]
+    public async Task InvalidOpeningWarehouseRollsBackProductCreation()
+    {
+        await using var fixture = await Database.Create(migrate: true);
+        await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: fixture.TestConnection);
+        await using var scope = app.Services.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<MediatR.ISender>();
+        var warehouse = await fixture.Db.Warehouses.SingleAsync(x => x.Id == fixture.Source);
+        warehouse.IsActive = false;
+        await fixture.Db.SaveChangesAsync();
+
+        var input = new NEXT.Application.DTOs.Products.ProductInputDto
+        {
+            Name = "Rejected opening stock",
+            CostPrice = 2.50m,
+            AddOpeningStock = true,
+            OpeningWarehouseId = fixture.Source,
+            OpeningQuantity = 15
+        };
+        await Assert.ThrowsAsync<AppValidationException>(() =>
+            sender.Send(new CreateEntityCommand<NEXT.Application.DTOs.Products.ProductDto,
+                NEXT.Application.DTOs.Products.ProductInputDto>(input)));
+        Assert.False(await fixture.Db.Products.AnyAsync(x => x.Name == input.Name));
+        Assert.Empty(await fixture.Db.Stocks.ToListAsync());
+        Assert.Empty(await fixture.Db.StockMovements.ToListAsync());
+    }
+
+    [PostgresFact]
     public async Task TransferPreservesTotalQuantityAndUsesSourceAverageCost()
     {
-        await using var f = await Database.Create();
+        await using var f = await Database.Create(withReceiptRate: true);
         var service = f.Service();
-        await service.ReceiveAsync(f.Receipt(10, 4));
-        var destination = f.Receipt(5, 10);
+        await service.ReceiveAsync(f.Receipt(10));
+        await f.SetProductCostAsync(10);
+        var destination = f.Receipt(5);
         destination.WarehouseId = f.Target;
         await service.ReceiveAsync(destination);
         var transfer = f.Transfer(5);
@@ -88,9 +118,9 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task TransferRejectsReservedInsufficientSameWarehouseAndInactiveTargets()
     {
-        await using var f = await Database.Create();
+        await using var f = await Database.Create(withReceiptRate: true);
         var service = f.Service();
-        await service.ReceiveAsync(f.Receipt(10, 4));
+        await service.ReceiveAsync(f.Receipt(10));
         var stock = await f.Db.Stocks.SingleAsync();
         stock.ReservedQuantity = 8;
         await f.Db.SaveChangesAsync();
@@ -109,9 +139,9 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task ExpiryBatchesMoveWithBalancesAndMismatchedExpiryRollsBack()
     {
-        await using var f = await Database.Create(expiry: true);
+        await using var f = await Database.Create(expiry: true, withReceiptRate: true);
         var service = f.Service();
-        var receipt = f.Receipt(10, 4);
+        var receipt = f.Receipt(10);
         receipt.BatchNumber = "LOT-1";
         receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
         await service.ReceiveAsync(receipt);
@@ -121,7 +151,7 @@ public sealed class PostgresInventoryTests
         f.Db.ChangeTracker.Clear();
         Assert.Equal(6m, (await f.Db.Batches.SingleAsync(x => x.WarehouseId == f.Source)).Quantity);
         Assert.Equal(4m, (await f.Db.Batches.SingleAsync(x => x.WarehouseId == f.Target)).Quantity);
-        var mismatch = f.Receipt(1, 20);
+        var mismatch = f.Receipt(1);
         mismatch.BatchNumber = "LOT-1";
         mismatch.ExpiryDate = receipt.ExpiryDate.Value.AddDays(1);
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(mismatch));
@@ -133,9 +163,9 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task LedgerFailureRollsBackBothWarehousesAndBatches()
     {
-        await using var f = await Database.Create(expiry: true);
+        await using var f = await Database.Create(expiry: true, withReceiptRate: true);
         var service = f.Service();
-        var receipt = f.Receipt(10, 4);
+        var receipt = f.Receipt(10);
         receipt.BatchNumber = "LOT-1";
         receipt.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
         await service.ReceiveAsync(receipt);
@@ -155,8 +185,8 @@ public sealed class PostgresInventoryTests
     [PostgresFact]
     public async Task ConcurrentTransfersCannotOversellOrCreateHalfALedger()
     {
-        await using var f = await Database.Create();
-        await f.Service().ReceiveAsync(f.Receipt(10, 4));
+        await using var f = await Database.Create(withReceiptRate: true);
+        await f.Service().ReceiveAsync(f.Receipt(10));
         await using var second = f.NewContext();
         var tasks = new[] { Attempt(f.Service(), f.Transfer(7)), Attempt(f.Service(second), f.Transfer(7)) };
         var outcomes = await Task.WhenAll(tasks);
@@ -184,18 +214,16 @@ public sealed class PostgresInventoryTests
     }
 
     [PostgresFact]
-    public async Task InvalidQuantityCostAndMissingBatchesNeverWriteStock()
+    public async Task InvalidQuantityAndMissingBatchesNeverWriteStock()
     {
-        await using var f = await Database.Create(expiry: true);
+        await using var f = await Database.Create(expiry: true, withReceiptRate: true);
         var service = f.Service();
         foreach (var quantity in new[] { 0m, -1m, 1.0001m })
         {
-            await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(quantity, 4)));
+            await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(quantity)));
         }
-        await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, -1)));
-        await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, 1.001m)));
-        await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1, 4)));
-        var expired = f.Receipt(1, 4);
+        await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(f.Receipt(1)));
+        var expired = f.Receipt(1);
         expired.BatchNumber = "OLD";
         expired.ExpiryDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
         await Assert.ThrowsAsync<AppValidationException>(() => service.ReceiveAsync(expired));
@@ -339,7 +367,7 @@ public sealed class PostgresInventoryTests
         var token = WorkspaceUiTests.Token(form);
         var operation = Guid.NewGuid().ToString();
         var receipt = new[] { ("ProductId", f.Product.ToString()), ("WarehouseId", f.Source.ToString()), ("Quantity", "10.125"),
-            ("UnitCost", "4.25"), ("BatchNumber", "HTTP-BATCH"), ("ExpiryDate", DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)), ("OperationId", operation) };
+            ("BatchNumber", "HTTP-BATCH"), ("ExpiryDate", DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)), ("OperationId", operation) };
         Assert.Equal(System.Net.HttpStatusCode.OK, (await WorkspaceUiTests.Post(client, "/Inventory/Receive", token, receipt)).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.Conflict, (await WorkspaceUiTests.Post(client, "/Inventory/Receive", token, receipt)).StatusCode);
         form = await client.GetStringAsync("/Inventory/Transfer");
@@ -591,7 +619,7 @@ public sealed class PostgresInventoryTests
             Database = "postgres",
             Pooling = false
         }.ConnectionString;
-        public static async Task<Database> Create(bool expiry = false, bool migrate = false, bool preupgraded = false)
+        public static async Task<Database> Create(bool expiry = false, bool migrate = false, bool preupgraded = false, bool withReceiptRate = false)
         {
             var configuration = new ConfigurationBuilder().AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629").AddEnvironmentVariables().Build();
             var connection = Environment.GetEnvironmentVariable("NEXT_TEST_POSTGRES") ?? configuration.GetConnectionString("NEXTDatabase")
@@ -626,7 +654,8 @@ public sealed class PostgresInventoryTests
                 var product = new Product
                 {
                     Name = "Test product",
-                    HasExpiry = expiry
+                    HasExpiry = expiry,
+                    CostPrice = withReceiptRate ? 4 : 0
                 };
                 var source = new Warehouse
                 {
@@ -643,6 +672,10 @@ public sealed class PostgresInventoryTests
                     Name = "Test branch"
                 };
                 database.Db.AddRange(product, source, target, branch);
+                if (withReceiptRate)
+                {
+                    database.Db.Add(new SystemSetting { Key = ExchangeRateReader.SettingKey, ValueJson = "1", Category = "Currency" });
+                }
                 await database.Db.SaveChangesAsync();
                 database.Branch = branch.Id;
                 database.Product = product.Id;
@@ -669,14 +702,20 @@ public sealed class PostgresInventoryTests
             var db = context ?? Db;
             return new(new KeyRepository<Product, Guid>(db), new KeyRepository<Warehouse, Guid>(db), new TRepository<Stock>(db),
                 new TRepository<StockMovement>(db), new TRepository<ProductBatch>(db), new UnitOfWork(db),
-                new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>());
+                new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>(),
+                new ExchangeRateReader(new SystemSettingRepository(db)));
         }
-        public ReceiveStockDto Receipt(decimal quantity, decimal cost) => new()
+        public async Task SetProductCostAsync(decimal cost)
+        {
+            var product = await Db.Products.SingleAsync(product => product.Id == Product);
+            product.CostPrice = cost;
+            await Db.SaveChangesAsync();
+        }
+        public ReceiveStockDto Receipt(decimal quantity) => new()
         {
             ProductId = Product,
             WarehouseId = Source,
-            Quantity = quantity,
-            UnitCost = cost
+            Quantity = quantity
         };
         public TransferStockDto Transfer(decimal quantity) => new()
         {

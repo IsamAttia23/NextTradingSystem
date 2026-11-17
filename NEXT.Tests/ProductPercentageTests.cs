@@ -105,6 +105,52 @@ public sealed class ProductPercentageTests
         }
     }
 
+    [Fact]
+    public async Task PackagingAndOpeningStockUseProductCapacityAndCost()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        await using var scope = app.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        var piece = new UnitOfMeasure { Name = "piece", Symbol = "pc" };
+        var carton = new UnitOfMeasure { Name = "carton", Symbol = "ct", BaseUnit = piece, ConversionFactor = 24 };
+        var warehouse = new Warehouse { Name = "Opening warehouse", Code = "OPEN" };
+        db.AddRange(piece, carton, warehouse);
+        await db.SaveChangesAsync();
+
+        var form = await client.GetStringAsync("/Products/Create?culture=en");
+        Assert.Contains("data-field-group=\"OpeningStock\"", form);
+        Assert.Contains("data-package-price", form);
+        var token = WorkspaceUiTests.Token(form);
+        (string, string)[] fields =
+        [
+            ("Name", "Packaged soap"), ("CostPrice", "2.50"), ("RetailPrice", "40"),
+            ("WholesalePrice", "20"), ("VipPrice", "10"), ("UnitOfMeasureId", piece.Id.ToString()),
+            ("PackagingUnitId", carton.Id.ToString()), ("UnitsPerPackage", "12"), ("AddOpeningStock", "true"),
+            ("OpeningQuantity", "2"), ("OpeningInPackages", "true")
+        ];
+        using var rejected = await WorkspaceUiTests.Post(client, "/Products/Create", token, fields);
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        using var created = await WorkspaceUiTests.Post(client, "/Products/Create", token,
+            [..fields, ("OpeningWarehouseId", warehouse.Id.ToString())]);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var product = await db.Products.AsNoTracking().SingleAsync();
+        var receive = await client.GetStringAsync($"/Inventory/Receive?productId={product.Id}&culture=en");
+        Assert.Contains("data-units-per-package=\"12\"", receive);
+        Assert.DoesNotContain("name=\"UnitCost\"", receive);
+        using var received = await WorkspaceUiTests.Post(client, "/Inventory/Receive", WorkspaceUiTests.Token(receive),
+            ("ProductId", product.Id.ToString()), ("WarehouseId", warehouse.Id.ToString()), ("Quantity", "3"),
+            ("ReceiveInPackages", "true"), ("UnitCost", "999"));
+        Assert.Equal(HttpStatusCode.OK, received.StatusCode);
+        var balance = await db.Stocks.AsNoTracking().SingleAsync();
+        Assert.Equal(60m, balance.Quantity);
+        Assert.Equal(2.50m, balance.AverageCost);
+        Assert.All(await db.StockMovements.AsNoTracking().ToListAsync(), movement => Assert.Equal(2.50m, movement.UnitCost));
+        Assert.Contains("5 carton (60 piece)", await client.GetStringAsync("/Inventory?culture=en"));
+    }
+
     [Theory]
     [InlineData("MinStock", "0.0004")]
     [InlineData("MaxStock", "2.0004")]
@@ -260,9 +306,12 @@ public sealed class ProductPercentageTests
         await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Products\" SET \"CostPrice\" = 20, \"RetailPrice\" = 250, \"WholesalePrice\" = 230, \"VipPrice\" = 220, \"RowVersion\" = {rowVersion} WHERE \"Id\" = {database.Product}");
         db.Add(new SystemSetting { Key = "Currency.UsdToSdg", ValueJson = "10" });
         await db.SaveChangesAsync();
-        var deleted = new Product { Name = "Deleted legacy percentage", CostPrice = 20, RetailPrice = 250, WholesalePrice = 230, VipPrice = 220, DeletedAt = DateTimeOffset.UtcNow };
-        db.Add(deleted);
-        await db.SaveChangesAsync();
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Products" ("Id", "Name", "CostPrice", "RetailPrice", "WholesalePrice", "VipPrice",
+                "TaxRate", "MinStock", "HasExpiry", "IsActive", "CreatedAt", "DeletedAt", "RowVersion")
+            VALUES ({Guid.NewGuid()}, 'Deleted legacy percentage', 20, 250, 230, 220,
+                0, 0, false, true, now(), now(), {Guid.NewGuid().ToByteArray()})
+            """);
         db.ChangeTracker.Clear();
         await migrator.MigrateAsync();
         Assert.False(db.Database.HasPendingModelChanges());
@@ -298,7 +347,9 @@ public sealed class ProductPercentageTests
         await migrator.MigrateAsync("20261105120000_SupportUsdProductCost");
         await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Products\" SET \"CostPrice\" = 0, \"RetailPrice\" = 10 WHERE \"Id\" = {database.Product}");
         await Assert.ThrowsAsync<Npgsql.PostgresException>(() => migrator.MigrateAsync());
-        Assert.Equal(10, (await db.Products.AsNoTracking().SingleAsync()).RetailPrice);
+        var legacyPrice = await db.Database.SqlQuery<decimal>(
+            $"SELECT \"RetailPrice\" AS \"Value\" FROM \"Products\" WHERE \"Id\" = {database.Product}").SingleAsync();
+        Assert.Equal(10, legacyPrice);
         Assert.DoesNotContain("20261106120000_UseProductSalePercentages", await db.Database.GetAppliedMigrationsAsync());
     }
 

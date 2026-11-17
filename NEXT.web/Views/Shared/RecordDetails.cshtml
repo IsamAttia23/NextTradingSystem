@@ -25,7 +25,7 @@
             <partial name="_ColorBadge" model="badge" />
         }
     </div>
-    <dl class="detail-grid @(Model.CreateContact is not null ? "customer-detail-grid" : null)">
+    <dl class="detail-grid detail-pairs">
         <partial name="_DetailFields" model="Model.Fields" />
     </dl>
 </section>
@@ -56,7 +56,7 @@
             {
                 <article class="activity-record">
                     <span class="eyebrow">@L[Model.Activity.Selected!] · <bdi>@record.Id</bdi></span>
-                    <dl class="detail-grid">
+                    <dl class="detail-grid detail-pairs">
                         <partial name="_DetailFields" model="NEXT.web.Services.RelatedRecordPresenter.Fields(record)" />
                     </dl>
                 </article>

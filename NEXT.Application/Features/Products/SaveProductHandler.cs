@@ -1,6 +1,8 @@
 using MapsterMapper;
 using MediatR;
 using NEXT.Application.Abstractions.Persistence;
+using NEXT.Application.Abstractions.IServices;
+using NEXT.Application.DTOs.Inventory;
 using NEXT.Application.DTOs.Products;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Features.Common.CQRS;
@@ -11,7 +13,7 @@ namespace NEXT.Application.Features.Products;
 
 public sealed class SaveProductHandler(IKeyRepository<Product, Guid> repository, IMapper mapper, IUnitOfWork unitOfWork,
     IQueryExecutor executor,
-    IEntityValidator<ProductInputDto> validator, IEnumerable<IEntityRules<Product, ProductInputDto>> rules, ProductPricing pricing)
+    IEntityValidator<ProductInputDto> validator, IEnumerable<IEntityRules<Product, ProductInputDto>> rules, ProductPricing pricing, IInventoryService inventory)
     : IRequestHandler<CreateEntityCommand<ProductDto, ProductInputDto>, ProductDto>,
       IRequestHandler<UpdateEntityCommand<ProductDto, ProductInputDto>, ProductDto>
 {
@@ -58,8 +60,38 @@ public sealed class SaveProductHandler(IKeyRepository<Product, Guid> repository,
         {
             await repository.AddAsync(product, ct);
         }
+        ReceiveStockDto? opening = null;
+        if (existing is null && input.AddOpeningStock)
+        {
+            opening = OpeningReceipt(product.Id, input);
+        }
         await unitOfWork.SaveChangesAsync(ct);
+        if (opening is not null)
+        {
+            await inventory.ReceiveAsync(opening, ct);
+        }
         return await GetEntityByIdQueryHandler<Product, ProductDto>.ReadAsync(repository, executor,
             product.Id, pricing.ReadMapping(rate), ct);
+    }
+
+    private static ReceiveStockDto OpeningReceipt(Guid productId, ProductInputDto input)
+    {
+        if (input.OpeningWarehouseId is null || input.OpeningWarehouseId == Guid.Empty)
+        {
+            RequestValidation.Fail(nameof(input.OpeningWarehouseId), "OpeningWarehouseRequired");
+        }
+        if (input.OpeningQuantity is not > 0)
+        {
+            RequestValidation.Fail(nameof(input.OpeningQuantity), "OpeningQuantityRequired");
+        }
+        return new ReceiveStockDto
+        {
+            ProductId = productId,
+            WarehouseId = input.OpeningWarehouseId.Value,
+            Quantity = input.OpeningQuantity.Value,
+            ReceiveInPackages = input.OpeningInPackages,
+            BatchNumber = input.OpeningBatchNumber,
+            ExpiryDate = input.OpeningExpiryDate
+        };
     }
 }

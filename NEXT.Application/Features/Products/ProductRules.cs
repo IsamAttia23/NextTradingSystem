@@ -38,6 +38,28 @@ public sealed class ProductRules(IReadRepository<Category> categories, IReadRepo
         {
             await ReferenceGuard.Require(units, x => x.Id == unit, "UnitOfMeasureId", ct);
         }
+        if (input.PackagingUnitId is { } packaging)
+        {
+            if (input.UnitOfMeasureId is null || input.UnitOfMeasureId == packaging)
+            {
+                ReferenceGuard.Fail("PackagingUnitId", "PackagingNeedsDifferentBaseUnit");
+            }
+            if (input.UnitsPerPackage is null)
+            {
+                ReferenceGuard.Fail("UnitsPerPackage", "PackagingCapacityRequired");
+            }
+            await ReferenceGuard.Require(units, x => x.Id == packaging, "PackagingUnitId", ct);
+        }
+        else if (input.UnitsPerPackage is not null)
+        {
+            ReferenceGuard.Fail("PackagingUnitId", "PackagingUnitRequired");
+        }
+        if (id is not null && await products.AnyAsync(x => x.Id == id
+            && x.UnitOfMeasureId != null && x.UnitOfMeasureId != input.UnitOfMeasureId
+            && x.StockMovements.Any(), ct))
+        {
+            ReferenceGuard.Fail("UnitOfMeasureId", "BaseUnitCannotChange");
+        }
         if (input.MaxStock < input.MinStock)
         {
             ReferenceGuard.Fail("MaxStock", "Maximum stock must be at least the minimum.");

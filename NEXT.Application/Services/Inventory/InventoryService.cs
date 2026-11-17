@@ -3,6 +3,7 @@ using NEXT.Application.Abstractions.Persistence;
 using NEXT.Application.DTOs.Inventory;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Validation;
+using NEXT.Application.Services.Currencies;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
@@ -13,17 +14,13 @@ namespace NEXT.Application.Services.Inventory;
 public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKeyRepository<Warehouse, Guid> warehouses,
     IRepository<Stock> stocks, IRepository<StockMovement> movements, IRepository<ProductBatch> batches,
     IUnitOfWork unitOfWork, IEntityValidator<ReceiveStockDto> receiptValidator,
-    IEntityValidator<TransferStockDto> transferValidator) : IInventoryService
+    IEntityValidator<TransferStockDto> transferValidator, ExchangeRateReader exchangeRates) : IInventoryService
 {
     public Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         receiptValidator.Validate(input);
         ValidateOperation(input);
-        if (decimal.Round(input.UnitCost, 2) != input.UnitCost)
-        {
-            Fail("UnitCost", "Cost supports at most two decimal places.");
-        }
         return unitOfWork.ExecuteInTransactionAsync(token => ReceiveInTransactionAsync(input, token), ct);
     }
 
@@ -34,14 +31,37 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         var product = await Product(input.ProductId, ct);
         await Warehouse(input.WarehouseId, ct);
         ValidateReceiptExpiry(product, input, DateOnly.FromDateTime(now.UtcDateTime));
+        var quantity = ReceiptQuantity(product, input);
+        EnsureCapacity(0, quantity);
+        var rate = await exchangeRates.GetUsdRateAsync(ct);
+        var cost = decimal.Round(product.CostPrice * rate, 2, MidpointRounding.AwayFromZero);
+        if (cost < 0 || cost > 9999999999999.99m)
+        {
+            Fail("ProductId", "ReceiptCostOutOfRange");
+        }
         var stock = await GetOrCreateStock(input.ProductId, input.WarehouseId, ct);
-        EnsureCapacity(stock.Quantity, input.Quantity);
+        EnsureCapacity(stock.Quantity, quantity);
         if (product.HasExpiry)
         {
-            await ReceiveBatchAsync(input, ct);
+            await ReceiveBatchAsync(input, quantity, cost, ct);
         }
-        Receive(stock, input.Quantity, input.UnitCost, now);
-        await movements.AddAsync(Movement(input, input.WarehouseId, StockMovementType.Purchase, input.UnitCost, "Receipt", now), ct);
+        Receive(stock, quantity, cost, now);
+        var movement = Movement(input, input.WarehouseId, StockMovementType.Purchase, cost, "Receipt", now);
+        movement.Quantity = quantity;
+        await movements.AddAsync(movement, ct);
+    }
+
+    private static decimal ReceiptQuantity(Product product, ReceiveStockDto input)
+    {
+        if (!input.ReceiveInPackages)
+        {
+            return input.Quantity;
+        }
+        if (product.UnitOfMeasureId is null || product.PackagingUnitId is null || product.UnitsPerPackage is not > 0)
+        {
+            Fail("ReceiveInPackages", "ProductHasNoPackaging");
+        }
+        return input.Quantity * product.UnitsPerPackage.Value;
     }
 
     private static void ValidateReceiptExpiry(Product product, ReceiveStockDto input, DateOnly today)
@@ -59,12 +79,12 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         }
     }
 
-    private async Task ReceiveBatchAsync(ReceiveStockDto input, CancellationToken ct)
+    private async Task ReceiveBatchAsync(ReceiveStockDto input, decimal quantity, decimal cost, CancellationToken ct)
     {
         var batch = await GetOrCreateBatch(input.ProductId, input.WarehouseId, input.BatchNumber!.Trim(), input.ExpiryDate, ct);
-        EnsureCapacity(batch.Quantity, input.Quantity);
-        batch.CostPrice = InventoryValuation.ReceiveCost(batch.Quantity, batch.CostPrice, input.Quantity, input.UnitCost);
-        batch.Quantity += input.Quantity;
+        EnsureCapacity(batch.Quantity, quantity);
+        batch.CostPrice = InventoryValuation.ReceiveCost(batch.Quantity, batch.CostPrice, quantity, cost);
+        batch.Quantity += quantity;
     }
 
     public Task TransferAsync(TransferStockDto input, CancellationToken ct = default)

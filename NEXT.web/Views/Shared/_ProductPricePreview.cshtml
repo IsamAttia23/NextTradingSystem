@@ -11,10 +11,11 @@
         <partial name="_FieldControl" model="Model" />
     </div>
     <div>
-        <label class="form-label" for="@(Model.Id + "-price")">@L[Model.Field.Name]</label>
+        <label class="form-label" for="@(Model.Id + "-price")">@L[Model.Field.Name] <small>(@L["BaseStockUnit"])</small></label>
         <div class="product-price-value">
             <output id="@(Model.Id + "-price")" for="field-CostPrice @Model.Id" data-price-preview="@Model.Field.Name" aria-live="polite">—</output>
             <bdi>SDG</bdi>
         </div>
+        <small data-package-price-row hidden>@L["PackagePrice"] <output data-price-preview="@Model.Field.Name" data-package-price>—</output> <bdi>SDG</bdi></small>
     </div>
 </div>

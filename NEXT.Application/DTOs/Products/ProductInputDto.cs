@@ -1,3 +1,4 @@
+using NEXT.Application.Validation;
 using System.ComponentModel.DataAnnotations;
 
 namespace NEXT.Application.DTOs.Products;
@@ -10,14 +11,39 @@ public class ProductInputDto
 
     [Required, StringLength(200)]
     public string Name { get; set; } = "";
+
     [StringLength(100)]
     public string? Barcode { get; set; }
+
     [StringLength(1000)]
     public string? Description { get; set; }
-    [NEXT.Application.Validation.NotEmptyGuid]
+
+    [NotEmptyGuid]
     public Guid? CategoryId { get; set; }
-    [NEXT.Application.Validation.NotEmptyGuid]
+
+    [NotEmptyGuid]
     public Guid? UnitOfMeasureId { get; set; }
+
+    [NotEmptyGuid]
+    public Guid? PackagingUnitId { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int? UnitsPerPackage { get; set; }
+    [ScaffoldColumn(false)]
+    public bool AddOpeningStock { get; set; }
+    [ScaffoldColumn(false)]
+    public Guid? OpeningWarehouseId { get; set; }
+
+    [ScaffoldColumn(false)]
+    public bool OpeningInPackages { get; set; }
+    [ScaffoldColumn(false)]
+    public decimal? OpeningQuantity { get; set; }
+
+    [ScaffoldColumn(false)]
+    public string? OpeningBatchNumber { get; set; }
+
+    [ScaffoldColumn(false)]
+    public DateOnly? OpeningExpiryDate { get; set; }
     [Range(typeof(decimal), "0", "9999999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
     [Required(ErrorMessage = "ProductPriceRequired")]
     public decimal CostPrice { get; set; }

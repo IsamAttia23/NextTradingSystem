@@ -9,7 +9,9 @@ else if (Model.Field.Type == "select")
         <option value="">@L[Model.EmptyOption]</option>
         @foreach (var option in Model.Field.Options ?? [])
         {
-            <option value="@option.Value" selected="@(Model.Field.Value == option.Value)">@L[option.Label]</option>
+            <option value="@option.Value" selected="@(Model.Field.Value == option.Value)"
+                    data-base-unit="@option.BaseUnit" data-packaging-unit="@option.PackagingUnit"
+                    data-units-per-package="@option.UnitsPerPackage">@L[option.Label]</option>
         }
     </select>
 }

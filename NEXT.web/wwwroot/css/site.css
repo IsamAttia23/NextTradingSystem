@@ -1539,22 +1539,28 @@ footer {
     color: var(--muted);
     margin-bottom: 5px;
 }
-.customer-detail-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+.detail-pairs {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
+    gap: 0 20px;
 }
-.customer-detail-grid > div {
-    min-width: 0;
-    padding-block-end: 12px;
-    border-bottom: 1px solid var(--line);
+.detail-pairs > div {
+    display: grid;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding-block: 8px;
+    border-block-end: 1px solid var(--line);
 }
-@media (max-width: 900px) {
-    .customer-detail-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+.detail-pairs dt, .detail-pairs dd {
+    font-size: inherit;
+    margin: 0;
+    overflow-wrap: anywhere;
+    text-align: start;
 }
-@media (max-width: 420px) {
-    .detail-grid.customer-detail-grid {
+@media (max-width: 580px) {
+    .detail-grid.detail-pairs {
         grid-template-columns: minmax(0, 1fr);
+        gap: 0;
     }
     .details-actions {
         flex-wrap: wrap;
@@ -2471,3 +2477,39 @@ a.page-number:hover {
 .notice-progress { animation-duration: var(--notice-duration, 7000ms); }
 @keyframes notice-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .notification-stack .app-notice { animation: none; transition: none; } }
+
+.modal-dialog:has(.modal-field-group) {
+    --bs-modal-width: 780px;
+}
+.modal-field-group {
+    margin-block-end: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .85rem;
+}
+.modal-field-group legend {
+    float: none;
+    width: auto;
+    padding-inline: .35rem;
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 600;
+}
+.modal-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+.modal-field-grid .modal-field {
+    margin-bottom: 0 !important;
+}
+.modal-field-grid :is([data-field="Description"], [data-field="CostPrice"],
+    [data-field="RetailPrice"], [data-field="WholesalePrice"], [data-field="VipPrice"],
+    [data-field="AddOpeningStock"], [data-field="OpeningQuantityPreview"]) {
+    grid-column: 1 / -1;
+}
+@media (max-width: 575px) {
+    .modal-field-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

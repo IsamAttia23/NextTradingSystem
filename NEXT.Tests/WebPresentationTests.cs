@@ -239,7 +239,8 @@ public sealed class WebPresentationTests
         var productId = Guid.NewGuid();
         var warehouseId = Guid.NewGuid();
         var transfer = await presenter.TransferFormAsync("/Inventory/Transfer", productId, warehouseId, default);
-        Assert.Contains(receive.Fields, x => x.Name == "UnitCost");
+        Assert.DoesNotContain(receive.Fields, x => x.Name == "UnitCost");
+        Assert.Contains(receive.Fields, x => x.Name == "ReceiveInPackages");
         Assert.Contains(receive.Fields, x => x.Name == "ExpiryDate");
         Assert.DoesNotContain(transfer.Fields, x => x.Name is "UnitCost" or "ExpiryDate" or "WarehouseId");
         Assert.Equal(productId.ToString(), transfer.Fields.Single(x => x.Name == "ProductId").Value);

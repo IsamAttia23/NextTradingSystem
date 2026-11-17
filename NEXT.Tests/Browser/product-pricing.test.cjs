@@ -9,14 +9,18 @@ function setup() {
     class HTMLInputElement {}
     const events = new Map();
     const inputs = Object.fromEntries([
-        ["CostPrice", 200], ["RetailPrice", 25], ["WholesalePrice", 15], ["VipPrice", 10]
+        ["UnitsPerPackage", 12], ["CostPrice", 200], ["RetailPrice", 25], ["WholesalePrice", 15], ["VipPrice", 10]
     ].map(([name, value]) => [name, Object.assign(new HTMLInputElement(), { name, valueAsNumber: value, validity: { valid: true } })]));
     const outputs = ["RetailPrice", "WholesalePrice", "VipPrice"].map((name) => ({
         dataset: { pricePreview: name }, textContent: ""
     }));
+    inputs.PackagingUnitId = { value: "carton" };
+    const packageRow = { hidden: true };
+    const packageRetail = { dataset: { pricePreview: "RetailPrice", packagePrice: "" },
+        closest: () => packageRow };
     const form = {
         elements: { namedItem: (name) => inputs[name] },
-        querySelectorAll: () => outputs
+        querySelectorAll: () => [...outputs, packageRetail]
     };
     const document = {
         readyState: "complete",
@@ -26,7 +30,7 @@ function setup() {
     };
     vm.runInNewContext(source, { document, Intl, HTMLInputElement });
     return {
-        inputs, outputs, events,
+        inputs, outputs, events, packageRetail, packageRow,
         change: (name, value) => {
             inputs[name].valueAsNumber = value;
             events.get("input")({ target: { name, closest: () => form } });
@@ -53,4 +57,17 @@ test("Product preview rejects missing or negative numbers and initializes loaded
     ui.inputs.RetailPrice.valueAsNumber = 20;
     ui.events.get("next:formloaded")();
     assert.equal(ui.outputs[0].textContent, "120.00");
+});
+
+test("Package price follows the product capacity and the same sale markup", () => {
+    const ui = setup();
+    assert.equal(ui.packageRetail.textContent, "3,000.00");
+    ui.change("UnitsPerPackage", 24);
+    assert.equal(ui.packageRetail.textContent, "6,000.00");
+    ui.change("CostPrice", 1.019);
+    assert.equal(ui.outputs[0].textContent, "1.27");
+    assert.equal(ui.packageRetail.textContent, "30.48");
+    ui.inputs.PackagingUnitId.value = "";
+    ui.events.get("next:formloaded")();
+    assert.equal(ui.packageRow.hidden, true);
 });

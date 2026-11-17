@@ -1,0 +1,80 @@
+@model ModalFormField
+@{
+    var field = Model.Field;
+    var productPricing = Model.ProductPricing;
+    var id = "field-" + field.Name.Replace(".", "-");
+    if (field.Type == "hidden")
+    {
+        <input type="hidden" name="@field.Name" value="@field.Value" />
+        return;
+    }
+    var dependent = field.VisibleWhenField is {} dependency
+        ? Model.AllFields.FirstOrDefault(item => item.Name == dependency) : null;
+    var visible = dependent is null || dependent.Value == field.VisibleWhenValue;
+}
+<div class="mb-3 modal-field" data-field="@field.Name" data-visible-when-field="@field.VisibleWhenField" data-visible-when-value="@field.VisibleWhenValue" hidden="@(!visible)">
+    @if (productPricing && field.Name is "RetailPrice" or "WholesalePrice" or "VipPrice")
+    {
+        <partial name="_ProductPricePreview" model='@(new FieldControlModel(field, id, "Choose"))' />
+    }
+    else if (field.Type == "checkbox")
+    {
+        <div class="form-check form-switch">
+            <input class="form-check-input" id="@id" name="@field.Name" type="checkbox" value="true" checked="@(field.Value == "true")" />
+            <label class="form-check-label" for="@id">@L[field.Label]</label>
+            <input type="hidden" name="@field.Name" value="false" />
+        </div>
+    }
+    else if (field.Type == "checklist")
+    {
+        var selected = new HashSet<string>(field.SelectedValues ?? [], StringComparer.OrdinalIgnoreCase);
+        <fieldset class="dropdown" data-checklist>
+            <legend class="form-label">@L[field.Label]</legend>
+            <button class="form-select text-start" type="button" id="@id" data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside" aria-expanded="false" aria-controls="@(id + "-options")"
+                    data-choose="@L["ChooseRoles"]" data-count="@L["SelectedRolesCount", "{0}"]">
+                <span data-checklist-summary aria-live="polite">@(selected.Count == 0 ? L["ChooseRoles"] : L["SelectedRolesCount", selected.Count])</span>
+            </button>
+            <div class="dropdown-menu w-100 px-3" id="@(id + "-options")">
+                @foreach (var option in field.Options ?? [])
+                {
+                    <label class="form-check py-2 mb-0">
+                        <input class="form-check-input" type="checkbox" name="@field.Name" data-checklist-option
+                               value="@option.Value" checked="@selected.Contains(option.Value)" />
+                        <span class="form-check-label">@option.Label</span>
+                    </label>
+                }
+            </div>
+        </fieldset>
+    }
+    else
+    {
+        <label class="form-label" for="@id">
+            @L[field.Label]
+            @if (field.Required)
+            {
+                <span class="required" aria-hidden="true">*</span>
+            }
+        </label>
+        @if (field.Type == "quantity-output")
+        {
+            <output id="@id" class="form-text d-block" aria-live="polite">—</output>
+        }
+        else if (field.Type == "file")
+        {
+            <partial name="_ProfileImagePicker" model="field" />
+        }
+        else if (field.Type == "textarea")
+        {
+            <textarea class="form-control" id="@id" name="@field.Name" maxlength="@field.MaxLength" rows="3" required="@field.Required">@field.Value</textarea>
+        }
+        else
+        {
+            <partial name="_FieldControl" model='@(new FieldControlModel(visible ? field : field with { Value = null }, id, "Choose", Disabled: !visible))' />
+        }
+        @if (productPricing && field.Name == "CostPrice")
+        {
+            <small data-package-price-row hidden>@L["PackageCost"] <output data-price-preview="CostPrice" data-package-price>—</output> <bdi>SDG</bdi></small>
+        }
+    }
+</div>

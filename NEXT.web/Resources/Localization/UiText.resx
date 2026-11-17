@@ -642,4 +642,30 @@
   <data name="TaxRatePrecision" xml:space="preserve"><value>Use at most two decimal places for the tax rate.</value></data>
   <data name="StockQuantityPrecision" xml:space="preserve"><value>Use at most three decimal places for stock quantities.</value></data>
   <data name="Maximum stock must be at least the minimum." xml:space="preserve"><value>Maximum stock must be at least the minimum.</value></data>
+  <data name="PackagingUnitId" xml:space="preserve"><value>Packaging unit</value></data>
+  <data name="UnitsPerPackage" xml:space="preserve"><value>Base units per package</value></data>
+  <data name="ProductInformation" xml:space="preserve"><value>Product information</value></data>
+  <data name="ProductUnits" xml:space="preserve"><value>Measurement and packaging</value></data>
+  <data name="ProductPricing" xml:space="preserve"><value>Pricing</value></data>
+  <data name="ProductInventory" xml:space="preserve"><value>Inventory settings</value></data>
+  <data name="OpeningStock" xml:space="preserve"><value>Opening stock</value></data>
+  <data name="AddOpeningStock" xml:space="preserve"><value>Add opening stock</value></data>
+  <data name="BaseStockUnit" xml:space="preserve"><value>Base unit</value></data>
+  <data name="QuantityUnit" xml:space="preserve"><value>Quantity unit</value></data>
+  <data name="ReceiptQuantityPreview" xml:space="preserve"><value>Quantity to add in the base unit</value></data>
+  <data name="PackagePrice" xml:space="preserve"><value>Package price:</value></data>
+  <data name="PackageCost" xml:space="preserve"><value>Package cost:</value></data>
+  <data name="QuantityWithUnit" xml:space="preserve"><value>{0} {1}</value></data>
+  <data name="QuantityPlusRemainder" xml:space="preserve"><value>{0} + {1}</value></data>
+  <data name="PackagedQuantity" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="PackagedPrice" xml:space="preserve"><value>{0} SDG / {1} · {2} SDG / {3}</value></data>
+  <data name="PackagingNeedsDifferentBaseUnit" xml:space="preserve"><value>Choose a base unit different from the packaging unit.</value></data>
+  <data name="PackagingCapacityRequired" xml:space="preserve"><value>Enter the number of base units per package.</value></data>
+  <data name="PackagingUnitRequired" xml:space="preserve"><value>Choose a packaging unit.</value></data>
+  <data name="BaseUnitCannotChange" xml:space="preserve"><value>The base unit cannot change after stock movements have been recorded.</value></data>
+  <data name="ReceiptCostOutOfRange" xml:space="preserve"><value>The product cost exceeds the allowed inventory cost range.</value></data>
+  <data name="ProductHasNoPackaging" xml:space="preserve"><value>The selected product has no packaging unit.</value></data>
+  <data name="OpeningWarehouseRequired" xml:space="preserve"><value>Choose a warehouse for the opening stock.</value></data>
+  <data name="OpeningQuantityRequired" xml:space="preserve"><value>Enter an opening quantity greater than zero.</value></data>
+  <data name="BaseUnitCost" xml:space="preserve"><value>Cost per base unit</value></data>
 </root>

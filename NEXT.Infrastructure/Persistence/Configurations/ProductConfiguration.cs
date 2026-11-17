@@ -13,6 +13,8 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
                     .HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.SetNull);
         builder.HasOne(x => x.UnitOfMeasure).WithMany(x => x.Products)
                     .HasForeignKey(x => x.UnitOfMeasureId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(x => x.PackagingUnit).WithMany()
+            .HasForeignKey(x => x.PackagingUnitId).OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.Barcode).HasMaxLength(100);
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.HasIndex(x => x.Barcode).IsUnique().HasFilter("\"Barcode\" IS NOT NULL");

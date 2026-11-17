@@ -642,4 +642,30 @@
   <data name="TaxRatePrecision" xml:space="preserve"><value>استخدم منزلتين عشريتين كحد أقصى لنسبة الضريبة.</value></data>
   <data name="StockQuantityPrecision" xml:space="preserve"><value>استخدم ثلاث منازل عشرية كحد أقصى لكميات المخزون.</value></data>
   <data name="Maximum stock must be at least the minimum." xml:space="preserve"><value>يجب أن يكون الحد الأعلى للمخزون أكبر من الحد الأدنى أو مساويًا له.</value></data>
+  <data name="PackagingUnitId" xml:space="preserve"><value>وحدة التعبئة</value></data>
+  <data name="UnitsPerPackage" xml:space="preserve"><value>عدد الوحدات في العبوة</value></data>
+  <data name="ProductInformation" xml:space="preserve"><value>بيانات المنتج</value></data>
+  <data name="ProductUnits" xml:space="preserve"><value>وحدات القياس والتعبئة</value></data>
+  <data name="ProductPricing" xml:space="preserve"><value>التسعير</value></data>
+  <data name="ProductInventory" xml:space="preserve"><value>إعدادات المخزون</value></data>
+  <data name="OpeningStock" xml:space="preserve"><value>الرصيد الافتتاحي</value></data>
+  <data name="AddOpeningStock" xml:space="preserve"><value>إضافة رصيد افتتاحي</value></data>
+  <data name="BaseStockUnit" xml:space="preserve"><value>الوحدة الأساسية</value></data>
+  <data name="QuantityUnit" xml:space="preserve"><value>وحدة الكمية</value></data>
+  <data name="ReceiptQuantityPreview" xml:space="preserve"><value>الكمية التي ستضاف بالوحدة الأساسية</value></data>
+  <data name="PackagePrice" xml:space="preserve"><value>سعر العبوة:</value></data>
+  <data name="PackageCost" xml:space="preserve"><value>تكلفة العبوة:</value></data>
+  <data name="QuantityWithUnit" xml:space="preserve"><value>{0} {1}</value></data>
+  <data name="QuantityPlusRemainder" xml:space="preserve"><value>{0} + {1}</value></data>
+  <data name="PackagedQuantity" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="PackagedPrice" xml:space="preserve"><value>{0} ج.س / {1} · {2} ج.س / {3}</value></data>
+  <data name="PackagingNeedsDifferentBaseUnit" xml:space="preserve"><value>اختر وحدة أساسية تختلف عن وحدة التعبئة.</value></data>
+  <data name="PackagingCapacityRequired" xml:space="preserve"><value>أدخل عدد الوحدات الأساسية في العبوة.</value></data>
+  <data name="PackagingUnitRequired" xml:space="preserve"><value>اختر وحدة التعبئة.</value></data>
+  <data name="BaseUnitCannotChange" xml:space="preserve"><value>لا يمكن تغيير الوحدة الأساسية بعد تسجيل حركات مخزون.</value></data>
+  <data name="ReceiptCostOutOfRange" xml:space="preserve"><value>تكلفة المنتج خارج النطاق المسموح به في المخزون.</value></data>
+  <data name="ProductHasNoPackaging" xml:space="preserve"><value>لا توجد وحدة تعبئة للمنتج المحدد.</value></data>
+  <data name="OpeningWarehouseRequired" xml:space="preserve"><value>اختر مخزن الرصيد الافتتاحي.</value></data>
+  <data name="OpeningQuantityRequired" xml:space="preserve"><value>أدخل كمية افتتاحية أكبر من صفر.</value></data>
+  <data name="BaseUnitCost" xml:space="preserve"><value>تكلفة الوحدة الأساسية</value></data>
 </root>

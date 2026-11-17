@@ -172,7 +172,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         "CustomerId" => "Customers",
         "ParentId" or "CategoryId" => "Categories",
         "BranchId" => "Branches",
-        "BaseUnitId" or "UnitOfMeasureId" => "Units",
+        "BaseUnitId" or "UnitOfMeasureId" or "PackagingUnitId" => "Units",
         "ProductId" => "Products",
         "WarehouseId" => "Warehouses",
         _ => null

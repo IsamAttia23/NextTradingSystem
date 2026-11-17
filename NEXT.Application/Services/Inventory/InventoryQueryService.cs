@@ -14,8 +14,18 @@ namespace NEXT.Application.Services.Inventory;
 
 public sealed class InventoryQueryService(IStockRepository stocks, IStockMovementRepository movements,
     IProductBatchRepository batches, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator,
-    TypeAdapterConfig mapping, ExchangeRateReader? exchangeRates = null) : IInventoryQueryService
+    TypeAdapterConfig mapping, ExchangeRateReader exchangeRates,
+    IReadRepository<Product> products, IQueryExecutor executor) : IInventoryQueryService
 {
+    public Task<IReadOnlyList<ReceiptProductOption>> ReceiptProductsAsync(CancellationToken ct)
+    {
+        var query = products.Query(product => product.IsActive).OrderBy(product => product.Name)
+            .Select(product => new ReceiptProductOption(product.Id, product.Name,
+                product.UnitOfMeasure == null ? null : product.UnitOfMeasure.Name,
+                product.PackagingUnit == null ? null : product.PackagingUnit.Name, product.UnitsPerPackage));
+        return executor.ToListAsync(query, ct);
+    }
+
     public Task<TPaginationQueryModel<StockDto>> StocksAsync(PaginationQuery query, CancellationToken ct = default) =>
         GetPagedList<Stock, StockDto>(stocks, query, ct);
     public Task<TPaginationQueryModel<StockMovementDto>> MovementsAsync(PaginationQuery query, CancellationToken ct = default) =>
@@ -46,8 +56,7 @@ public sealed class InventoryQueryService(IStockRepository stocks, IStockMovemen
         {
             return mapping;
         }
-        var reader = exchangeRates ?? throw new InvalidOperationException("Exchange rate reader is not registered.");
-        var rate = await reader.GetUsdRateAsync(ct);
+        var rate = await exchangeRates.GetUsdRateAsync(ct);
         var readMapping = mapping.Clone();
         NEXT.Application.Features.Common.Mapping.RecordMappingRegister.ConfigureStockMapping(
             readMapping, stock => stock.Product.CostPrice * rate);

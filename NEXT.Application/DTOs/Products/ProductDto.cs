@@ -14,6 +14,12 @@ public sealed class ProductDto : IVersionedRecordDto
     public string? Description { get; set; }
     public Guid? CategoryId { get; set; }
     public Guid? UnitOfMeasureId { get; set; }
+    public Guid? PackagingUnitId { get; set; }
+    public int? UnitsPerPackage { get; set; }
+    [ScaffoldColumn(false)]
+    public string? BaseUnitName { get; set; }
+    [ScaffoldColumn(false)]
+    public string? PackagingUnitName { get; set; }
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
     public decimal WholesalePrice { get; set; }

@@ -21,10 +21,16 @@ public sealed class RecordMappingRegister : IRegister
         config.NewConfig<Supplier, SupplierDto>().Map(d => d.TagName, s => s.Tag == null ? null : s.Tag.Name).Map(d => d.TagColor, s => s.Tag == null ? null : s.Tag.Color);
         ConfigureStockMapping(config, stock => stock.Product.CostPrice);
         config.NewConfig<Product, ProductDto>()
+            .Map(d => d.BaseUnitName, s => s.UnitOfMeasure == null ? null : s.UnitOfMeasure.Name)
+            .Map(d => d.PackagingUnitName, s => s.PackagingUnit == null ? null : s.PackagingUnit.Name)
             .Map(d => d.AvailableQuantity, s => s.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity));
         config.NewConfig<StockMovement, StockMovementDto>()
-            .Map(d => d.Type, s => s.Type.ToString());
-        config.NewConfig<ProductBatch, ProductBatchDto>();
+            .Map(d => d.Type, s => s.Type.ToString())
+            .Map(d => d.BaseUnitName, s => s.Product.UnitOfMeasure == null ? null : s.Product.UnitOfMeasure.Name);
+        config.NewConfig<ProductBatch, ProductBatchDto>()
+            .Map(d => d.UnitsPerPackage, s => s.Product.UnitsPerPackage)
+            .Map(d => d.BaseUnitName, s => s.Product.UnitOfMeasure == null ? null : s.Product.UnitOfMeasure.Name)
+            .Map(d => d.PackagingUnitName, s => s.Product.PackagingUnit == null ? null : s.Product.PackagingUnit.Name);
         config.NewConfig<Branch, BranchOption>();
         foreach (var type in new[] { typeof(Customer), typeof(Tag), typeof(Category), typeof(Branch),
                      typeof(Warehouse), typeof(Product), typeof(UnitOfMeasure) })
@@ -46,6 +52,9 @@ public sealed class RecordMappingRegister : IRegister
             .Map(d => d.ProductName, s => s.Product.Name)
             .Map(d => d.WarehouseName, s => s.Warehouse.Name)
             .Map(d => d.AvailableQuantity, s => s.Quantity - s.ReservedQuantity)
-            .Map(d => d.CostPrice, costPrice);
+            .Map(d => d.CostPrice, costPrice)
+            .Map(d => d.UnitsPerPackage, s => s.Product.UnitsPerPackage)
+            .Map(d => d.BaseUnitName, s => s.Product.UnitOfMeasure == null ? null : s.Product.UnitOfMeasure.Name)
+            .Map(d => d.PackagingUnitName, s => s.Product.PackagingUnit == null ? null : s.Product.PackagingUnit.Name);
     }
 }

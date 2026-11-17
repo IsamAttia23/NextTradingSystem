@@ -162,7 +162,7 @@ public sealed class CrmTests
         html = WebUtility.HtmlDecode(await client.GetStringAsync($"/Customers/Details/{customer.Id}"));
         Assert.Contains(addLabel, html);
         Assert.Contains($"/CustomersContact/Create?customerId={customer.Id}", html);
-        Assert.Contains("customer-detail-grid", html);
+        Assert.Contains("detail-grid detail-pairs", html);
         html = WebUtility.HtmlDecode(await client.GetStringAsync($"/CustomersContact/Create?customerId={customer.Id}"));
         Assert.Contains($"name=\"CustomerId\" value=\"{customer.Id}\"", html);
         Assert.Contains("value=\"Customer preview\"", html);
