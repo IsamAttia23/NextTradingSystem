@@ -43,13 +43,22 @@ public sealed class ProductRepository(NEXTDbContext context) : KeyRepository<Pro
         var barcode = query.Barcode?.Trim();
         var name = query.Name?.Trim();
         var description = query.Description?.Trim();
+        var availability = query.Availability;
+        var isAvailable = availability.HasValue ? null : query.IsAvailable;
         Expression<Func<Product, bool>> filters = entity =>
             (string.IsNullOrEmpty(barcode) || (entity.Barcode != null && entity.Barcode.Contains(barcode))) &&
             (string.IsNullOrEmpty(name) || entity.Name.Contains(name)) &&
             (string.IsNullOrEmpty(description) || (entity.Description != null && entity.Description.Contains(description))) &&
             (!query.CategoryId.HasValue || entity.CategoryId == query.CategoryId.Value) &&
             (!query.UnitOfMeasureId.HasValue || entity.UnitOfMeasureId == query.UnitOfMeasureId.Value) &&
-            (!query.IsActive.HasValue || entity.IsActive == query.IsActive.Value) &&
+            (!isAvailable.HasValue || (entity.IsActive &&
+                entity.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity) > 0) == isAvailable.Value) &&
+            (!availability.HasValue ||
+                (!entity.IsActive || entity.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity) <= 0
+                    ? ProductAvailability.Unavailable
+                    : entity.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity) <= entity.MinStock
+                        ? ProductAvailability.LowStock
+                        : ProductAvailability.Available) == availability.Value) &&
             (!query.HasExpiry.HasValue || entity.HasExpiry == query.HasExpiry.Value) &&
             (!query.MinCostPrice.HasValue || entity.CostPrice >= query.MinCostPrice.Value) &&
             (!query.MaxCostPrice.HasValue || entity.CostPrice <= query.MaxCostPrice.Value) &&

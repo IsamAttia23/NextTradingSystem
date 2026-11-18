@@ -77,6 +77,10 @@
 <data name="Warehouse" xml:space="preserve"><value>المستودعات</value></data>
 <data name="Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
 <data name="Cancel" xml:space="preserve"><value>إلغاء</value></data>
+<data name="DiscardChangesTitle" xml:space="preserve"><value>تجاهل التغييرات؟</value></data>
+<data name="DiscardChangesMessage" xml:space="preserve"><value>لديك تغييرات غير محفوظة. سيؤدي الإغلاق إلى فقدانها.</value></data>
+<data name="DiscardChanges" xml:space="preserve"><value>تجاهل التغييرات</value></data>
+<data name="KeepEditing" xml:space="preserve"><value>متابعة التعديل</value></data>
 <data name="Choose" xml:space="preserve"><value>اختر من القائمة</value></data>
 <data name="DeleteWarning" xml:space="preserve"><value>هل تريد حذف هذا السجل؟ قد تمنع السجلات المرتبطة تنفيذ العملية. لا يمكن التراجع عن الحذف من هذه الصفحة.</value></data>
 <data name="RestoreWarning" xml:space="preserve"><value>هل تريد استعادة هذا السجل إلى مساحة العمل؟</value></data>
@@ -527,7 +531,7 @@
 <data name="ProductPriceRequired" xml:space="preserve"><value>أدخل التكلفة أو نسبة الزيادة. يمكن إدخال صفر.</value></data>
 <data name="ProductAvailable" xml:space="preserve"><value>متوفر</value></data>
 <data name="ProductUnavailable" xml:space="preserve"><value>غير متوفر</value></data>
-<data name="ProductLowStock" xml:space="preserve"><value>مخزون منخفض</value></data>
+<data name="ProductLowStock" xml:space="preserve"><value>قارب على النفاد</value></data>
 <data name="ProductEnabled" xml:space="preserve"><value>السماح بعمليات المنتج</value></data>
 <data name="ProductMarkupHint" xml:space="preserve"><value>أدخل نسبة الزيادة على التكلفة. تتغير أسعار البيع تلقائيًا مع التكلفة وسعر الدولار الحالي.</value></data>
 <data name="PercentagePrecision" xml:space="preserve"><value>استخدم 12 منزلة عشرية كحد أقصى للنسب.</value></data>

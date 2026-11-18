@@ -7,9 +7,14 @@
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const body = document.getElementById("modalBody");
     const title = document.getElementById("modalTitle");
+    const discard = document.getElementById("modalDiscard");
     let request;
     let trigger;
     let saving = false;
+    let filterMode = false;
+    let allowClose = false;
+    let initialValues;
+    let lastFocus;
     const messageFor = (status) => window.NextHttp.messageFor(status, modalElement.dataset);
     const firstControl = "input:not([type=hidden]):not([data-checklist-option]),select,textarea,[data-bs-toggle=dropdown],button[type=submit]";
     document.addEventListener("change", (event) => {
@@ -25,29 +30,89 @@
     function showError(message) {
         window.NextNotifications?.show(message, "error");
     }
+
+    function formValues(form) {
+        const values = [...new FormData(form)].map(([name, value]) =>
+            [name, typeof value === "string" ? value : (value.name ? [value.name, value.size, value.lastModified] : null)],
+        );
+        const searchInputs = [...form.querySelectorAll("[data-reference-search]")].map(input => input.value);
+        return JSON.stringify([values, searchInputs]);
+    }
+
+    function keepEditing() {
+        discard.hidden = true;
+        body.hidden = false;
+        title.textContent = body.querySelector("[data-modal-form]").dataset.title;
+        modalElement.removeAttribute("aria-describedby");
+        modal.handleUpdate();
+        if (lastFocus?.isConnected) {
+            lastFocus.focus();
+        } else {
+            body.querySelector(firstControl)?.focus();
+        }
+    }
+
+    function closeModal() {
+        allowClose = true;
+        modal.hide();
+    }
+
+    discard.addEventListener("click", event => {
+        if (event.target.closest("[data-keep-editing]")) {
+            keepEditing();
+        } else if (event.target.closest("[data-discard-changes]")) {
+            closeModal();
+        }
+    });
+
+    document.addEventListener("next:navigated", () => {
+        if (filterMode) {
+            closeModal();
+        }
+    });
+
     document.addEventListener("click", async (event) => {
-        const button = event.target.closest("[data-modal-url]");
-        if (!button) {
+        const button = event.target.closest("[data-modal-url], [data-modal-template]");
+        if (!button || saving) {
             return;
         }
         event.preventDefault();
         trigger = button;
         request?.abort();
-        request = new AbortController();
+        const template = document.getElementById(button.dataset.modalTemplate ?? "");
+        filterMode = template instanceof HTMLTemplateElement;
+        modalElement.classList.toggle("filter-modal", filterMode);
+        initialValues = undefined;
+        if (filterMode) {
+            body.replaceChildren(template.content.cloneNode(true));
+            title.textContent = button.dataset.title;
+            modal.show();
+            return;
+        }
+
+        const loading = new AbortController();
+        request = loading;
         body.replaceChildren();
         try {
             const url = new URL(button.dataset.modalUrl, location.href);
             if (url.origin !== location.origin) {
                 throw new Error("Origin");
             }
-            const response = await window.NextHttp.request(url, { signal: request.signal });
+            const response = await window.NextHttp.request(url, { signal: loading.signal });
+            if (loading.signal.aborted) {
+                return;
+            }
             if (!response.ok || !response.headers.get("content-type")?.includes("text/html")) {
                 body.replaceChildren();
                 showError(messageFor(response.status));
                 return;
             }
             // Only server-rendered, Razor-encoded same-origin partial views enter this container.
-            body.innerHTML = await response.text();
+            const content = await response.text();
+            if (loading.signal.aborted) {
+                return;
+            }
+            body.innerHTML = content;
             const form = body.querySelector("[data-modal-form]");
             if (!form) {
                 body.replaceChildren();
@@ -56,12 +121,13 @@
             }
             title.textContent = form.dataset.title;
             document.dispatchEvent(new CustomEvent("next:formloaded", { detail: { form } }));
+            initialValues = formValues(form);
             modal.show();
             if (modalElement.classList.contains("show")) {
                 form.querySelector(firstControl)?.focus();
             }
         } catch (error) {
-            if (error.name !== "AbortError") {
+            if (!loading.signal.aborted && error.name !== "AbortError") {
                 body.replaceChildren();
                 showError(modalElement.dataset.error);
             }
@@ -73,15 +139,44 @@
     modalElement.addEventListener("hide.bs.modal", (event) => {
         if (saving) {
             event.preventDefault();
+            return;
+        }
+        if (allowClose) {
+            return;
+        }
+        if (!discard.hidden) {
+            event.preventDefault();
+            keepEditing();
+            return;
+        }
+        const form = body.querySelector("[data-modal-form]");
+        if (form && initialValues !== undefined && formValues(form) !== initialValues) {
+            event.preventDefault();
+            lastFocus = document.activeElement;
+            body.hidden = true;
+            discard.hidden = false;
+            title.textContent = modalElement.dataset.discardTitle;
+            modalElement.setAttribute("aria-describedby", "modalDiscardMessage");
+            modal.handleUpdate();
+            discard.querySelector("[data-keep-editing]").focus();
         }
     });
     modalElement.addEventListener("hidden.bs.modal", () => {
         request?.abort();
+        const nextFilter = filterMode ? document.querySelector("[data-modal-template]") : null;
+        filterMode = false;
+        allowClose = false;
+        initialValues = undefined;
+        lastFocus = undefined;
+        modalElement.classList.remove("filter-modal");
+        modalElement.removeAttribute("aria-describedby");
+        body.hidden = false;
+        discard.hidden = true;
         body.replaceChildren();
         if (trigger?.isConnected) {
             trigger.focus();
         } else {
-            document.getElementById("main")?.focus({ preventScroll: true });
+            (nextFilter ?? document.getElementById("main"))?.focus({ preventScroll: true });
         }
     });
     document.addEventListener("submit", async (event) => {
@@ -105,7 +200,7 @@
                 showError(await window.NextHttp.problemMessage(response, modalElement.dataset));
                 if (response.status === 409 && form.querySelector('[name="RoleSelection"]')) {
                     saving = false;
-                    modal.hide();
+                    closeModal();
                     await window.NextNavigation?.refresh();
                 }
                 return;
@@ -117,7 +212,7 @@
                 ? await window.NextNavigation?.navigate(result.redirectUrl, { replace: true })
                 : await window.NextNavigation?.refresh();
             saving = false;
-            modal.hide();
+            closeModal();
             window.NextNotifications?.show(
                 result?.notification?.message ?? modalElement.dataset.success,
                 result?.notification?.kind ?? "info",

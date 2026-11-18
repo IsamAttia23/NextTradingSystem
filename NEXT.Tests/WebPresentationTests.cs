@@ -32,11 +32,14 @@ public sealed class WebPresentationTests
         Assert.Equal(flag, details.Single(field => field.Label == "HasExpiry").Value);
         Assert.Equal(status, details.Single(field => field.Label == "IsActive").Value);
         var filters = await new QueryFilterPresenter(presenter).FieldsAsync(new ProductQueryModel(), default);
-        foreach (var (name, expected) in new[] { ("HasExpiry", flag), ("IsActive", status) })
-        {
-            var options = filters.Single(field => field.Name == name).Options!;
-            Assert.Equal(expected, options.Single(option => option.Value == value.ToString().ToLowerInvariant()).Label);
-        }
+        Assert.DoesNotContain(filters, field => field.Name == "IsActive");
+        var availability = Assert.Single(filters, field => field.Name == "Availability");
+        Assert.Equal("Status", availability.Label);
+        Assert.Equal(new[] { "Available", "LowStock", "Unavailable" }, availability.Options!.Select(option => option.Value));
+        Assert.Equal(new[] { "ProductAvailable", "ProductLowStock", "ProductUnavailable" },
+            availability.Options!.Select(option => option.Label));
+        var expiry = Assert.Single(filters, field => field.Name == "HasExpiry");
+        Assert.Equal(flag, expiry.Options!.Single(option => option.Value == value.ToString().ToLowerInvariant()).Label);
         var related = RelatedRecordPresenter.Fields(new(Guid.NewGuid(), new Dictionary<string, object?>
         {
             ["HasExpiry"] = value,

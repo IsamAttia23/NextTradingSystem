@@ -84,7 +84,7 @@ public sealed class ProductPresenter(ISender sender, TablePresenter tables, Form
         {
             return "ProductUnavailable";
         }
-        return "ProductAvailable";
+        return StockLevel(item) == "low" ? "ProductLowStock" : "ProductAvailable";
     }
 
     private static string StockLevel(ProductDto item)
@@ -93,7 +93,7 @@ public sealed class ProductPresenter(ISender sender, TablePresenter tables, Form
         {
             return "empty";
         }
-        if (item.AvailableQuantity <= item.MinStock)
+        if (item.IsActive && item.AvailableQuantity <= item.MinStock)
         {
             return "low";
         }

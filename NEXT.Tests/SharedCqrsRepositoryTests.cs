@@ -242,6 +242,7 @@ public sealed class SharedCqrsRepositoryTests
         Check(new ProductRepository(db), new ProductQueryModel
         {
             Barcode = "code",
+            Availability = ProductAvailability.LowStock,
             MaxStock = 10,
             MinCostPrice = 1,
             HasExpiry = true

@@ -77,13 +77,14 @@ public sealed class ProductPercentageTests
         list = await client.GetStringAsync("/Products?culture=en");
         Assert.Contains("data-stock-level=\"low\"", list);
         Assert.Contains("stock-warning", list);
-        Assert.Contains(">Available</span>", list);
+        Assert.Contains("stock-low-tag\">Low stock", list);
         Assert.Equal(4m, (await sender.Send(new GetEntityByIdQuery<ProductDto>(product.Id))).AvailableQuantity);
 
         await Receive(2);
         list = await client.GetStringAsync("/Products?culture=en");
         Assert.Contains("data-stock-level=\"normal\"", list);
         Assert.DoesNotContain("stock-warning", list);
+        Assert.Contains(">Available</span>", list);
         Assert.Equal(6m, (await sender.Send(new GetEntityByIdQuery<ProductDto>(product.Id))).AvailableQuantity);
         Assert.True((await db.Products.AsNoTracking().SingleAsync()).IsActive);
 

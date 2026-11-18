@@ -1,6 +1,8 @@
 <div class="modal fade" id="workspaceModal" tabindex="-1" aria-labelledby="modalTitle"
      data-error="@L["RequestFailed"]" data-expired="@L["SessionExpired"]" data-forbidden="@L["Denied"]"
-     data-validation="@L["ValidationFailed"]" data-conflict="@L["Conflict"]" data-success="@L["Saved"]" data-login-url="@Url.Action("Login", "Account")" data-refresh-error="@L["RefreshAfterSaveFailed"]" data-loading="@L["Loading"]">
+     data-validation="@L["ValidationFailed"]" data-conflict="@L["Conflict"]" data-success="@L["Saved"]"
+     data-login-url="@Url.Action("Login", "Account")" data-refresh-error="@L["RefreshAfterSaveFailed"]"
+     data-loading="@L["Loading"]" data-discard-title="@L["DiscardChangesTitle"]">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
@@ -8,6 +10,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
             </div>
             <div id="modalBody" class="modal-body">
+            </div>
+            <div id="modalDiscard" class="modal-body" hidden>
+                <p id="modalDiscardMessage">@L["DiscardChangesMessage"]</p>
+                <div class="modal-form-footer">
+                    <button type="button" class="btn btn-danger" data-discard-changes>@L["DiscardChanges"]</button>
+                    <button type="button" class="btn btn-primary" data-keep-editing>@L["KeepEditing"]</button>
+                </div>
             </div>
         </div>
     </div>

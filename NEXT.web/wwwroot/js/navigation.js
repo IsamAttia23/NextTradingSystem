@@ -116,6 +116,7 @@
         updateHeader(source);
         updatePart(".skip-link", source);
         updatePart("#workspaceModal .btn-close", source);
+        updatePart("#modalDiscard", source);
         updatePart(".app-footer", source);
         const oldDrawer = document.getElementById("mobileNavigation");
         const newDrawer = source.getElementById("mobileNavigation");

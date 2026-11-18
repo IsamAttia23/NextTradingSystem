@@ -84,7 +84,14 @@
                                 }
                                 else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
                                 {
-                                    <span class="status-tag @(row.Cells[i] == "ProductUnavailable" ? "stock-unavailable-tag" : row.Cells[i] == "Inactive" ? (Model.Title == "Customers" ? "inactive-tag" : "muted-tag") : "")">@L[row.Cells[i]]</span>
+                                    var statusClass = row.Cells[i] switch
+                                    {
+                                        "ProductUnavailable" => "stock-unavailable-tag",
+                                        "ProductLowStock" => "stock-low-tag",
+                                        "Inactive" => Model.Title == "Customers" ? "inactive-tag" : "muted-tag",
+                                        _ => ""
+                                    };
+                                    <span class="status-tag @statusClass">@L[row.Cells[i]]</span>
                                 }
                                 else
                                 {

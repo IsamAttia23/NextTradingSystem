@@ -77,6 +77,10 @@
 <data name="Warehouse" xml:space="preserve"><value>Warehouses</value></data>
 <data name="Save" xml:space="preserve"><value>Save changes</value></data>
 <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+<data name="DiscardChangesTitle" xml:space="preserve"><value>Discard changes?</value></data>
+<data name="DiscardChangesMessage" xml:space="preserve"><value>Closing will discard your unsaved changes.</value></data>
+<data name="DiscardChanges" xml:space="preserve"><value>Discard changes</value></data>
+<data name="KeepEditing" xml:space="preserve"><value>Keep editing</value></data>
 <data name="Choose" xml:space="preserve"><value>Select an option</value></data>
 <data name="DeleteWarning" xml:space="preserve"><value>Delete this record? Related records may prevent this operation. This action cannot be undone here.</value></data>
 <data name="RestoreWarning" xml:space="preserve"><value>Restore this record to the active workspace?</value></data>

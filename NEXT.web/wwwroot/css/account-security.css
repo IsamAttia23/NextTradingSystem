@@ -3,7 +3,7 @@
 .auth-intro > p { max-width: 350px; }
 .auth-art { width: 240px; height: 200px; position: relative; margin: 35px auto 20px; }
 .auth-art-background { position: absolute; inset: 20px 5px 0; border-radius: 45% 55% 40% 60%; background: var(--blue-soft); transform: rotate(-10deg); }
-.auth-identity-card { position: absolute; inset: 15px 55px 22px; border: 2px solid var(--blue); border-radius: 18px; background: #fff; transform: rotate(7deg); display: flex; flex-direction: column; align-items: center; padding: 18px 10px; gap: 10px; box-shadow: 10px 12px 0 #153d9710; }
+.auth-identity-card { position: absolute; inset: 15px 55px 22px; border: 2px solid var(--blue); border-radius: 18px; background: var(--surface); transform: rotate(7deg); display: flex; flex-direction: column; align-items: center; padding: 18px 10px; gap: 10px; box-shadow: 10px 12px 0 #153d9710; }
 .auth-avatar { display: grid; place-items: center; width: 47px; height: 47px; background: var(--blue-soft); border-radius: 50%; color: var(--blue); }
 .auth-identity-card > i { width: 70%; height: 5px; border-radius: 8px; background: var(--line); }
 .auth-identity-card > i:nth-of-type(2) { width: 50%; }
@@ -11,7 +11,7 @@
 .auth-art-lock,.auth-art-check { position: absolute; display: grid; place-items: center; border: 5px solid var(--canvas); }
 .auth-art-lock { width: 70px; height: 70px; border-radius: 22px; background: var(--blue); color: var(--lime); bottom: 6px; inset-inline-start: 13px; transform: rotate(-12deg); }
 .auth-art-lock .ui-icon { width: 33px; height: 33px; }
-.auth-art-check { width: 48px; height: 48px; border-radius: 50%; background: var(--lime); color: var(--blue); top: 10px; inset-inline-end: 18px; }
+.auth-art-check { width: 48px; height: 48px; border-radius: 50%; background: var(--lime); color: #13244b; top: 10px; inset-inline-end: 18px; }
 .auth-intro .auth-security-note { text-align: center; max-width: none; font-size: 12px; }
 .auth-security-note .ui-icon { color: var(--green); width: 17px; }
 .auth-card { display: flex; flex-direction: column; gap: 17px; padding: 32px; min-width: 0; border-radius: 22px; }
@@ -58,14 +58,14 @@
 .otp-input > input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; direction: ltr; font-size: 20px; cursor: text; }
 .otp-input:focus-within .otp-box[data-current="true"] { outline: 2px solid var(--blue); outline-offset: 3px; border-color: var(--blue); }
 .otp-form[data-state="error"] .otp-box { color: #bd3045; border-color: #bd3045; background: #fff0f2; }
-.otp-form[data-state="success"] .otp-box { color: #128363; border-color: #128363; background: #fff; animation: otp-settle .4s ease-out both; animation-delay: calc(var(--otp-index) * .08s); }
+.otp-form[data-state="success"] .otp-box { color: #128363; border-color: #128363; background: var(--surface); animation: otp-settle .4s ease-out both; animation-delay: calc(var(--otp-index) * .08s); }
 .otp-form[data-state="success"] .otp-box::after { content: ""; position: absolute; inset: -4px; border: 2px solid #128363; border-radius: 15px; animation: otp-outline .6s ease both; animation-delay: calc(var(--otp-index) * .08s); pointer-events: none; }
 .otp-validity,.otp-resend-row { display: flex; justify-content: center; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 0; }
 .otp-validity .ui-icon { width: 15px; height: 15px; }
 [data-otp-expiry],[data-resend-countdown] { font: 12px "Segoe UI",sans-serif; font-variant-numeric: tabular-nums; }
 .auth-lock-illustration { width: 170px; height: 140px; position: relative; margin-bottom: 3px; }
 .auth-lock-halo { position: absolute; inset: 6px 12px; border-radius: 50%; background: var(--blue-soft); }
-.auth-lock-card { position: absolute; inset: 18px 39px 12px; border: 2px solid var(--blue); background: #fff; border-radius: 16px; transform: rotate(8deg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.auth-lock-card { position: absolute; inset: 18px 39px 12px; border: 2px solid var(--blue); background: var(--surface); border-radius: 16px; transform: rotate(8deg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
 .auth-lock-card > .ui-icon { width: 39px; height: 39px; color: var(--blue); }
 .auth-lock-card i { color: var(--blue); font-style: normal; letter-spacing: 3px; }
 .auth-lock-badge { position: absolute; inset-inline-start: 15px; bottom: 2px; width: 53px; height: 53px; border: 4px solid #fff; border-radius: 17px; color: var(--lime); background: var(--blue); transform: rotate(-10deg); display: grid; place-items: center; }

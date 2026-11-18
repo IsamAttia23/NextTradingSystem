@@ -2,6 +2,7 @@ using NEXT.web.Models;
 using NEXT.Application.Common.QueryModels;
 using NEXT.Application.QueryModels;
 using NEXT.Application.DTOs.Presentation;
+using NEXT.Domain.Enums;
 
 namespace NEXT.web.Services;
 
@@ -13,6 +14,24 @@ public sealed class QueryFilterPresenter(FormFieldPresenter fields)
         var result = new List<FormField> { new("SearchTerm", "SearchAll", query.SearchTerm, "search", MaxLength: 200) };
         foreach (var property in query.GetType().GetProperties().Where(p => !Common.Contains(p.Name)))
         {
+            if (query is ProductQueryModel product)
+            {
+                if (property.Name == nameof(ProductQueryModel.IsAvailable))
+                {
+                    continue;
+                }
+                if (property.Name == nameof(ProductQueryModel.Availability))
+                {
+                    var availability = product.Availability ??
+                        (product.IsAvailable == false ? ProductAvailability.Unavailable : (ProductAvailability?)null);
+                    result.Add(new(property.Name, "Status", availability?.ToString(), "select",
+                        Options: [new(nameof(ProductAvailability.Available), "ProductAvailable"),
+                            new(nameof(ProductAvailability.LowStock), "ProductLowStock"),
+                            new(nameof(ProductAvailability.Unavailable), "ProductUnavailable")]));
+                    continue;
+                }
+            }
+
             var label = (query, property.Name) switch
             {
                 (CustomerQueryModel, "Type") => "CustomerTypeFilter",
@@ -25,5 +44,7 @@ public sealed class QueryFilterPresenter(FormFieldPresenter fields)
         return result;
     }
     public static int ActiveCount(PaginationQuery query) => query.GetType().GetProperties()
-        .Count(p => (!Common.Contains(p.Name) || p.Name == "SearchTerm") && p.GetValue(query) is { } value && (value is not string text || !string.IsNullOrWhiteSpace(text)));
+        .Count(p => (!Common.Contains(p.Name) || p.Name == "SearchTerm")
+            && (p.Name != nameof(ProductQueryModel.IsAvailable) || query is not ProductQueryModel { Availability: not null })
+            && p.GetValue(query) is { } value && (value is not string text || !string.IsNullOrWhiteSpace(text)));
 }

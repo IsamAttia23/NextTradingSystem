@@ -1,4 +1,5 @@
 using NEXT.Application.Common.QueryModels;
+using System.ComponentModel.DataAnnotations;
 
 using NEXT.Domain.Enums;
 
@@ -41,8 +42,11 @@ public sealed class ProductQueryModel : PaginationQuery
     public decimal? MinStock { get; set; }
     public decimal? MaxStock { get; set; }
 
-    // Product status
-    public bool? IsActive { get; set; }
+    [EnumDataType(typeof(ProductAvailability))]
+    public ProductAvailability? Availability { get; set; }
+
+    // Retain support for existing links that filter by positive available stock.
+    public bool? IsAvailable { get; set; }
     public bool? HasExpiry { get; set; }
 
 }

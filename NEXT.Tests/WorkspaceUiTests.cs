@@ -540,9 +540,13 @@ public sealed class WorkspaceUiTests
         {
             Assert.Contains("name=\"" + field + "\"", customers);
         }
-        var panel = Regex.Match(customers, "<details[^>]*data-filter-panel[\\s\\S]*?</details>").Value;
+        var panel = Regex.Match(customers, """<template id="queryFilters">[\s\S]*?</template>""").Value;
         Assert.NotEmpty(panel);
-        Assert.DoesNotContain("<details open", panel);
+        Assert.Contains("data-modal-template=\"queryFilters\"", customers);
+        Assert.Contains("aria-controls=\"workspaceModal\"", customers);
+        Assert.Contains("id=\"modalDiscard\"", customers);
+        Assert.Contains("data-keep-editing", customers);
+        Assert.Contains("data-discard-changes", customers);
         Assert.DoesNotContain("<select class=\"form-select\" name=\"PageSize\"", panel);
         Assert.Contains("class=\"list-navigation\"", customers);
         Assert.Contains("data-page-size", customers);
@@ -552,7 +556,7 @@ public sealed class WorkspaceUiTests
         Assert.DoesNotContain("name=\"MinCreditLimit\"", suppliers);
         Assert.DoesNotContain("name=\"TaxNumber\"", suppliers);
         var products = await client.GetStringAsync("/Products");
-        foreach (var field in new[] { "Barcode", "Name", "Description", "CategoryId", "UnitOfMeasureId", "MinCostPrice", "MaxRetailPrice", "MinWholesalePrice", "MaxVipPrice", "MinTaxRate", "HasExpiry", "IsActive" })
+        foreach (var field in new[] { "Barcode", "Name", "Description", "CategoryId", "UnitOfMeasureId", "MinCostPrice", "MaxRetailPrice", "MinWholesalePrice", "MaxVipPrice", "MinTaxRate", "HasExpiry", "Availability" })
         {
             Assert.Contains("name=\"" + field + "\"", products);
         }
@@ -638,6 +642,68 @@ public sealed class WorkspaceUiTests
         foreach (var route in new[] { "/Customers?Type=999", "/Products?HasExpiry=invalid" })
         {
             Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(route)).StatusCode);
+        }
+    }
+
+    [Fact]
+    public async Task ProductAvailabilityFilterMatchesDisplayedStatus()
+    {
+        await using var app = await StartAsync();
+        using var client = Client(app);
+        await Login(client, "ui-admin");
+        Guid lowId;
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var available = new Product { Name = "Available item" };
+            var low = new Product { Name = "Low stock item", MinStock = 2 };
+            var empty = new Product { Name = "Empty item" };
+            var reserved = new Product { Name = "Reserved item" };
+            var disabled = new Product { Name = "Disabled item", IsActive = false };
+            var firstWarehouse = new Warehouse { Name = "First", Code = "FIRST" };
+            var secondWarehouse = new Warehouse { Name = "Second", Code = "SECOND" };
+            db.AddRange(available, low, empty, reserved, disabled, firstWarehouse, secondWarehouse);
+            db.Stocks.AddRange(
+                new Stock { Product = available, Warehouse = firstWarehouse, Quantity = 3, ReservedQuantity = 3 },
+                new Stock { Product = available, Warehouse = secondWarehouse, Quantity = 1 },
+                new Stock { Product = low, Warehouse = firstWarehouse, Quantity = 5, ReservedQuantity = 3 },
+                new Stock { Product = reserved, Warehouse = firstWarehouse, Quantity = 3, ReservedQuantity = 3 },
+                new Stock { Product = disabled, Warehouse = firstWarehouse, Quantity = 1 });
+            await db.SaveChangesAsync();
+            lowId = low.Id;
+        }
+
+        var arabic = WebUtility.HtmlDecode(await client.GetStringAsync("/Products?culture=ar"));
+        var availability = Regex.Match(arabic, """<select\b[^>]*\bname="Availability"[^>]*>[\s\S]*?</select>""").Value;
+        Assert.Contains(">متوفر</option>", availability);
+        Assert.Contains(">غير متوفر</option>", availability);
+        Assert.Contains(">قارب على النفاد</option>", availability);
+        var details = WebUtility.HtmlDecode(await client.GetStringAsync($"/Products/Details/{lowId}?culture=ar"));
+        Assert.Contains("قارب على النفاد", details);
+
+        var all = await client.GetStringAsync("/Products?culture=en");
+        Assert.DoesNotContain("name=\"IsActive\"", all);
+        foreach (var name in new[] { "Available item", "Low stock item", "Empty item", "Reserved item", "Disabled item" })
+        {
+            Assert.Contains(name, all);
+        }
+
+        var availablePage = await client.GetStringAsync("/Products?culture=en&Availability=Available");
+        var unavailablePage = await client.GetStringAsync("/Products?culture=en&Availability=Unavailable");
+        var lowPage = await client.GetStringAsync("/Products?culture=en&Availability=LowStock");
+        Assert.Contains("Low stock item", lowPage);
+        Assert.Contains("stock-low-tag", lowPage);
+        Assert.DoesNotContain("Available item", lowPage);
+        Assert.DoesNotContain("Low stock item", availablePage);
+        Assert.DoesNotContain("Low stock item", unavailablePage);
+        Assert.Contains("Low stock item", await client.GetStringAsync("/Products?culture=en&IsAvailable=true"));
+        Assert.Contains("Available item", availablePage);
+        Assert.DoesNotContain("Available item", unavailablePage);
+        foreach (var name in new[] { "Empty item", "Reserved item", "Disabled item" })
+        {
+            Assert.DoesNotContain(name, availablePage);
+            Assert.Contains(name, unavailablePage);
+            Assert.DoesNotContain(name, lowPage);
         }
     }
 
