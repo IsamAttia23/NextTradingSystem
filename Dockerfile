@@ -26,5 +26,11 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
+
 USER $APP_UID
 ENTRYPOINT ["dotnet", "NEXT.web.dll"]
