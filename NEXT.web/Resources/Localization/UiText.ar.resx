@@ -748,4 +748,25 @@
   <data name="InvoiceProductMerged" xml:space="preserve"><value>تم دمج المنتج مع السطر السابق. يمكنك تعديل الكمية الإجمالية.</value></data>
   <data name="Date" xml:space="preserve"><value>التاريخ</value></data>
   <data name="Reference" xml:space="preserve"><value>المرجع</value></data>
+  <data name="AccountingInvalidIdentifier" xml:space="preserve"><value>معرّف العملية أو السجل غير صالح.</value></data>
+  <data name="AccountingInvalidAmount" xml:space="preserve"><value>أدخل مبلغًا صالحًا بمنزلتين عشريتين وبطرف مدين أو دائن واحد.</value></data>
+  <data name="AccountingDebtReferenceRequired" xml:space="preserve"><value>يجب ربط حركة الديون بعميل وبند دين صحيحين.</value></data>
+  <data name="AccountingDescriptionInvalid" xml:space="preserve"><value>أدخل بيانًا صالحًا للقيد.</value></data>
+  <data name="AccountingInvalidReference" xml:space="preserve"><value>نوع العملية أو مرجعها غير متوافق.</value></data>
+  <data name="AccountingLinesInvalid" xml:space="preserve"><value>يجب أن يتكون القيد من سطرين إلى ألف سطر صالح.</value></data>
+  <data name="AccountingUnbalancedEntry" xml:space="preserve"><value>لا يمكن اعتماد قيد غير متوازن أو بلا مبلغ.</value></data>
+  <data name="AccountingEntryImmutable" xml:space="preserve"><value>الحركة المعتمدة لا تقبل التعديل أو الحذف. استخدم قيدًا عكسيًا.</value></data>
+  <data name="AccountingFixedAccountsImmutable" xml:space="preserve"><value>الحسابات الأساسية ثابتة ولا تقبل الإضافة أو التعديل أو الحذف.</value></data>
+  <data name="AccountingOperationConflict" xml:space="preserve"><value>استُخدم معرّف العملية سابقًا ببيانات مختلفة.</value></data>
+  <data name="AccountingSourceAlreadyPosted" xml:space="preserve"><value>تم ترحيل هذا المصدر من قبل.</value></data>
+  <data name="AccountingEntryNotFound" xml:space="preserve"><value>القيد المحاسبي غير موجود.</value></data>
+  <data name="AccountingReversalUnavailable" xml:space="preserve"><value>تعذّر عكس القيد. تحقق من تاريخه وعدم عكسه سابقًا.</value></data>
+  <data name="AccountingDateRangeInvalid" xml:space="preserve"><value>تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.</value></data>
+  <data name="AccountingSeedRequired" xml:space="preserve"><value>الحسابات الأساسية غير مكتملة. طبّق ترحيل قاعدة البيانات.</value></data>
+  <data name="AccountingDebtUnavailable" xml:space="preserve"><value>أحد بنود الدين غير موجود أو غير متاح.</value></data>
+  <data name="AccountingDebtCustomerInvalid" xml:space="preserve"><value>تحقق من صاحب الدين ونشاطه وسجّل رقم هاتفه قبل الترحيل.</value></data>
+  <data name="AccountingOverpayment" xml:space="preserve"><value>رُفض السداد لأن المبلغ يتجاوز الرصيد المتبقي.</value></data>
+  <data name="AccountingBalanceLimit" xml:space="preserve"><value>الرصيد الناتج يتجاوز الحد المسموح.</value></data>
+  <data name="AccountingDebtAccountImmutable" xml:space="preserve"><value>لا يمكن حذف حساب الدين أو تغيير صاحبه.</value></data>
+  <data name="AccountingPaymentMismatch" xml:space="preserve"><value>قيد الخزينة لا يطابق مبلغ الدفعة أو نوعها.</value></data>
 </root>

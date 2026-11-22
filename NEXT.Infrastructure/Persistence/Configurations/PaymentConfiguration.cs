@@ -8,7 +8,8 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 {
     public void Configure(EntityTypeBuilder<Payment> builder)
     {
-        builder.ToTable("Payments");
+        builder.ToTable("Payments", table => table.HasCheckConstraint("CK_Payments_Purpose", "\"Purpose\" BETWEEN 0 AND 3"));
+        builder.HasOne<Invoice>().WithMany().HasForeignKey(x => x.ReturnInvoiceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Customer).WithMany()
                     .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Supplier).WithMany()

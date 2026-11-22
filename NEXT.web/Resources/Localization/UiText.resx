@@ -748,4 +748,25 @@
   <data name="InvoiceProductMerged" xml:space="preserve"><value>Product merged into the existing line. You can adjust its total quantity.</value></data>
   <data name="Date" xml:space="preserve"><value>Date</value></data>
   <data name="Reference" xml:space="preserve"><value>Reference</value></data>
+  <data name="AccountingInvalidIdentifier" xml:space="preserve"><value>The operation or record identifier is invalid.</value></data>
+  <data name="AccountingInvalidAmount" xml:space="preserve"><value>Enter a valid two-decimal amount on exactly one side.</value></data>
+  <data name="AccountingDebtReferenceRequired" xml:space="preserve"><value>Receivable movements require a customer and debt item.</value></data>
+  <data name="AccountingDescriptionInvalid" xml:space="preserve"><value>Enter a valid entry description.</value></data>
+  <data name="AccountingInvalidReference" xml:space="preserve"><value>The operation type and reference do not match.</value></data>
+  <data name="AccountingLinesInvalid" xml:space="preserve"><value>An entry must contain between two and one thousand valid lines.</value></data>
+  <data name="AccountingUnbalancedEntry" xml:space="preserve"><value>An unbalanced or zero-value entry cannot be posted.</value></data>
+  <data name="AccountingEntryImmutable" xml:space="preserve"><value>Posted movements cannot be edited or deleted. Use a reversing entry.</value></data>
+  <data name="AccountingFixedAccountsImmutable" xml:space="preserve"><value>Fixed accounts cannot be added, edited or deleted.</value></data>
+  <data name="AccountingOperationConflict" xml:space="preserve"><value>The operation identifier was already used with different data.</value></data>
+  <data name="AccountingSourceAlreadyPosted" xml:space="preserve"><value>This source has already been posted.</value></data>
+  <data name="AccountingEntryNotFound" xml:space="preserve"><value>The accounting entry was not found.</value></data>
+  <data name="AccountingReversalUnavailable" xml:space="preserve"><value>The entry cannot be reversed. Check its date and previous reversals.</value></data>
+  <data name="AccountingDateRangeInvalid" xml:space="preserve"><value>The start date must not exceed the end date.</value></data>
+  <data name="AccountingSeedRequired" xml:space="preserve"><value>Fixed accounts are incomplete. Apply the database migration.</value></data>
+  <data name="AccountingDebtUnavailable" xml:space="preserve"><value>A debt item is missing or unavailable.</value></data>
+  <data name="AccountingDebtCustomerInvalid" xml:space="preserve"><value>Check the debt owner and active status, and record a phone number before posting.</value></data>
+  <data name="AccountingOverpayment" xml:space="preserve"><value>Payment was rejected because it exceeds the remaining balance.</value></data>
+  <data name="AccountingBalanceLimit" xml:space="preserve"><value>The resulting balance exceeds the supported limit.</value></data>
+  <data name="AccountingDebtAccountImmutable" xml:space="preserve"><value>A debt account cannot be deleted or reassigned.</value></data>
+  <data name="AccountingPaymentMismatch" xml:space="preserve"><value>The treasury entry does not match the payment amount or type.</value></data>
 </root>

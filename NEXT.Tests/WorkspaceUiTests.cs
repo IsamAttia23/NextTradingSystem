@@ -74,6 +74,7 @@ public sealed class WorkspaceUiTests
         await using (var scope = app.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            if (postgresConnection is null) await db.Database.EnsureCreatedAsync();
             var branch = new Branch
             {
                 Id = Guid.NewGuid(),

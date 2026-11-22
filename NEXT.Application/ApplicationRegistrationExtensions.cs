@@ -51,6 +51,10 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceConfirmation>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoicePaymentRecording>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceFulfillment>();
+        services.AddScoped<IAccountingPostingService, NEXT.Application.Features.Accounting.AccountingPostingService>();
+        services.AddScoped<NEXT.Application.Features.Accounting.AccountingPostingValidator>();
+        services.AddScoped<IAccountingReversalService, NEXT.Application.Features.Accounting.AccountingReversalService>();
+        services.AddScoped<IAccountingReadService, NEXT.Application.Features.Accounting.AccountingReadService>();
         services.AddSingleton<NEXT.Domain.Services.IInvoiceStateMachine, NEXT.Domain.Services.InvoiceStateMachine>();
         services.AddEntityFeatures();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserIdentityRules>();

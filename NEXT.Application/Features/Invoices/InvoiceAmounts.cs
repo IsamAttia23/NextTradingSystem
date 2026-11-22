@@ -5,13 +5,12 @@ namespace NEXT.Application.Features.Invoices;
 
 public static class InvoiceAmounts
 {
-    private const decimal MaximumMoney = 9_999_999_999_999.99m;
     public const decimal MaximumQuantity = 999_999_999_999.999m;
 
     public static decimal Money(decimal value)
     {
-        var rounded = decimal.Round(value, 2, MidpointRounding.AwayFromZero);
-        if (rounded is < 0 or > MaximumMoney)
+        var rounded = NEXT.Domain.Services.MoneyRules.Round(value);
+        if (rounded is < 0 or > NEXT.Domain.Services.MoneyRules.Maximum)
             RequestValidation.Fail("TotalAmount", "مبلغ الفاتورة خارج النطاق المسموح.");
         return rounded;
     }

@@ -8,6 +8,8 @@ public class Payment : AuditableEntity<Guid>
     public string PaymentNumber { get; set; } = string.Empty;
     public string? RecordedByFullName { get; set; }
     public PaymentType PaymentType { get; set; }
+    public PaymentPurpose Purpose { get; set; }
+    public Guid? ReturnInvoiceId { get; set; }
     public Guid? CustomerId { get; set; }
     public Customer? Customer { get; set; }
     public Guid? SupplierId { get; set; }
