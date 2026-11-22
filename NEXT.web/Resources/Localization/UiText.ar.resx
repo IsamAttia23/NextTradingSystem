@@ -730,6 +730,7 @@
   <data name="InvoiceDocumentPrint" xml:space="preserve"><value>طباعة</value></data>
   <data name="InvoiceDocumentActions" xml:space="preserve"><value>خيارات الفاتورة</value></data>
   <data name="InvoicePdfUnavailable" xml:space="preserve"><value>تصدير PDF غير متاح مؤقتًا. حاول مجددًا أو استخدم صفحة طباعة الفاتورة.</value></data>
+  <data name="ErrorReference" xml:space="preserve"><value>رقم الخطأ</value></data>
   <data name="Shipped" xml:space="preserve"><value>مشحونة</value></data>
   <data name="Delivered" xml:space="preserve"><value>مسلّمة</value></data>
   <data name="ShipInvoice" xml:space="preserve"><value>شحن الفاتورة</value></data>

@@ -730,6 +730,7 @@
   <data name="InvoiceDocumentPrint" xml:space="preserve"><value>Print</value></data>
   <data name="InvoiceDocumentActions" xml:space="preserve"><value>Invoice document actions</value></data>
   <data name="InvoicePdfUnavailable" xml:space="preserve"><value>PDF export is temporarily unavailable. Try again or use the invoice print page.</value></data>
+  <data name="ErrorReference" xml:space="preserve"><value>Error reference</value></data>
   <data name="Shipped" xml:space="preserve"><value>Shipped</value></data>
   <data name="Delivered" xml:space="preserve"><value>Delivered</value></data>
   <data name="ShipInvoice" xml:space="preserve"><value>Ship invoice</value></data>

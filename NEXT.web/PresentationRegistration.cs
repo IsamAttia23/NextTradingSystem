@@ -18,6 +18,7 @@ public static class PresentationRegistration
     {
         services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => options.MultipartBodyLengthLimit = 8 * 1024 * 1024);
         services.AddScoped<Filters.OperationNotificationFilter>();
+        services.AddScoped<Filters.RequestFailureFilter>();
         services.AddScoped<Filters.AccountSecurityResultFilter>();
         services.AddScoped<Services.AccountPresenter>();
         services.AddScoped<Services.StatusPresenter>();
@@ -48,6 +49,7 @@ public static class PresentationRegistration
             options.ModelMetadataDetailsProviders.Add(scalarBinding);
             options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
             options.Filters.AddService<Filters.OperationNotificationFilter>();
+            options.Filters.AddService<Filters.RequestFailureFilter>(int.MaxValue);
             options.Filters.AddService<Filters.AccountSecurityResultFilter>();
         })
             .AddDataAnnotationsLocalization(options => options.DataAnnotationLocalizerProvider =
