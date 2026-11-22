@@ -31,6 +31,10 @@ public static class PresentationRegistration
         services.AddScoped<Services.QueryFilterPresenter>();
         services.AddScoped<Services.FormFieldPresenter>();
         services.AddScoped<Services.TablePresenter>();
+        services.AddSingleton<Services.InvoiceDocumentAssets>();
+        services.AddSingleton<Services.InvoicePdfBrowser>();
+        services.AddSingleton<Services.InvoicePdfRenderer>();
+        services.AddScoped<Services.InvoiceDocumentHtml>();
         services.AddScoped<Services.RecycleBinPresenter>();
         services.AddScoped<Services.UsersPresenter>();
         services.AddScoped<Services.RolesPresenter>();

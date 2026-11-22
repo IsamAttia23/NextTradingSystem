@@ -1,0 +1,47 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+<article class="invoice-document" lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
+         dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
+    <header class="invoice-document-heading">
+        <div><div class="invoice-document-brand">NEXT</div><p>@L["TradingSystem"]</p></div>
+        <div><h1>@L["InvoiceDocumentTitle"]</h1><bdi class="invoice-document-number">@Model.Summary.Number</bdi></div>
+    </header>
+    <dl class="invoice-document-meta">
+        <div><dt>@L["CustomerName"]</dt><dd><bdi>@(Model.Summary.CustomerName ?? "—")</bdi></dd></div>
+        <div><dt>@L["InvoiceDate"]</dt><dd><bdi>@Model.Summary.Date.ToLocalTime().ToString("g")</bdi></dd></div>
+        <div><dt>@L["InvoiceCreatedBy"]</dt><dd><bdi>@(Model.CreatedByFullName ?? "—")</bdi></dd></div>
+        <div><dt>@L["Status"]</dt><dd>@L[Model.Summary.Status.ToString()]</dd></div>
+        <div><dt>@L["PaymentStatus"]</dt><dd>@L[Model.Summary.PaymentStatus.ToString()]</dd></div>
+    </dl>
+    <div class="invoice-document-table-wrap">
+        <table class="invoice-document-lines">
+            <caption>@L["InvoiceItems"] · <bdi>SDG</bdi></caption>
+            <colgroup><col class="invoice-col-index" /><col class="invoice-col-product" /><col class="invoice-col-quantity" /><col class="invoice-col-money" /><col class="invoice-col-money" /></colgroup>
+            <thead><tr><th scope="col">#</th><th scope="col">@L["Product"]</th><th scope="col" class="invoice-document-numeric">@L["Quantity"]</th><th scope="col" class="invoice-document-numeric">@L["UnitPrice"]</th><th scope="col" class="invoice-document-numeric">@L["InvoiceLineTotal"]</th></tr></thead>
+            <tbody>
+                @for (var index = 0; index < Model.Lines.Count; index++)
+                {
+                    var line = Model.Lines[index];
+                    <tr>
+                        <td><bdi>@(index + 1)</bdi></td>
+                        <td><bdi>@(line.ProductName ?? "—")</bdi></td>
+                        <td class="invoice-document-numeric"><bdi>@NEXT.web.Services.FormFieldPresenter.Quantity(line.Quantity)</bdi></td>
+                        <td class="invoice-document-numeric"><bdi>@line.UnitPrice.ToString("N2")</bdi></td>
+                        <td class="invoice-document-numeric"><bdi>@line.Total.ToString("N2")</bdi></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <dl class="invoice-document-totals">
+        <div><dt>@L["SubTotal"]</dt><dd><bdi>@Model.SubTotal.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["DiscountAmount"]</dt><dd><bdi>@Model.DiscountAmount.ToString("N2") SDG</bdi></dd></div>
+        <div class="invoice-document-total"><dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["PaidAmount"]</dt><dd><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["RemainingAmount"]</dt><dd><bdi>@Model.RemainingAmount.ToString("N2") SDG</bdi></dd></div>
+    </dl>
+    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+    {
+        <section class="invoice-document-notes"><h2>@L["Notes"]</h2><p>@Model.Notes</p></section>
+    }
+    <footer class="invoice-document-footer"><span>NEXT · @L["TradingSystem"]</span><bdi>@Model.Summary.Number</bdi></footer>
+</article>

@@ -723,6 +723,13 @@
   <data name="InvoicePaymentConflict" xml:space="preserve"><value>The invoice or payment has changed. Refresh the invoice and review its payments before trying again.</value></data>
   <data name="InvoicePaymentUnavailable" xml:space="preserve"><value>Payments require a confirmed, shipped or delivered invoice with an outstanding balance.</value></data>
   <data name="InvoiceLaterPaymentInvalid" xml:space="preserve"><value>Enter a positive payment no greater than the outstanding balance, with at most two decimal places.</value></data>
+  <data name="InvoiceDocumentPreview" xml:space="preserve"><value>Invoice preview</value></data>
+  <data name="InvoiceDocumentTitle" xml:space="preserve"><value>Sales invoice</value></data>
+  <data name="InvoiceDocumentViewPdf" xml:space="preserve"><value>View PDF</value></data>
+  <data name="InvoiceDocumentSavePdf" xml:space="preserve"><value>Save PDF</value></data>
+  <data name="InvoiceDocumentPrint" xml:space="preserve"><value>Print</value></data>
+  <data name="InvoiceDocumentActions" xml:space="preserve"><value>Invoice document actions</value></data>
+  <data name="InvoicePdfUnavailable" xml:space="preserve"><value>PDF export is temporarily unavailable. Try again or use the invoice print page.</value></data>
   <data name="Shipped" xml:space="preserve"><value>Shipped</value></data>
   <data name="Delivered" xml:space="preserve"><value>Delivered</value></data>
   <data name="ShipInvoice" xml:space="preserve"><value>Ship invoice</value></data>

@@ -9,6 +9,7 @@
         <p>@L[Model.Summary.Status.ToString()] · @Model.Summary.Date.ToLocalTime().ToString("g")</p>
     </div>
     <div class="details-actions">
+        <button type="button" class="btn btn-light" data-modal-url="@Url.Action("Preview", "InvoiceDocuments", new { id = Model.Summary.Id })">@L["InvoiceDocumentPreview"]</button>
         <a class="btn btn-light" asp-action="Index">@L["BackToList"]</a>
         @if (Model.CanConfirm)
         {

@@ -1,0 +1,15 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@inject NEXT.web.Services.InvoiceDocumentAssets Assets
+<section data-modal-view data-invoice-preview data-title="@L["InvoiceDocumentPreview"]">
+    <style>@Html.Raw(Assets.Styles)</style>
+    <div class="invoice-document-actions">
+        <a class="btn btn-light" target="_blank" rel="noopener" asp-controller="InvoiceDocuments" asp-action="Pdf"
+           asp-route-id="@Model.Summary.Id" asp-route-culture="@CultureInfo.CurrentUICulture.Name">@L["InvoiceDocumentViewPdf"]</a>
+        <a class="btn btn-primary" data-native-navigation asp-controller="InvoiceDocuments" asp-action="Pdf"
+           asp-route-id="@Model.Summary.Id" asp-route-download="true" asp-route-culture="@CultureInfo.CurrentUICulture.Name">@L["InvoiceDocumentSavePdf"]</a>
+        <a class="btn btn-light" target="_blank" rel="noopener" asp-controller="InvoiceDocuments" asp-action="Print"
+           asp-route-id="@Model.Summary.Id" asp-route-autoPrint="true" asp-route-culture="@CultureInfo.CurrentUICulture.Name">@L["InvoiceDocumentPrint"]</a>
+    </div>
+    <partial name="~/Views/Invoices/_InvoiceDocument.cshtml" model="Model" />
+    <div class="modal-form-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Close"]</button></div>
+</section>

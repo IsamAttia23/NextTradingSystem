@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Infrastructure.Persistence;
@@ -237,7 +238,75 @@ public sealed class InvoiceFulfillmentTests
         Assert.Single(await f.Db.StockMovements.ToListAsync());
     }
 
-
+    [PdfFact]
+    public async Task FulfillmentModalUpdatesActionsPreservesDiscardAndSubmitsShipmentAndDeliveryOnMobile()
+    {
+        await using var app = await WorkspaceUiTests.StartAsync();
+        Guid id;
+        await using (var scope = app.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
+            var actor = await db.Users.SingleAsync(item => item.UserName == "ui-admin");
+            var product = new Product { Name = "منتج الشحن / Dispatch product" };
+            var warehouse = new Warehouse { Name = "Fulfillment warehouse", Code = "FULFILL" };
+            db.AddRange(product, warehouse);
+            await db.SaveChangesAsync();
+            var invoice = NewInvoice(actor.Id, warehouse.Id, product.Id, "INV-11202026-UI", 4);
+            db.AddRange(invoice, new Stock { ProductId = product.Id, WarehouseId = warehouse.Id, Quantity = 10, ReservedQuantity = 4 });
+            await db.SaveChangesAsync();
+            id = invoice.Id;
+        }
+        var browser = await app.Services.GetRequiredService<InvoicePdfBrowser>().GetAsync(default);
+        await using var context = await browser.NewContextAsync(new() { ViewportSize = new() { Width = 390, Height = 844 } });
+        var page = await context.NewPageAsync();
+        page.SetDefaultTimeout(15000);
+        using var client = WorkspaceUiTests.Client(app);
+        var origin = client.BaseAddress!.ToString().TrimEnd('/');
+        await page.GotoAsync(origin + "/Account/Login?culture=ar");
+        await page.Locator("[name=UserName]").FillAsync("ui-admin");
+        await page.Locator("[name=Password]").FillAsync("Test-only!2026");
+        await page.Locator("form:has([name=UserName]) button[type=submit]").ClickAsync();
+        await page.WaitForURLAsync(origin + "/");
+        await page.GotoAsync(origin + $"/Invoices/Details/{id}?culture=ar");
+        Assert.Equal(1, await page.Locator("[data-modal-url*='Fulfill']").CountAsync());
+        await page.Locator("[data-modal-url*='Fulfill']").ClickAsync();
+        await page.Locator("#workspaceModal.show [data-invoice-fulfillment]").WaitForAsync();
+        await page.Locator("#modalBody [name=TargetStatus]").SelectOptionAsync("Delivered");
+        Assert.Equal("تسليم مباشر", await page.Locator("#modalTitle").InnerTextAsync());
+        await page.Locator("#modalBody [data-bs-dismiss=modal]").ClickAsync();
+        await page.Locator("#modalDiscard").WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        await page.Locator("[data-keep-editing]").ClickAsync();
+        Assert.Equal("تسليم مباشر", await page.Locator("#modalTitle").InnerTextAsync());
+        await page.Locator("#modalBody [name=TargetStatus]").SelectOptionAsync("Shipped");
+        await page.Locator("#modalBody [name=Note]").FillAsync("شُحنت للعميل");
+        Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
+        Assert.True(await page.Locator("#modalBody .table-responsive").EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth"));
+        var qa = Environment.GetEnvironmentVariable("NEXT_PDF_QA_DIRECTORY");
+        if (!string.IsNullOrWhiteSpace(qa))
+        {
+            Directory.CreateDirectory(qa);
+            await page.ScreenshotAsync(new() { Path = Path.Combine(qa, "fulfillment-mobile.png"), FullPage = true });
+        }
+        await page.Locator("#modalBody [type=submit]").ClickAsync();
+        await page.Locator("#workspaceModal").WaitForAsync(new() { State = WaitForSelectorState.Hidden });
+        Assert.Contains("مشحونة", await page.Locator("#main .page-heading p").InnerTextAsync());
+        Assert.Equal(1, await page.Locator("[data-modal-url*='Fulfill']").CountAsync());
+        await page.Locator("[data-modal-url*='Fulfill']").ClickAsync();
+        await page.Locator("#workspaceModal.show [data-invoice-fulfillment]").WaitForAsync();
+        Assert.Equal(0, await page.Locator("#modalBody select").CountAsync());
+        Assert.Equal("تأكيد التسليم", await page.Locator("#modalTitle").InnerTextAsync());
+        await page.Locator("#modalBody [type=submit]").ClickAsync();
+        await page.Locator("#workspaceModal").WaitForAsync(new() { State = WaitForSelectorState.Hidden });
+        Assert.Equal(0, await page.Locator("[data-modal-url*='Fulfill']").CountAsync());
+        Assert.Equal(1, await page.Locator("[data-modal-url*='RecordPayment']").CountAsync());
+        await using var check = app.Services.CreateAsyncScope();
+        var finalDb = check.ServiceProvider.GetRequiredService<NEXTDbContext>();
+        Assert.Equal(InvoiceStatus.Delivered, (await finalDb.Invoices.SingleAsync()).Status);
+        Assert.Equal(6m, (await finalDb.Stocks.SingleAsync()).Quantity);
+        Assert.Equal(0m, (await finalDb.Stocks.SingleAsync()).ReservedQuantity);
+        Assert.Single(await finalDb.StockMovements.ToListAsync());
+        Assert.Equal(2, await finalDb.InvoiceStatusHistory.CountAsync());
+    }
 
     private static Invoice NewInvoice(Guid actor, Guid warehouse, Guid product, string number, decimal quantity) => new()
     {

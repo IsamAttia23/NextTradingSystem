@@ -723,6 +723,13 @@
   <data name="InvoicePaymentConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو الدفعة. حدّث الفاتورة وراجع دفعاتها قبل المحاولة مجددًا.</value></data>
   <data name="InvoicePaymentUnavailable" xml:space="preserve"><value>يمكن تسجيل الدفعات للفواتير المعتمدة أو المشحونة أو المسلّمة التي لديها مبلغ متبقٍ.</value></data>
   <data name="InvoiceLaterPaymentInvalid" xml:space="preserve"><value>أدخل مبلغًا موجبًا لا يتجاوز المتبقي، بمنزلتين عشريتين بحد أقصى.</value></data>
+  <data name="InvoiceDocumentPreview" xml:space="preserve"><value>معاينة الفاتورة</value></data>
+  <data name="InvoiceDocumentTitle" xml:space="preserve"><value>فاتورة مبيعات</value></data>
+  <data name="InvoiceDocumentViewPdf" xml:space="preserve"><value>عرض PDF</value></data>
+  <data name="InvoiceDocumentSavePdf" xml:space="preserve"><value>حفظ PDF</value></data>
+  <data name="InvoiceDocumentPrint" xml:space="preserve"><value>طباعة</value></data>
+  <data name="InvoiceDocumentActions" xml:space="preserve"><value>خيارات الفاتورة</value></data>
+  <data name="InvoicePdfUnavailable" xml:space="preserve"><value>تصدير PDF غير متاح مؤقتًا. حاول مجددًا أو استخدم صفحة طباعة الفاتورة.</value></data>
   <data name="Shipped" xml:space="preserve"><value>مشحونة</value></data>
   <data name="Delivered" xml:space="preserve"><value>مسلّمة</value></data>
   <data name="ShipInvoice" xml:space="preserve"><value>شحن الفاتورة</value></data>

@@ -1,0 +1,33 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@inject NEXT.web.Services.InvoiceDocumentAssets Assets
+@{
+    Layout = null;
+    var exporting = ViewData["PdfExport"] is true;
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" dir="@(rtl ? "rtl" : "ltr")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Summary.Number · NEXT</title>
+    <style>@Html.Raw(Assets.Styles)</style>
+</head>
+<body class="invoice-document-page" data-auto-print="@(ViewData["AutoPrint"] is true ? "true" : "false")">
+    @if (!exporting)
+    {
+        <nav class="invoice-document-actions" aria-label="@L["InvoiceDocumentActions"]">
+            <button type="button" class="invoice-document-button" data-print-invoice>@L["InvoiceDocumentPrint"]</button>
+            <a class="invoice-document-button" data-native-navigation asp-controller="InvoiceDocuments" asp-action="Pdf"
+               asp-route-id="@Model.Summary.Id" asp-route-download="true" asp-route-culture="@CultureInfo.CurrentUICulture.Name">@L["InvoiceDocumentSavePdf"]</a>
+            <a class="invoice-document-button" asp-controller="Invoices" asp-action="Details"
+               asp-route-id="@Model.Summary.Id" asp-route-culture="@CultureInfo.CurrentUICulture.Name">@L["Details"]</a>
+        </nav>
+    }
+    <main><partial name="~/Views/Invoices/_InvoiceDocument.cshtml" model="Model" /></main>
+    @if (!exporting)
+    {
+        <script src="~/js/invoice-document.js" asp-append-version="true" defer></script>
+    }
+</body>
+</html>
