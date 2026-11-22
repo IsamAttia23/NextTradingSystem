@@ -758,6 +758,18 @@ footer {
 .reference-option[hidden] {
     display: none;
 }
+.invoice-document-notes {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.table.financial-movements { min-width: 1550px; table-layout: auto; }
+.table.financial-account-balances { min-width: 1000px; table-layout: auto; }
+.financial-movements th, .financial-movements td,
+.financial-account-balances th, .financial-account-balances td { white-space: nowrap; }
+.financial-movements th:nth-child(3), .financial-movements td:nth-child(3) { min-width: 320px; }
+.financial-movements th:nth-child(4), .financial-movements td:nth-child(4) { min-width: 180px; }
+
 .reference-empty {
     padding: 10px;
     margin: 0;
@@ -818,6 +830,17 @@ footer {
     color: white;
 }
 
+[data-invoice-fulfillment] .table {
+    min-width: 0;
+    width: 100%;
+    table-layout: fixed;
+}
+[data-invoice-fulfillment] .table th:last-child,
+[data-invoice-fulfillment] .table td:last-child {
+    width: 6rem;
+    text-align: end;
+}
+
 .modal-content {
     border: 0;
     border-radius: var(--radius);
@@ -872,6 +895,44 @@ footer {
     padding-top: 20px;
     margin-top: 22px;
     border-top: 1px solid var(--line);
+}
+
+.modal-dialog:has([data-invoice-form]) {
+    --bs-modal-width: 820px;
+}
+.invoice-line {
+    display: grid;
+    grid-template-columns: minmax(130px, 2.5fr) repeat(3, minmax(78px, 1fr)) auto;
+    align-items: start;
+    gap: 10px;
+    padding-block: 9px;
+    border-bottom: 1px solid var(--line);
+}
+.invoice-line input,
+.invoice-line output { margin-block-start: 5px; }
+.invoice-line > button { margin-block-start: 25px; }
+.invoice-picker { position: relative; }
+.invoice-options { min-width: 100%; }
+.modal-body .invoice-options {
+    position: absolute;
+    inset-block-start: 100%;
+    margin-block-start: 4px;
+    max-height: 200px;
+    z-index: 30;
+}
+.invoice-options .reference-option {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.invoice-picker small { display: block; color: var(--muted); margin-block-start: 4px; }
+.invoice-value { display: block; padding: 9px; background: var(--canvas); border-radius: 8px; }
+.invoice-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-block-start: 12px; }
+.invoice-totals { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; margin: 0; }
+.invoice-totals dd { margin: 0; text-align: end; }
+@media (max-width: 620px) {
+    .invoice-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .invoice-line .invoice-picker { grid-column: 1 / -1; }
+    .invoice-summary-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .notification {
@@ -2490,4 +2551,10 @@ a.page-number:hover {
     .modal-field-grid {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+@media (max-width: 767.98px) {
+    .customer-account-invoices { min-width: 0; table-layout: fixed; }
+    .customer-account-invoices th, .customer-account-invoices td { padding: 12px 6px; overflow-wrap: anywhere; }
+    .customer-account-invoices .btn { padding: 9px 10px; white-space: normal; }
 }

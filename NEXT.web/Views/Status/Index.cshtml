@@ -8,6 +8,7 @@
     <span class="eyebrow">NEXT / @Model.StatusCode</span>
     <h1>@L[Model.TitleKey]</h1>
     <p>@L[Model.DescriptionKey]</p>
+    <p>@L["ErrorReference"]: <bdi><code>@Context.TraceIdentifier</code></bdi></p>
     @if (User.Identity?.IsAuthenticated == true)
     {
         <a asp-controller="Account" asp-action="Profile" class="btn btn-primary">@L["BackToMyAccount"]</a>

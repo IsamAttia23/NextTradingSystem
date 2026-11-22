@@ -1,5 +1,6 @@
 using NEXT.Infrastructure.Identity.Entities;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using NEXT.web.Models;
 using NEXT.Application.Features.Common.CQRS;
 using NEXT.Application.Common.QueryModels;
@@ -389,6 +390,334 @@ public sealed class PostgresInventoryTests
         Assert.DoesNotContain("ui-reader", await client.GetStringAsync("/Users"));
     }
     [PostgresFact]
+    public async Task ConfirmationRecordsPaymentAndHistoryOnceAndPreventsOverselling()
+    {
+        await using var fixture = await Database.Create(migrate: true, withReceiptRate: true);
+        await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: fixture.TestConnection);
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        var db = fixture.Db;
+        var actor = await db.Users.SingleAsync(user => user.UserName == "ui-admin");
+        var stock = new Stock { ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 10, ReservedQuantity = 2 };
+        Invoice Draft(string number, decimal quantity) => new()
+        {
+            InvoiceNumber = number, CustomerName = "Confirmation customer", CreatedByFullName = actor.FullName,
+            UserId = actor.Id, WarehouseId = fixture.Source, Status = InvoiceStatus.Pending,
+            TotalAmount = 8, SubTotal = 8, RemainingAmount = 8,
+            Items = [new InvoiceItem { ProductId = fixture.Product, Quantity = quantity, UnitPrice = 4, TotalAmount = 8 }]
+        };
+        var first = Draft("CONFIRM-FIRST", 2);
+        var left = Draft("CONFIRM-LEFT", 5);
+        var right = Draft("CONFIRM-RIGHT", 5);
+        db.AddRange(stock, first, left, right);
+        await db.SaveChangesAsync();
+        var form = await client.GetStringAsync($"/Invoices/Confirm/{first.Id}?culture=en");
+        Assert.Contains("data-modal-form", form);
+        Assert.Contains("data-invoice-confirmation", form);
+        var token = WorkspaceUiTests.Token(form);
+        Task<System.Net.Http.HttpResponseMessage> Confirm(Invoice invoice, Guid operation, string amount) =>
+            WorkspaceUiTests.Post(client, $"/Invoices/Confirm/{invoice.Id}", token,
+                ("OperationId", operation.ToString()), ("RowVersion", Convert.ToBase64String(invoice.RowVersion)),
+                ("Amount", amount), ("PaymentMethod", "Cash"));
+
+        var operation = Guid.NewGuid();
+        using (var excessive = await Confirm(first, Guid.NewGuid(), "8.01"))
+            Assert.Equal(System.Net.HttpStatusCode.BadRequest, excessive.StatusCode);
+        var repeated = await Task.WhenAll(Confirm(first, operation, "3"), Confirm(first, operation, "3"));
+        foreach (var response in repeated)
+        {
+            using (response)
+                Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        }
+        using (var changedRetry = await Confirm(first, operation, "4"))
+            Assert.Equal(System.Net.HttpStatusCode.Conflict, changedRetry.StatusCode);
+        using (var newOperation = await Confirm(first, Guid.NewGuid(), "3"))
+            Assert.Equal(System.Net.HttpStatusCode.Conflict, newOperation.StatusCode);
+        db.ChangeTracker.Clear();
+        var confirmed = await db.Invoices.AsNoTracking().SingleAsync(invoice => invoice.Id == first.Id);
+        Assert.Equal(InvoiceStatus.Confirmed, confirmed.Status);
+        Assert.Equal(PaymentStatus.Partial, confirmed.PaymentStatus);
+        Assert.Equal(3m, confirmed.PaidAmount);
+        Assert.Equal(5m, confirmed.RemainingAmount);
+        Assert.NotNull(confirmed.LastActionAt);
+        Assert.Single(await db.Payments.Where(payment => payment.InvoiceId == first.Id).ToListAsync());
+        var entry = Assert.Single(await db.InvoiceStatusHistory.Where(item => item.InvoiceId == first.Id).ToListAsync());
+        Assert.Equal(actor.Id, entry.ActorId);
+        Assert.Equal(actor.FullName, entry.ActorFullName);
+        Assert.Equal(4m, (await db.Stocks.AsNoTracking().SingleAsync()).ReservedQuantity);
+
+        var competing = await Task.WhenAll(Confirm(left, Guid.NewGuid(), "0"), Confirm(right, Guid.NewGuid(), "0"));
+        Assert.Single(competing, response => response.IsSuccessStatusCode);
+        Assert.Single(competing, response => response.StatusCode == System.Net.HttpStatusCode.BadRequest);
+        foreach (var response in competing) response.Dispose();
+        Assert.Equal(9m, (await db.Stocks.AsNoTracking().SingleAsync()).ReservedQuantity);
+        Assert.Equal(10m, (await db.Stocks.AsNoTracking().SingleAsync()).Quantity);
+        Assert.Equal(2, await db.InvoiceStatusHistory.CountAsync());
+        Assert.Single(await db.Payments.AsNoTracking().ToListAsync());
+        var detail = await client.GetStringAsync($"/Invoices/Details/{first.Id}?culture=en");
+        Assert.Contains("Status history", detail);
+        Assert.DoesNotContain($"data-modal-url=\"/Invoices/Confirm/{first.Id}\"", detail);
+        var arabic = System.Net.WebUtility.HtmlDecode(await client.GetStringAsync($"/Invoices/Details/{first.Id}?culture=ar"));
+        Assert.Contains("سجل الحالات", arabic);
+    }
+
+    [PostgresFact]
+    public async Task ConfirmationRollsBackStockAndStatusWhenPaymentStorageFails()
+    {
+        await using var fixture = await Database.Create(migrate: true);
+        await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: fixture.TestConnection);
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        var db = fixture.Db;
+        var user = await db.Users.SingleAsync(item => item.UserName == "ui-admin");
+        var invoice = new Invoice
+        {
+            InvoiceNumber = "FAIL-PAYMENT", UserId = user.Id, WarehouseId = fixture.Source, TotalAmount = 10,
+            RemainingAmount = 10, Items = [new InvoiceItem { ProductId = fixture.Product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }]
+        };
+        db.AddRange(invoice, new Stock { ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 5 });
+        await db.SaveChangesAsync();
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE FUNCTION reject_invoice_payment() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN RAISE EXCEPTION 'Injected payment storage failure'; END $$;
+            CREATE TRIGGER reject_invoice_payment BEFORE INSERT ON "Payments"
+            FOR EACH ROW EXECUTE FUNCTION reject_invoice_payment();
+            """);
+        var form = await client.GetStringAsync($"/Invoices/Confirm/{invoice.Id}");
+        using var response = await WorkspaceUiTests.Post(client, $"/Invoices/Confirm/{invoice.Id}", WorkspaceUiTests.Token(form),
+            ("OperationId", Guid.NewGuid().ToString()), ("RowVersion", Convert.ToBase64String(invoice.RowVersion)),
+            ("Amount", "5"), ("PaymentMethod", "Cash"));
+        Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
+        db.ChangeTracker.Clear();
+        Assert.Equal(InvoiceStatus.Pending, (await db.Invoices.SingleAsync()).Status);
+        Assert.Equal(0m, (await db.Stocks.SingleAsync()).ReservedQuantity);
+        Assert.Empty(await db.Payments.ToListAsync());
+        Assert.Empty(await db.InvoiceStatusHistory.ToListAsync());
+    }
+
+    [PostgresFact]
+    public async Task InvoiceCreationUsesServerSnapshotsAndSerializesDailyNumbers()
+    {
+        await using var fixture = await Database.Create(migrate: true, withReceiptRate: true);
+        var warehouse = await fixture.Db.Warehouses.SingleAsync(item => item.Id == fixture.Source);
+        warehouse.IsDefault = true;
+        var customer = new Customer { Name = "Invoice fixture customer" };
+        fixture.Db.Add(customer);
+        fixture.Db.Stocks.Add(new Stock { ProductId = fixture.Product, WarehouseId = warehouse.Id, Quantity = 15, ReservedQuantity = 2 });
+        await fixture.Db.SaveChangesAsync();
+
+        await using var app = await WorkspaceUiTests.StartAsync(postgresConnection: fixture.TestConnection);
+        using var client = WorkspaceUiTests.Client(app);
+        await WorkspaceUiTests.Login(client, "ui-admin");
+        var index = await client.GetStringAsync("/Invoices?culture=en");
+        Assert.Contains("data-modal-url=\"/Invoices/Create\"", index);
+        var form = await client.GetStringAsync("/Invoices/Create?culture=en");
+        Assert.Contains("data-modal-form", form);
+        Assert.Contains("data-add-invoice-line", form);
+        Assert.DoesNotContain("name=\"WarehouseId\"", form);
+        Assert.DoesNotContain("name=\"DeliveryMode\"", form);
+        var token = WorkspaceUiTests.Token(form);
+        Assert.NotEmpty(token);
+        Assert.Contains(customer.Name, await client.GetStringAsync("/Invoices/Customers?search=fixture"));
+        Assert.Contains(customer.Name, await client.GetStringAsync("/Invoices/Customers"));
+        Assert.Contains("\"unitPrice\":4", await client.GetStringAsync("/Invoices/Products"));
+        Assert.Contains("\"unitPrice\":4", await client.GetStringAsync("/Invoices/Products?search=product"));
+
+        using var invalid = await Post(Guid.NewGuid(), "New customer", quantity: "14");
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, invalid.StatusCode);
+        using var stale = await Post(Guid.NewGuid(), "New customer", unitPrice: "5");
+        Assert.Equal(System.Net.HttpStatusCode.Conflict, stale.StatusCode);
+
+        var operations = Enumerable.Range(0, 4).Select(_ => Guid.NewGuid()).ToArray();
+        var requests = operations.Select((id, i) => Post(id, i == 0 ? customer.Name : "New customer"))
+            .Append(Post(operations[0], customer.Name));
+        var responses = await Task.WhenAll(requests);
+        foreach (var response in responses)
+        {
+            using (response)
+                Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        var invoices = await fixture.Db.Invoices.AsNoTracking().Include(invoice => invoice.Items)
+            .OrderBy(invoice => invoice.InvoiceNumber).ToListAsync();
+        Assert.Equal(4, invoices.Count);
+        var prefix = $"INV-{DateTime.Now:MMddyyyy}-";
+        Assert.Equal(new[] { "01", "02", "03", "04" }.Select(suffix => prefix + suffix),
+            invoices.Select(invoice => invoice.InvoiceNumber));
+        foreach (var invoice in invoices)
+        {
+            Assert.Equal(InvoiceStatus.Pending, invoice.Status);
+            Assert.Equal("UI test ui-admin", invoice.CreatedByFullName);
+            Assert.Equal(warehouse.Id, invoice.WarehouseId);
+            Assert.Equal(8m, invoice.SubTotal);
+            Assert.Equal(2m, invoice.DiscountAmount);
+            Assert.Equal(6m, invoice.TotalAmount);
+            Assert.Equal(6m, invoice.RemainingAmount);
+            Assert.Equal(4m, Assert.Single(invoice.Items).UnitPrice);
+        }
+        Assert.Equal(customer.Id, invoices.Single(invoice => invoice.Id == operations[0]).CustomerId);
+        Assert.All(invoices.Where(invoice => invoice.Id != operations[0]), invoice => Assert.Null(invoice.CustomerId));
+        Assert.Single(await fixture.Db.Customers.AsNoTracking().ToListAsync());
+        Assert.Empty(await fixture.Db.Payments.AsNoTracking().ToListAsync());
+        var creator = await fixture.Db.Users.SingleAsync(item => item.UserName == "ui-admin");
+        creator.FullName = "Edited account name";
+        await fixture.Db.SaveChangesAsync();
+        var detail = await client.GetStringAsync($"/Invoices/Details/{operations[0]}?culture=en");
+        Assert.Contains("data-invoice-created-by><bdi>UI test ui-admin</bdi>", detail);
+        var nextDay = DateOnly.FromDateTime(DateTime.Now).AddDays(1);
+        var nextNumber = await new UnitOfWork(fixture.Db).ExecuteReadCommittedAsync(
+            ct => new InvoiceNumberGenerator(fixture.Db).NextAsync(nextDay, ct));
+        Assert.Equal($"INV-{nextDay:MMddyyyy}-01", nextNumber);
+
+        Task<HttpResponseMessage> Post(Guid id, string name, string quantity = "2", string unitPrice = "4") =>
+            WorkspaceUiTests.Post(client, "/Invoices/Create", token, ("OperationId", id.ToString()), ("CustomerName", name),
+                ("DiscountType", "Percentage"), ("DiscountValue", "25"), ("Lines[0].ProductId", fixture.Product.ToString()),
+                ("Lines[0].Quantity", quantity), ("Lines[0].QuotedUnitPrice", unitPrice));
+    }
+
+    [PostgresFact]
+    public async Task InvoiceCreationRepairUpgradesTheAlreadyAppliedOriginalSchema()
+    {
+        await using var fixture = await Database.Create(migrate: true,
+            migrationTarget: "20261118122622_UnifyInvoiceSchema");
+        var db = fixture.Db;
+        var before = await db.Database.GetAppliedMigrationsAsync();
+        Assert.DoesNotContain("20261119100000_RepairInvoiceCreationColumns", before);
+        await db.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE "Invoices"
+                DROP COLUMN "CustomerName",
+                DROP COLUMN "CreatedByFullName",
+                DROP COLUMN "DiscountType",
+                DROP COLUMN "DiscountValue";
+            """);
+        await db.Database.MigrateAsync();
+        Assert.Empty(await db.Invoices.AsNoTracking().ToListAsync());
+        Assert.Equal(4, await db.Database.SqlQueryRaw<int>("""
+            SELECT count(*)::integer AS "Value" FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'Invoices'
+            AND column_name IN ('CustomerName', 'CreatedByFullName', 'DiscountType', 'DiscountValue')
+            """).SingleAsync());
+        await db.Database.MigrateAsync();
+        Assert.Contains("20261119100000_RepairInvoiceCreationColumns",
+            await db.Database.GetAppliedMigrationsAsync());
+    }
+
+    [PostgresFact]
+    public async Task InvoiceSchemaMigrationPreservesSalesRowsAndReferences()
+    {
+        const string previousMigration = "20261115112800_AddProductPackaging";
+        await using var fixture = await Database.Create(migrate: true, migrationTarget: previousMigration);
+        var db = fixture.Db;
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(), UserName = "invoice-migration-user", FullName = "Invoice migration",
+            BranchId = fixture.Branch
+        };
+        var customer = new Customer { Id = Guid.NewGuid(), Name = "Historical customer" };
+        var supplier = new Supplier { Name = "Historical supplier" };
+        db.AddRange(user, supplier);
+        await db.SaveChangesAsync();
+        // This fixture deliberately targets the schema before Customer.AccountId existed.
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Customers" ("Id", "Type", "Name", "Category", "CreditLimit", "CurrentBalance",
+                "PaymentTermsDays", "IsActive", "CreatedAt", "RowVersion")
+            VALUES ({customer.Id}, {0}, {customer.Name}, {0}, {0m}, {0m}, {0}, {true}, {DateTimeOffset.UtcNow}, {Guid.NewGuid().ToByteArray()})
+            """);
+
+        var saleId = Guid.NewGuid();
+        var returnId = Guid.NewGuid();
+        var itemId = Guid.NewGuid();
+        var salePaymentId = Guid.NewGuid();
+        var supplierPaymentId = Guid.NewGuid();
+        var purchaseId = Guid.NewGuid();
+        var movement = new StockMovement
+        {
+            ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 2,
+            ReferenceType = "SalesInvoice", ReferenceId = saleId
+        };
+        db.Add(movement);
+        await db.SaveChangesAsync();
+
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "SalesInvoices" (
+                "Id", "InvoiceNumber", "CustomerId", "WarehouseId", "UserId", "InvoiceDate", "InvoiceType",
+                "SubTotal", "DiscountAmount", "TaxAmount", "TotalAmount", "PaidAmount", "RemainingAmount",
+                "ChangeAmount", "PaymentStatus", "Status", "ParentInvoiceId", "RowVersion", "CreatedAt")
+            VALUES
+                ({saleId}, 'LEGACY-SALE', {customer.Id}, {fixture.Source}, {user.Id}, now(), 0,
+                 25, 0, 0, 25, 10, 15, 0, 1, 2, NULL, decode('01', 'hex'), now()),
+                ({returnId}, 'LEGACY-RETURN', NULL, {fixture.Source}, {user.Id}, now(), 1,
+                 25, 0, 0, 25, 0, 25, 0, 0, 1, {saleId}, decode('02', 'hex'), now());
+
+            INSERT INTO "SalesInvoiceItems" (
+                "Id", "InvoiceId", "ProductId", "Quantity", "UnitPrice", "UnitCost", "DiscountAmount",
+                "TaxRate", "TaxAmount", "TotalAmount", "CreatedAt")
+            VALUES ({itemId}, {saleId}, {fixture.Product}, 2, 12.50, 9, 0, 0, 0, 25, now());
+
+            INSERT INTO "PurchaseInvoices" (
+                "Id", "InvoiceNumber", "SupplierId", "WarehouseId", "InvoiceDate", "SubTotal",
+                "DiscountAmount", "TaxAmount", "TotalAmount", "PaidAmount", "RemainingAmount",
+                "PaymentStatus", "Status", "RowVersion", "CreatedAt")
+            VALUES ({purchaseId}, 'LEGACY-PURCHASE', {supplier.Id}, {fixture.Source}, now(),
+                15, 0, 0, 15, 15, 0, 2, 1, decode('03', 'hex'), now());
+
+            INSERT INTO "Payments" (
+                "Id", "PaymentNumber", "PaymentType", "CustomerId", "SupplierId", "SalesInvoiceId",
+                "PurchaseInvoiceId", "Amount", "PaymentMethod", "PaymentDate", "RowVersion", "CreatedAt")
+            VALUES
+                ({salePaymentId}, 'LEGACY-SALE-PAYMENT', 0, {customer.Id}, NULL, {saleId},
+                 NULL, 10, 0, current_date, decode('04', 'hex'), now()),
+                ({supplierPaymentId}, 'LEGACY-SUPPLIER-PAYMENT', 1, NULL, {supplier.Id}, NULL,
+                 {purchaseId}, 15, 0, current_date, decode('05', 'hex'), now());
+            """);
+
+        var migrator = db.GetService<IMigrator>();
+        await migrator.MigrateAsync();
+
+        var sale = await db.Invoices.AsNoTracking().Include(invoice => invoice.Items)
+            .SingleAsync(invoice => invoice.Id == saleId);
+        Assert.Equal("LEGACY-SALE", sale.InvoiceNumber);
+        Assert.Equal(InvoiceType.Sales, sale.Type);
+        Assert.Equal(0, sale.LegacyInvoiceTypeCode);
+        Assert.Equal(2, (int)sale.Status);
+        Assert.Equal(new byte[] { 1 }, sale.RowVersion);
+        Assert.Equal(25m, sale.TotalAmount);
+        var item = Assert.Single(sale.Items);
+        Assert.Equal(itemId, item.Id);
+        Assert.Equal(12.50m, item.UnitPrice);
+        var returned = await db.Invoices.AsNoTracking().SingleAsync(invoice => invoice.Id == returnId);
+        Assert.Equal(saleId, returned.ParentInvoiceId);
+        Assert.Equal(1, returned.LegacyInvoiceTypeCode);
+        Assert.Equal(saleId, (await db.Payments.AsNoTracking().SingleAsync(payment => payment.Id == salePaymentId)).InvoiceId);
+        var supplierPayment = await db.Payments.AsNoTracking().SingleAsync(payment => payment.Id == supplierPaymentId);
+        Assert.Equal(supplier.Id, supplierPayment.SupplierId);
+        Assert.Equal(15m, supplierPayment.Amount);
+        Assert.Null(supplierPayment.InvoiceId);
+        Assert.Equal(nameof(Invoice), (await db.StockMovements.AsNoTracking().SingleAsync(stock => stock.Id == movement.Id)).ReferenceType);
+        Assert.True(await db.Database.SqlQueryRaw<bool>("""
+            SELECT (
+                to_regclass('"SalesInvoices"') IS NULL AND to_regclass('"SalesInvoiceItems"') IS NULL
+                AND to_regclass('"PurchaseInvoices"') IS NULL AND to_regclass('"PurchaseInvoiceItems"') IS NULL
+                AND EXISTS (SELECT 1 FROM pg_index
+                    WHERE indexrelid = to_regclass('"IX_Invoices_InvoiceNumber"') AND indisunique)
+            ) AS "Value"
+            """).SingleAsync());
+
+        var newSale = new Invoice
+        {
+            InvoiceNumber = "NEW-SALE", UserId = user.Id, WarehouseId = fixture.Source
+        };
+        db.Add(newSale);
+        await db.SaveChangesAsync();
+        await migrator.MigrateAsync(previousMigration);
+
+        var restoredCodes = await db.Database.SqlQueryRaw<int>("""
+            SELECT "InvoiceType" AS "Value" FROM "SalesInvoices"
+            """).ToListAsync();
+        Assert.Equal(new[] { 0, 0, 1 }, restoredCodes.Order());
+    }
+
+    [PostgresFact]
     public async Task RelatedGraphFindsInvoiceReturnsPaymentsJournalsAndStockWithoutDuplicates()
     {
         await using var f = await Database.Create();
@@ -423,7 +752,7 @@ public sealed class PostgresInventoryTests
         };
         f.Db.AddRange(customer, other, supplier, user);
         await f.Db.SaveChangesAsync();
-        var sale = new SalesInvoice
+        var sale = new Invoice
         {
             CustomerId = customer.Id,
             InvoiceNumber = "SALE-LINKED",
@@ -438,28 +767,21 @@ public sealed class PostgresInventoryTests
         };
         f.Db.AddRange(sale, order);
         await f.Db.SaveChangesAsync();
-        var purchase = new PurchaseInvoice
-        {
-            SupplierId = supplier.Id,
-            PurchaseOrderId = order.Id,
-            InvoiceNumber = "BUY-LINKED",
-            WarehouseId = f.Source
-        };
         // A return with no CustomerId must still be reached through ParentInvoiceId.
-        var returned = new SalesInvoice
+        var returned = new Invoice
         {
             ParentInvoiceId = sale.Id,
             InvoiceNumber = "RETURN-LINKED",
             UserId = user.Id,
             WarehouseId = f.Source,
-            InvoiceType = InvoiceType.Return
+            LegacyInvoiceTypeCode = 1
         };
-        f.Db.AddRange(purchase, returned);
+        f.Db.Add(returned);
         await f.Db.SaveChangesAsync();
         var payment = new Payment
         {
             CustomerId = customer.Id,
-            SalesInvoiceId = sale.Id,
+            InvoiceId = sale.Id,
             Amount = 50,
             PaymentNumber = "PAY-LINKED"
         };
@@ -471,19 +793,13 @@ public sealed class PostgresInventoryTests
         };
         f.Db.AddRange(payment, foreign);
         await f.Db.SaveChangesAsync();
-        f.Db.AddRange(new JournalEntry
-        {
-            EntryNumber = "JOURNAL-PAYMENT",
-            ReferenceType = JournalReferenceType.Payment,
-            ReferenceId = payment.Id
-        },
-            new StockMovement
+        f.Db.AddRange(new StockMovement
             {
                 ProductId = f.Product,
                 WarehouseId = f.Source,
                 Quantity = 1,
                 UnitCost = 10,
-                ReferenceType = "SalesInvoice",
+                ReferenceType = "Invoice",
                 ReferenceId = sale.Id
             });
         await f.Db.SaveChangesAsync();
@@ -493,10 +809,14 @@ public sealed class PostgresInventoryTests
         var result = await reader.ReadAsync<Customer>(customer.Id, "Payment", 1, default);
         Assert.Single(result.Records);
         Assert.Contains(result.Records[0].Values, x => Equals(x.Value, "PAY-LINKED"));
-        Assert.Equal(2, result.Sections.Single(x => x.Key == "SalesInvoice").Count);
-        Assert.Equal(1, result.Sections.Single(x => x.Key == "JournalEntry").Count);
+        Assert.Equal(2, result.Sections.Single(x => x.Key == "Invoice").Count);
+        Assert.DoesNotContain(result.Sections, x => x.Key == "JournalEntry");
         Assert.Equal(1, result.Sections.Single(x => x.Key == "StockMovement").Count);
-        var supplierActivity = await reader.ReadAsync<Supplier>(supplier.Id, "PurchaseInvoice", 1, default);
+        var supplierActivity = await reader.ReadAsync<Supplier>(supplier.Id, "PurchaseOrder", 1, default);
+        Assert.DoesNotContain(supplierActivity.Sections, section => section.Key == "PurchaseInvoice");
+        var legacyLink = await reader.ReadAsync<Customer>(customer.Id, "SalesInvoice", 1, default);
+        Assert.Equal(nameof(Invoice), legacyLink.Selected);
+        Assert.Equal(2, legacyLink.Records.Count);
         Assert.Single(supplierActivity.Records);
         Assert.Equal(1, supplierActivity.Sections.Single(x => x.Key == "PurchaseOrder").Count);
         // Server-side filters/sorting execute on PostgreSQL, not on the current page in memory.
@@ -619,7 +939,8 @@ public sealed class PostgresInventoryTests
             Database = "postgres",
             Pooling = false
         }.ConnectionString;
-        public static async Task<Database> Create(bool expiry = false, bool migrate = false, bool preupgraded = false, bool withReceiptRate = false)
+        public static async Task<Database> Create(bool expiry = false, bool migrate = false,
+            bool preupgraded = false, bool withReceiptRate = false, string? migrationTarget = null)
         {
             var configuration = new ConfigurationBuilder().AddUserSecrets("57f7acf9-66bb-4e86-a018-95f71c8d9629").AddEnvironmentVariables().Build();
             var connection = Environment.GetEnvironmentVariable("NEXT_TEST_POSTGRES") ?? configuration.GetConnectionString("NEXTDatabase")
@@ -645,7 +966,7 @@ public sealed class PostgresInventoryTests
                         await database.Db.Database.ExecuteSqlRawAsync(script);
                         await database.Db.Database.ExecuteSqlRawAsync(script);
                     }
-                    await database.Db.Database.MigrateAsync();
+                    await database.Db.GetService<IMigrator>().MigrateAsync(migrationTarget);
                 }
                 else
                 {
@@ -703,7 +1024,7 @@ public sealed class PostgresInventoryTests
             return new(new KeyRepository<Product, Guid>(db), new KeyRepository<Warehouse, Guid>(db), new TRepository<Stock>(db),
                 new TRepository<StockMovement>(db), new TRepository<ProductBatch>(db), new UnitOfWork(db),
                 new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>(),
-                new ExchangeRateReader(new SystemSettingRepository(db)));
+                new ExchangeRateReader(new SystemSettingRepository(db)), new InvoiceConfirmationStore(db));
         }
         public async Task SetProductCostAsync(decimal cost)
         {

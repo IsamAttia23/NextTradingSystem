@@ -1,0 +1,87 @@
+@model InvoiceFulfillmentForm
+@using NEXT.Domain.Enums
+@{
+    var invoice = Model.Invoice;
+    var issuing = invoice.Summary.Status == InvoiceStatus.Confirmed;
+    var title = Model.TargetStatus == InvoiceStatus.Shipped ? "ShipInvoice" : issuing ? "DirectDelivery" : "ConfirmDelivery";
+}
+<form asp-action="Fulfill" asp-route-id="@invoice.Summary.Id" method="post" data-modal-form
+      data-title="@L[title]" data-invoice-fulfillment data-current-status="@invoice.Summary.Status"
+      data-ship="@L["ShipInvoice"]" data-direct="@L["DirectDelivery"]" data-deliver="@L["ConfirmDelivery"]"
+      data-shipped="@L["Shipped"]" data-delivered="@L["Delivered"]">
+    <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(invoice.RowVersion)" />
+    <p><bdi>@invoice.Summary.Number</bdi> · <bdi>@invoice.Summary.CustomerName</bdi></p>
+    @if (issuing)
+    {
+        <dl class="invoice-totals my-3">
+            <dt>@L["TotalAmount"]</dt><dd><bdi>@invoice.Summary.Total.ToString("N2") SDG</bdi></dd>
+            <dt>@L["PaidAmount"]</dt><dd><bdi>@invoice.PaidAmount.ToString("N2") SDG</bdi></dd>
+            <dt>@L["RemainingAmount"]</dt><dd><bdi>@invoice.RemainingAmount.ToString("N2") SDG</bdi></dd>
+        </dl>
+        @if (invoice.RemainingAmount > 0)
+        {
+            <p class="form-text">@L["AccountingDispatchDebtNotice"]</p>
+            @if (invoice.CustomerId is null && invoice.DebtCustomerCandidates.Count > 0)
+            {
+                <label class="form-label w-100">@L["CustomerName"]
+                    <select name="CustomerId" class="form-select" required>
+                        <option value="">@L["Select"]</option>
+                        @foreach (var customer in invoice.DebtCustomerCandidates)
+                        {
+                            <option value="@customer.Id">@customer.Name · @(customer.Phone ?? "—")</option>
+                        }
+                    </select>
+                </label>
+            }
+            @if (string.IsNullOrWhiteSpace(invoice.CustomerPhone))
+            {
+                <label class="form-label w-100">@L["Phone"]
+                    <input name="CustomerPhone" type="tel" class="form-control" maxlength="32"
+                           required="@(invoice.DebtCustomerCandidates.Count == 0)" autocomplete="tel" />
+                    <span class="form-text">@L["AccountingCustomerPhoneRequired"]</span>
+                </label>
+            }
+        }
+    }
+    @if (invoice.FulfillmentTargets.Count > 1)
+    {
+        <label class="form-label w-100">@L["InvoiceFulfillmentAction"]
+            <select name="TargetStatus" class="form-select" required>
+                @foreach (var target in invoice.FulfillmentTargets)
+                {
+                    <option value="@target" selected="@(target == Model.TargetStatus)">@L[target == InvoiceStatus.Shipped ? "ShipInvoice" : "DirectDelivery"]</option>
+                }
+            </select>
+        </label>
+    }
+    else
+    {
+        <input type="hidden" name="TargetStatus" value="@Model.TargetStatus" />
+    }
+    <div class="d-flex justify-content-between gap-3 my-3" aria-live="polite">
+        <span>@L[invoice.Summary.Status.ToString()]</span>
+        <span aria-hidden="true">@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "←" : "→")</span>
+        <span data-fulfillment-target>@L[Model.TargetStatus.ToString()]</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <caption class="visually-hidden">@L["InvoiceItems"]</caption>
+            <thead><tr><th scope="col">@L["Product"]</th><th scope="col">@L["Quantity"]</th></tr></thead>
+            <tbody>
+                @foreach (var line in invoice.Lines)
+                {
+                    <tr><td><bdi>@(line.ProductName ?? "—")</bdi></td><td><bdi>@NEXT.web.Services.FormFieldPresenter.Quantity(line.Quantity)</bdi></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="form-text">@L[issuing ? "InvoiceDispatchNotice" : "InvoiceDeliveryNotice"]</p>
+    <label class="form-label w-100">@L["InvoiceFulfillmentNote"]
+        <textarea name="Note" class="form-control" rows="3" maxlength="500"></textarea>
+    </label>
+    <div class="modal-form-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
+        <button type="submit" class="btn btn-primary" data-fulfillment-submit>@L[title]</button>
+    </div>
+</form>

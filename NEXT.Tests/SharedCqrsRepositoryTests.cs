@@ -251,25 +251,14 @@ public sealed class SharedCqrsRepositoryTests
         {
             IsActive = true
         });
-        Check(new PurchaseInvoiceRepository(db), new PurchaseInvoiceQueryModel
-        {
-            InvoiceNumber = "number",
-            MaxTotalAmount = 50,
-            SupplierId = Guid.NewGuid()
-        });
         Check(new PurchaseOrderRepository(db), new PurchaseOrderQueryModel
         {
             From = new DateOnly(2026, 1, 1),
             SupplierId = Guid.NewGuid()
         });
-        Check(new SalesInvoiceRepository(db), new SalesInvoiceQueryModel
+        Check(new InvoiceRepository(db), new InvoiceQueryModel
         {
-            CustomerName = "customer",
             From = DateTimeOffset.UtcNow
-        });
-        Check(new JournalEntryRepository(db), new JournalEntryQueryModel
-        {
-            To = new DateOnly(2026, 12, 31)
         });
         Check(new PaymentRepository(db), new PaymentQueryModel
         {

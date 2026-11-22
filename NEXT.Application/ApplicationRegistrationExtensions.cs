@@ -45,6 +45,18 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IInventoryQueryService, InventoryQueryService>();
         services.AddScoped<NEXT.Application.Services.Currencies.ExchangeRateReader>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceLookups>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceCreation>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceReads>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceConfirmation>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoicePaymentRecording>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceFulfillment>();
+        services.AddScoped<IAccountingPostingService, NEXT.Application.Features.Accounting.AccountingPostingService>();
+        services.AddScoped<NEXT.Application.Features.Accounting.AccountingPostingValidator>();
+        services.AddScoped<NEXT.Application.Features.Accounting.InvoiceDebtResolver>();
+        services.AddScoped<IAccountingReversalService, NEXT.Application.Features.Accounting.AccountingReversalService>();
+        services.AddScoped<IAccountingReadService, NEXT.Application.Features.Accounting.AccountingReadService>();
+        services.AddSingleton<NEXT.Domain.Services.IInvoiceStateMachine, NEXT.Domain.Services.InvoiceStateMachine>();
         services.AddEntityFeatures();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserIdentityRules>();
         services.AddScoped<NEXT.Application.Features.ApplicationUsers.UserDtoReader>();

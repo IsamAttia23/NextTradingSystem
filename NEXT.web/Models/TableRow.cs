@@ -3,4 +3,5 @@ namespace NEXT.web.Models;
 
 public sealed record TableRow(IReadOnlyList<string> Cells, IReadOnlyList<UiAction> Actions,
     ColorBadgeDto? Badge = null, RecordIdentityDto? Identity = null, string? NameWarning = null,
-    string BadgeColumn = "TagId", UserActivationToggle? Activation = null, string? StockLevel = null);
+    string BadgeColumn = "TagId", UserActivationToggle? Activation = null, string? StockLevel = null,
+    IReadOnlyDictionary<int, TableCellLink>? CellLinks = null);

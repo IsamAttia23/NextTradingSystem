@@ -408,15 +408,12 @@
   <data name="RelatedRecords" xml:space="preserve"><value>الحركات والسجلات المرتبطة</value></data>
   <data name="NoRelatedRecords" xml:space="preserve"><value>لا توجد سجلات مرتبطة</value></data>
   <data name="NoRelatedRecordsHint" xml:space="preserve"><value>ستظهر الحركات هنا عند تسجيلها وربطها بهذا السجل.</value></data>
-  <data name="SalesInvoice" xml:space="preserve"><value>فواتير المبيعات والمرتجعات</value></data>
-  <data name="SalesInvoiceItem" xml:space="preserve"><value>بنود فواتير المبيعات</value></data>
-  <data name="PurchaseInvoice" xml:space="preserve"><value>فواتير المشتريات</value></data>
-  <data name="PurchaseInvoiceItem" xml:space="preserve"><value>بنود فواتير المشتريات</value></data>
+  <data name="Invoice" xml:space="preserve"><value>الفواتير</value></data>
+  <data name="InvoiceItem" xml:space="preserve"><value>بنود الفواتير</value></data>
+  <data name="Sales" xml:space="preserve"><value>مبيعات</value></data>
   <data name="PurchaseOrder" xml:space="preserve"><value>أوامر الشراء</value></data>
   <data name="PurchaseOrderItem" xml:space="preserve"><value>بنود أوامر الشراء</value></data>
   <data name="Payment" xml:space="preserve"><value>المدفوعات والتحصيلات</value></data>
-  <data name="JournalEntry" xml:space="preserve"><value>القيود المحاسبية</value></data>
-  <data name="JournalLine" xml:space="preserve"><value>بنود القيود</value></data>
   <data name="CustomerContact" xml:space="preserve"><value>جهات الاتصال</value></data>
   <data name="StockMovement" xml:space="preserve"><value>حركات المخزون</value></data>
   <data name="Stock" xml:space="preserve"><value>أرصدة المخزون</value></data>
@@ -672,4 +669,145 @@
   <data name="OpeningWarehouseRequired" xml:space="preserve"><value>اختر مخزن الرصيد الافتتاحي.</value></data>
   <data name="OpeningQuantityRequired" xml:space="preserve"><value>أدخل كمية افتتاحية أكبر من صفر.</value></data>
   <data name="BaseUnitCost" xml:space="preserve"><value>تكلفة الوحدة الأساسية</value></data>
+  <data name="SalesGroup" xml:space="preserve"><value>المبيعات</value></data>
+  <data name="Invoices" xml:space="preserve"><value>الفواتير</value></data>
+  <data name="InvoicesDescription" xml:space="preserve"><value>عرض فواتير المبيعات وإنشاؤها.</value></data>
+  <data name="CreateInvoice" xml:space="preserve"><value>إنشاء فاتورة مبيعات</value></data>
+  <data name="InvoiceCreatedBy" xml:space="preserve"><value>أنشأها</value></data>
+  <data name="AddInvoiceLine" xml:space="preserve"><value>إضافة عنصر</value></data>
+  <data name="InvoiceProductHint" xml:space="preserve"><value>ابحث باسم المنتج أو الباركود</value></data>
+  <data name="InvoiceCustomerHint" xml:space="preserve"><value>اكتب اسم العميل أو اختر من القائمة</value></data>
+  <data name="InvoiceLineTotal" xml:space="preserve"><value>إجمالي البند</value></data>
+  <data name="InvoiceItems" xml:space="preserve"><value>بنود الفاتورة</value></data>
+  <data name="InvoiceDiscountType" xml:space="preserve"><value>نوع الخصم</value></data>
+  <data name="NoInvoiceDiscount" xml:space="preserve"><value>بدون خصم</value></data>
+  <data name="InvoiceDiscountValue" xml:space="preserve"><value>قيمة الخصم</value></data>
+  <data name="SaveInvoice" xml:space="preserve"><value>حفظ الفاتورة</value></data>
+  <data name="InvoiceInsufficientStock" xml:space="preserve"><value>الكميات المطلوبة تتجاوز المخزون المتاح.</value></data>
+  <data name="CustomerName" xml:space="preserve"><value>اسم العميل</value></data>
+  <data name="SubTotal" xml:space="preserve"><value>الإجمالي الفرعي</value></data>
+  <data name="DiscountAmount" xml:space="preserve"><value>الخصم</value></data>
+  <data name="Pending" xml:space="preserve"><value>معلقة</value></data>
+  <data name="Percentage" xml:space="preserve"><value>نسبة مئوية</value></data>
+  <data name="FixedAmount" xml:space="preserve"><value>مبلغ ثابت</value></data>
+  <data name="ConfirmInvoice" xml:space="preserve"><value>تأكيد الفاتورة</value></data>
+  <data name="InvoiceConfirmationPayment" xml:space="preserve"><value>الدفعة عند التأكيد</value></data>
+  <data name="InvoiceReservationNotice" xml:space="preserve"><value>التأكيد يحجز كميات الفاتورة. يُصرف المخزون عند الشحن أو التسليم.</value></data>
+  <data name="InvoiceLastAction" xml:space="preserve"><value>آخر إجراء</value></data>
+  <data name="InvoiceStatusHistory" xml:space="preserve"><value>سجل الحالات</value></data>
+  <data name="InvoicePaymentInvalid" xml:space="preserve"><value>أدخل مبلغًا بين صفر وإجمالي الفاتورة بمنزلتين عشريتين بحد أقصى.</value></data>
+  <data name="InvoicePaymentMethodRequired" xml:space="preserve"><value>اختر طريقة دفع صالحة.</value></data>
+  <data name="InvoiceActorUnavailable" xml:space="preserve"><value>تعذّر التحقق من حساب المستخدم.</value></data>
+  <data name="InvoiceNotFound" xml:space="preserve"><value>الفاتورة غير موجودة.</value></data>
+  <data name="InvoiceConfirmationConflict" xml:space="preserve"><value>طلب التأكيد يتعارض مع عملية سابقة.</value></data>
+  <data name="InvoiceTransitionInvalid" xml:space="preserve"><value>لا يمكن تأكيد هذه الفاتورة بحالتها الحالية.</value></data>
+  <data name="InvoiceWarehouseUnavailable" xml:space="preserve"><value>مستودع الفاتورة غير متاح.</value></data>
+  <data name="InvoiceExistingPayments" xml:space="preserve"><value>راجع الدفعات المسجلة على الفاتورة قبل تأكيدها.</value></data>
+  <data name="InvoiceProductUnavailable" xml:space="preserve"><value>أحد منتجات الفاتورة لم يعد متاحًا.</value></data>
+  <data name="InvoiceLinesInvalid" xml:space="preserve"><value>تحتوي بنود الفاتورة على منتجات أو كميات غير صالحة.</value></data>
+  <data name="Partial" xml:space="preserve"><value>مدفوعة جزئيًا</value></data>
+  <data name="PaymentMethod" xml:space="preserve"><value>طريقة الدفع</value></data>
+  <data name="Cash" xml:space="preserve"><value>نقدًا</value></data>
+  <data name="Card" xml:space="preserve"><value>بطاقة</value></data>
+  <data name="Wallet" xml:space="preserve"><value>محفظة إلكترونية</value></data>
+  <data name="BankTransfer" xml:space="preserve"><value>تحويل بنكي</value></data>
+  <data name="Cheque" xml:space="preserve"><value>شيك</value></data>
+  <data name="Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="RecordInvoicePayment" xml:space="preserve"><value>تسجيل دفعة</value></data>
+  <data name="InvoicePaymentAmount" xml:space="preserve"><value>مبلغ الدفعة</value></data>
+  <data name="InvoiceRemainingAfterPayment" xml:space="preserve"><value>المتبقي بعد الدفع</value></data>
+  <data name="InvoicePaymentHistory" xml:space="preserve"><value>سجل الدفعات</value></data>
+  <data name="InvoiceNoPayments" xml:space="preserve"><value>لم تُسجّل أي دفعات بعد.</value></data>
+  <data name="InvoicePaymentRecordedAt" xml:space="preserve"><value>وقت التسجيل</value></data>
+  <data name="InvoicePaymentRecordedBy" xml:space="preserve"><value>سجّلها</value></data>
+  <data name="InvoicePaymentConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو الدفعة. حدّث الفاتورة وراجع دفعاتها قبل المحاولة مجددًا.</value></data>
+  <data name="InvoicePaymentUnavailable" xml:space="preserve"><value>يمكن تسجيل الدفعات للفواتير المعتمدة أو المشحونة أو المسلّمة التي لديها مبلغ متبقٍ.</value></data>
+  <data name="InvoiceLaterPaymentInvalid" xml:space="preserve"><value>أدخل مبلغًا موجبًا لا يتجاوز المتبقي، بمنزلتين عشريتين بحد أقصى.</value></data>
+  <data name="InvoiceDocumentPreview" xml:space="preserve"><value>معاينة الفاتورة</value></data>
+  <data name="InvoiceDocumentTitle" xml:space="preserve"><value>فاتورة مبيعات</value></data>
+  <data name="InvoiceDocumentViewPdf" xml:space="preserve"><value>عرض PDF</value></data>
+  <data name="InvoiceDocumentSavePdf" xml:space="preserve"><value>حفظ PDF</value></data>
+  <data name="InvoiceDocumentPrint" xml:space="preserve"><value>طباعة</value></data>
+  <data name="InvoiceDocumentActions" xml:space="preserve"><value>خيارات الفاتورة</value></data>
+  <data name="InvoicePdfUnavailable" xml:space="preserve"><value>تصدير PDF غير متاح مؤقتًا. حاول مجددًا أو استخدم صفحة طباعة الفاتورة.</value></data>
+  <data name="ErrorReference" xml:space="preserve"><value>رقم الخطأ</value></data>
+  <data name="Shipped" xml:space="preserve"><value>مشحونة</value></data>
+  <data name="Delivered" xml:space="preserve"><value>مسلّمة</value></data>
+  <data name="ShipInvoice" xml:space="preserve"><value>شحن الفاتورة</value></data>
+  <data name="DirectDelivery" xml:space="preserve"><value>تسليم مباشر</value></data>
+  <data name="ConfirmDelivery" xml:space="preserve"><value>تأكيد التسليم</value></data>
+  <data name="InvoiceFulfillmentAction" xml:space="preserve"><value>الإجراء</value></data>
+  <data name="InvoiceFulfillmentNote" xml:space="preserve"><value>ملاحظة اختيارية</value></data>
+  <data name="InvoiceDispatchNotice" xml:space="preserve"><value>ستُصرف الكميات المحجوزة لهذه الفاتورة من المستودع مرة واحدة.</value></data>
+  <data name="InvoiceDeliveryNotice" xml:space="preserve"><value>سيُسجّل استلام العميل للفاتورة. صُرفت الكميات من المستودع عند الشحن.</value></data>
+  <data name="InvoiceFulfillmentUnavailable" xml:space="preserve"><value>هذا الإجراء غير متاح للحالة الحالية للفاتورة.</value></data>
+  <data name="InvoiceFulfillmentConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو العملية. حدّث الفاتورة وراجع سجل الحالات قبل المحاولة مجددًا.</value></data>
+  <data name="InvoiceReservedStockInsufficient" xml:space="preserve"><value>رصيد المخزون أو الكمية المحجوزة غير كافٍ. راجع المخزون قبل الصرف.</value></data>
+  <data name="InvoiceValidBatchesInsufficient" xml:space="preserve"><value>رصيد الدفعات الصالحة وغير المنتهية لا يكفي لصرف بنود هذه الفاتورة.</value></data>
+  <data name="ChangeInvoiceStatus" xml:space="preserve"><value>تغيير حالة الفاتورة</value></data>
+  <data name="InvoiceProductMerged" xml:space="preserve"><value>تم دمج المنتج مع السطر السابق. يمكنك تعديل الكمية الإجمالية.</value></data>
+  <data name="Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Reference" xml:space="preserve"><value>المرجع</value></data>
+  <data name="AccountingInvalidIdentifier" xml:space="preserve"><value>معرّف العملية أو السجل غير صالح.</value></data>
+  <data name="AccountingInvalidAmount" xml:space="preserve"><value>أدخل مبلغًا صالحًا بمنزلتين عشريتين وبطرف مدين أو دائن واحد.</value></data>
+  <data name="AccountingDebtReferenceRequired" xml:space="preserve"><value>يجب ربط حركة الديون بعميل وبند دين صحيحين.</value></data>
+  <data name="AccountingDescriptionInvalid" xml:space="preserve"><value>أدخل بيانًا صالحًا للقيد.</value></data>
+  <data name="AccountingInvalidReference" xml:space="preserve"><value>نوع العملية أو مرجعها غير متوافق.</value></data>
+  <data name="AccountingLinesInvalid" xml:space="preserve"><value>يجب أن يتكون القيد من سطرين إلى ألف سطر صالح.</value></data>
+  <data name="AccountingUnbalancedEntry" xml:space="preserve"><value>لا يمكن اعتماد قيد غير متوازن أو بلا مبلغ.</value></data>
+  <data name="AccountingEntryImmutable" xml:space="preserve"><value>الحركة المعتمدة لا تقبل التعديل أو الحذف. استخدم قيدًا عكسيًا.</value></data>
+  <data name="AccountingFixedAccountsImmutable" xml:space="preserve"><value>الحسابات الأساسية ثابتة ولا تقبل الإضافة أو التعديل أو الحذف.</value></data>
+  <data name="AccountingOperationConflict" xml:space="preserve"><value>استُخدم معرّف العملية سابقًا ببيانات مختلفة.</value></data>
+  <data name="AccountingSourceAlreadyPosted" xml:space="preserve"><value>تم ترحيل هذا المصدر من قبل.</value></data>
+  <data name="AccountingEntryNotFound" xml:space="preserve"><value>القيد المحاسبي غير موجود.</value></data>
+  <data name="AccountingReversalUnavailable" xml:space="preserve"><value>تعذّر عكس القيد. تحقق من تاريخه وعدم عكسه سابقًا.</value></data>
+  <data name="AccountingDateRangeInvalid" xml:space="preserve"><value>تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.</value></data>
+  <data name="AccountingSeedRequired" xml:space="preserve"><value>الحسابات الأساسية غير مكتملة. طبّق ترحيل قاعدة البيانات.</value></data>
+  <data name="AccountingDebtUnavailable" xml:space="preserve"><value>أحد بنود الدين غير موجود أو غير متاح.</value></data>
+  <data name="AccountingDebtCustomerInvalid" xml:space="preserve"><value>تحقق من صاحب الدين ونشاطه وسجّل رقم هاتفه قبل الترحيل.</value></data>
+  <data name="AccountingOverpayment" xml:space="preserve"><value>رُفض السداد لأن المبلغ يتجاوز الرصيد المتبقي.</value></data>
+  <data name="AccountingBalanceLimit" xml:space="preserve"><value>الرصيد الناتج يتجاوز الحد المسموح.</value></data>
+  <data name="AccountingDebtAccountImmutable" xml:space="preserve"><value>لا يمكن حذف حساب الدين أو تغيير صاحبه.</value></data>
+  <data name="AccountingPaymentMismatch" xml:space="preserve"><value>قيد الخزينة لا يطابق مبلغ الدفعة أو نوعها.</value></data>
+  <data name="AccountingChooseInvoiceCustomer" xml:space="preserve"><value>اختر العميل المطابق من القائمة قبل فتح الدين.</value></data>
+  <data name="AccountingCustomerPhoneRequired" xml:space="preserve"><value>رقم هاتف العميل إلزامي قبل ترحيل الدين.</value></data>
+  <data name="AccountingDispatchDebtNotice" xml:space="preserve"><value>سيُسجّل المتبقي دينًا مرتبطًا بهذه الفاتورة عند الشحن أو التسليم المباشر.</value></data>
+  <data name="AccountingInvoiceAlreadyRecognized" xml:space="preserve"><value>تم إثبات مبيعات هذه الفاتورة من قبل.</value></data>
+  <data name="AccountingInvoiceDebtMissing" xml:space="preserve"><value>بند دين الفاتورة غير موجود. راجع الربط المالي قبل السداد.</value></data>
+  <data name="AccountingInvoiceReviewRequired" xml:space="preserve"><value>مبالغ الفاتورة أو دفعاتها السابقة تحتاج تسوية مالية قبل الشحن.</value></data>
+  <data name="AccountingTaxNotConfigured" xml:space="preserve"><value>يلزم إعداد حساب الضريبة قبل ترحيل فاتورة بضريبة غير صفرية.</value></data>
+  <data name="FinancialAccounts" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="FinancialAccountsDescription" xml:space="preserve"><value>أرصدة الحسابات وحركات الفترة من القيود المعتمدة</value></data>
+  <data name="FinanceGroup" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="AccountMovements" xml:space="preserve"><value>حركات الحسابات</value></data>
+  <data name="AccountMovementsDescription" xml:space="preserve"><value>حركات مدينة ودائنة مرتبطة بالفواتير والدفعات</value></data>
+  <data name="AccountingDebit" xml:space="preserve"><value>مدين</value></data>
+  <data name="AccountingCredit" xml:space="preserve"><value>دائن</value></data>
+  <data name="AccountingOpeningBalance" xml:space="preserve"><value>الرصيد الافتتاحي</value></data>
+  <data name="AccountingClosingBalance" xml:space="preserve"><value>الرصيد الختامي</value></data>
+  <data name="AccountingTechnicalAccount" xml:space="preserve"><value>حساب تقني</value></data>
+  <data name="AccountingOperationType" xml:space="preserve"><value>نوع العملية</value></data>
+  <data name="FinancialAccountSales" xml:space="preserve"><value>المبيعات</value></data>
+  <data name="FinancialAccountPurchases" xml:space="preserve"><value>المشتريات</value></data>
+  <data name="FinancialAccountExpenses" xml:space="preserve"><value>المنصرفات</value></data>
+  <data name="FinancialAccountReceivables" xml:space="preserve"><value>الديون</value></data>
+  <data name="FinancialAccountTreasury" xml:space="preserve"><value>الخزينة</value></data>
+  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>مقدمات العملاء والمستحق للرد</value></data>
+  <data name="FinancialAccountOpeningBalances" xml:space="preserve"><value>مقابل الأرصدة الافتتاحية</value></data>
+  <data name="AccountingEntrySalesRecognition" xml:space="preserve"><value>إثبات مبيعات</value></data>
+  <data name="AccountingEntryReceipt" xml:space="preserve"><value>قبض</value></data>
+  <data name="AccountingEntryOpeningBalance" xml:space="preserve"><value>رصيد افتتاحي</value></data>
+  <data name="AccountingEntrySalesReturn" xml:space="preserve"><value>مرتجع مبيعات</value></data>
+  <data name="AccountingEntryRefund" xml:space="preserve"><value>رد مبلغ للعميل</value></data>
+  <data name="AccountingEntryReversal" xml:space="preserve"><value>قيد عكسي</value></data>
+  <data name="AccountingPurposeInvoiceReceipt" xml:space="preserve"><value>سداد فاتورة</value></data>
+  <data name="AccountingPurposeDebtReceipt" xml:space="preserve"><value>سداد دين</value></data>
+  <data name="AccountingPurposeCustomerRefund" xml:space="preserve"><value>رد مبلغ للعميل</value></data>
+  <data name="Receivables" xml:space="preserve"><value>الديون</value></data>
+  <data name="Treasury" xml:space="preserve"><value>الخزينة</value></data>
+  <data name="CustomerAdvances" xml:space="preserve"><value>مقدمات العملاء</value></data>
+  <data name="OpeningBalances" xml:space="preserve"><value>مقابل الأرصدة الافتتاحية</value></data>
+  <data name="Account" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Purchases" xml:space="preserve"><value>المشتريات</value></data>
+  <data name="Expenses" xml:space="preserve"><value>المنصرفات</value></data>
 </root>

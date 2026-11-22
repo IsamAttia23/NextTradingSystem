@@ -113,18 +113,20 @@
                 return;
             }
             body.innerHTML = content;
-            const form = body.querySelector("[data-modal-form]");
-            if (!form) {
+            const contentRoot = body.querySelector("[data-modal-form], [data-modal-view]");
+            if (!contentRoot) {
                 body.replaceChildren();
                 showError(modalElement.dataset.error);
                 return;
             }
-            title.textContent = form.dataset.title;
-            document.dispatchEvent(new CustomEvent("next:formloaded", { detail: { form } }));
-            initialValues = formValues(form);
+            title.textContent = contentRoot.dataset.title;
+            if (contentRoot.matches("[data-modal-form]")) {
+                document.dispatchEvent(new CustomEvent("next:formloaded", { detail: { form: contentRoot } }));
+                initialValues = formValues(contentRoot);
+            }
             modal.show();
             if (modalElement.classList.contains("show")) {
-                form.querySelector(firstControl)?.focus();
+                contentRoot.querySelector(firstControl + ",a[href],button")?.focus();
             }
         } catch (error) {
             if (!loading.signal.aborted && error.name !== "AbortError") {
@@ -134,7 +136,7 @@
         }
     });
     modalElement.addEventListener("shown.bs.modal", () =>
-        body.querySelector(firstControl)?.focus(),
+        body.querySelector(firstControl + ",[data-modal-view] a[href],[data-modal-view] button")?.focus(),
     );
     modalElement.addEventListener("hide.bs.modal", (event) => {
         if (saving) {

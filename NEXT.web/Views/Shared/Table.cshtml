@@ -9,7 +9,11 @@
         <h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1>
         <p>@L[Model.Description]</p>
     </div>
-    @if (Model.Create is not null)
+    @if (Model.Create is { Modal: false })
+    {
+        <a class="btn btn-primary" href="@Model.Create.Url">@L[Model.Create.Label]</a>
+    }
+    else if (Model.Create is not null)
     {
         <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button>
     }
@@ -43,7 +47,7 @@
         @L["ScrollTableHint"]
     </div>
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]">
-        <table class="table align-middle">
+        <table class="@(Model.CssClass is null ? "table align-middle" : "table align-middle " + Model.CssClass)">
             <caption class="visually-hidden">@L[Model.Title]</caption>
             <thead>
                 <tr>
@@ -82,7 +86,7 @@
                                 {
                                     <partial name="_UserActivationToggle" model="activation" />
                                 }
-                                else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
+                                else if (Model.Columns[i] is "Status" or "Type" or "MovementType" or "AccountPosition")
                                 {
                                     var statusClass = row.Cells[i] switch
                                     {
@@ -92,6 +96,18 @@
                                         _ => ""
                                     };
                                     <span class="status-tag @statusClass">@L[row.Cells[i]]</span>
+                                }
+                                else if (row.CellLinks is not null && row.CellLinks.TryGetValue(i, out var link))
+                                {
+                                    var position = row.Cells[i].IndexOf(link.Text, StringComparison.Ordinal);
+                                    @if (position >= 0)
+                                    {
+                                        <bdi>@row.Cells[i][..position]</bdi><a href="@link.Url"><bdi>@link.Text</bdi></a><bdi>@row.Cells[i][(position + link.Text.Length)..]</bdi>
+                                    }
+                                    else
+                                    {
+                                        <bdi>@row.Cells[i]</bdi> <a href="@link.Url"><bdi>@link.Text</bdi></a>
+                                    }
                                 }
                                 else
                                 {

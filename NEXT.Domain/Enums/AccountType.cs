@@ -2,5 +2,11 @@ namespace NEXT.Domain.Enums;
 
 public enum AccountType
 {
-    Asset, Liability, Equity, Revenue, Expense
+    Sales = 1,
+    Purchases = 2,
+    Expenses = 3,
+    Receivables = 4,
+    Treasury = 5,
+    CustomerAdvances = 6,
+    OpeningBalances = 7
 }

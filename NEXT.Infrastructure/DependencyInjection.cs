@@ -26,6 +26,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<Mapster.IRegister, IdentityMappingRegister>();
+        services.AddScoped<IAccountingStore, AccountingStore>();
+        services.AddScoped<IInvoiceAccountingStore, InvoiceAccountingStore>();
         services.AddScoped<NEXT.Application.Features.Dashboard.IDashboardAccountCounts, DashboardAccountCounts>();
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         var connectionString = configuration.GetConnectionString("NEXTDatabase");
@@ -86,6 +88,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IInvoiceConfirmationStore, InvoiceConfirmationStore>();
+        services.AddScoped<NEXT.Application.Abstractions.Services.IInvoiceNumberGenerator, InvoiceNumberGenerator>();
         services.AddScoped<IQueryExecutor, QueryExecutor>();
         services.AddScoped<IRelatedRecordsReader, RelatedRecordsReader>();
         // Register only dedicated repository contracts, without a service locator in UnitOfWork.

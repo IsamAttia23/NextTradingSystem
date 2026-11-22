@@ -5,10 +5,13 @@ using NEXT.web.Middleware;
 using NEXT.Application;
 using NEXT.Infrastructure;
 using NEXT.web;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+services.AddSerilog((provider, logger) => logger.ConfigureErrorLogging(configuration, builder.Environment)
+    .ReadFrom.Services(provider));
 // Add services to the container.
 
 services.AddApplicationServices(configuration);
@@ -27,11 +30,18 @@ if (builder.Environment.IsDevelopment()
 }
 
 var app = builder.Build();
-await using (var scope = app.Services.CreateAsyncScope())
+try
 {
+    await using var scope = app.Services.CreateAsyncScope();
     await scope.ServiceProvider.GetRequiredService<NEXT.Application.Abstractions.Context.IApplicationInitializer>().InitializeAsync();
 }
+catch (Exception error)
+{
+    app.Logger.LogCritical(error, "Application initialization failed");
+    throw;
+}
 
+app.UseErrorRequestLogging();
 app.UseStatusCodePagesWithReExecute("/Status/{0}");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRequestLocalization();

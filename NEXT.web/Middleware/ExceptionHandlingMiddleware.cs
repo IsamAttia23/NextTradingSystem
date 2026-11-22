@@ -12,6 +12,17 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
 {
     public async Task InvokeAsync(HttpContext context, IStringLocalizer<UiText>? text = null)
     {
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["ErrorReference"] = context.TraceIdentifier,
+            ["RequestMethod"] = context.Request.Method,
+            ["RequestPath"] = context.Request.Path.Value
+        });
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["X-Request-Id"] = context.TraceIdentifier;
+            return Task.CompletedTask;
+        });
         try
         {
             await next(context);
@@ -30,7 +41,15 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
             var status = exception is AppException appException ? StatusFor(appException.Code) : 500;
             if (status >= 500)
             {
-                logger.LogError(exception, "Request {TraceIdentifier} failed", context.TraceIdentifier);
+                logger.LogError(exception, "Request failed with status {StatusCode}", status);
+            }
+            else if (exception is AppValidationException invalid)
+            {
+                logger.LogWarning(exception, "Request validation failed with status {StatusCode}: {@ValidationErrors}", status, invalid.Errors);
+            }
+            else
+            {
+                logger.LogWarning(exception, "Request failed with status {StatusCode}", status);
             }
             ProblemDetails problem = exception is AppValidationException validation
                             ? new ValidationProblemDetails(validation.Errors.ToDictionary(x => x.Key, x => x.Value.Select(value => text?[value].Value ?? value).ToArray()))

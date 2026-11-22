@@ -47,16 +47,17 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     public DbSet<Stock> Stocks => Set<Stock>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<ProductBatch> Batches => Set<ProductBatch>();
-    public DbSet<SalesInvoice> SalesInvoices => Set<SalesInvoice>();
-    public DbSet<SalesInvoiceItem> SalesInvoiceItems => Set<SalesInvoiceItem>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<InvoiceStatusHistory> InvoiceStatusHistory => Set<InvoiceStatusHistory>();
     public DbSet<PurchaseOrder> PurchaseOrders => Set<PurchaseOrder>();
     public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
-    public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
-    public DbSet<PurchaseInvoiceItem> PurchaseInvoiceItems => Set<PurchaseInvoiceItem>();
-    public DbSet<Account> Accounts => Set<Account>();
-    public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
-    public DbSet<JournalLine> JournalLines => Set<JournalLine>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
+    public DbSet<AccountTransaction> AccountTransactions => Set<AccountTransaction>();
+    public DbSet<CustomerDebtAccount> CustomerDebtAccounts => Set<CustomerDebtAccount>();
+    public DbSet<DebtItem> DebtItems => Set<DebtItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RecycleBinEntry> RecycleBinEntries => Set<RecycleBinEntry>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
@@ -130,6 +131,7 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         try
         {
             transaction = PersistenceTransaction.Begin(this);
+            AccountingWriteGuard.Validate(this);
             var pending = trackedChangesProcessor.Prepare(this);
             var result = base.SaveChanges(false);
             var written = state.Capture(); // Includes generated keys and new concurrency tokens.
@@ -170,6 +172,7 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         try
         {
             transaction = await PersistenceTransaction.BeginAsync(this, cancellationToken);
+            AccountingWriteGuard.Validate(this);
             var pending = trackedChangesProcessor.Prepare(this);
             var result = await base.SaveChangesAsync(false, cancellationToken);
             var written = state.Capture();

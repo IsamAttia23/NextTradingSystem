@@ -32,7 +32,7 @@ public class Product : IsDeletableEntity<Guid>
 
     public ICollection<Stock> Stocks { get; set; } = new List<Stock>();
     public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
-    public ICollection<SalesInvoiceItem> SalesInvoiceItems { get; set; } = new List<SalesInvoiceItem>();
+    public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
     public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; } = new List<PurchaseOrderItem>();
     public ICollection<ProductBatch> Batches { get; set; } = new List<ProductBatch>();
 }

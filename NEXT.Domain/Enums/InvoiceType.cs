@@ -2,5 +2,7 @@ namespace NEXT.Domain.Enums;
 
 public enum InvoiceType
 {
-    Sale, Return, Quote, Delivery
+    Sales = 0,
+    Purchase = 1,
+    SalesReturn = 2
 }

@@ -116,45 +116,104 @@ namespace NEXT.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("AccountType")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Balance")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("IsTechnical")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("NormalSide")
+                        .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
+                    b.HasIndex("Code")
+                        .IsUnique();
 
-                    b.ToTable("Accounts", (string)null);
+                    b.HasIndex("Type")
+                        .IsUnique();
+
+                    b.ToTable("Accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Accounts_NormalSide", "\"NormalSide\" IN (0, 1)");
+
+                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 7");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000001"),
+                            Code = "SALES",
+                            IsTechnical = false,
+                            Name = "المبيعات",
+                            NormalSide = 1,
+                            Type = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000002"),
+                            Code = "PURCHASES",
+                            IsTechnical = false,
+                            Name = "المشتريات",
+                            NormalSide = 0,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000003"),
+                            Code = "EXPENSES",
+                            IsTechnical = false,
+                            Name = "المنصرفات",
+                            NormalSide = 0,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000004"),
+                            Code = "RECEIVABLES",
+                            IsTechnical = false,
+                            Name = "الديون",
+                            NormalSide = 0,
+                            Type = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000005"),
+                            Code = "TREASURY",
+                            IsTechnical = false,
+                            Name = "الخزينة",
+                            NormalSide = 0,
+                            Type = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000006"),
+                            Code = "CUSTOMER-ADVANCES",
+                            IsTechnical = true,
+                            Name = "مقدمات العملاء والمستحق للرد",
+                            NormalSide = 1,
+                            Type = 6
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000007"),
+                            Code = "OPENING-BALANCES",
+                            IsTechnical = true,
+                            Name = "مقابل الأرصدة الافتتاحية",
+                            NormalSide = 1,
+                            Type = 7
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.AccountSecurityGrant", b =>
@@ -199,122 +258,58 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("AccountSecurityGrants", "security");
                 });
 
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.AccountTransaction", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
-
-                    b.Property<byte[]>("AvatarUrl")
-                        .HasColumnType("bytea");
-
-                    b.Property<Guid>("BranchId")
+                    b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
+                    b.Property<decimal>("Credit")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("CreatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DeletedBy")
+                    b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("DeletionReason")
-                        .HasColumnType("text");
+                    b.Property<decimal>("Debit")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
 
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                    b.Property<Guid?>("DebtItemId")
+                        .HasColumnType("uuid");
 
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("boolean");
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                    b.Property<Guid>("LedgerEntryId")
+                        .HasColumnType("uuid");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastInvalidLoginAttempt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("LastLogin")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("MustChangePassword")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("RequiresAdministratorUnlock")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("TemporaryPasswordExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("TemporaryPasswordUsedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("UpdatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                    b.Property<short>("Sequence")
+                        .HasColumnType("smallint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BranchId");
+                    b.HasIndex("CustomerId");
 
-                    b.HasIndex("NormalizedEmail")
-                        .IsUnique()
-                        .HasDatabaseName("EmailIndex");
+                    b.HasIndex("DebtItemId");
 
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
+                    b.HasIndex("AccountId", "LedgerEntryId");
 
-                    b.ToTable("Users", "security");
+                    b.HasIndex("LedgerEntryId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("AccountTransactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountTransactions_Amounts", "\"Debit\" >= 0 AND \"Credit\" >= 0 AND ((\"Debit\" > 0 AND \"Credit\" = 0) OR (\"Credit\" > 0 AND \"Debit\" = 0))");
+
+                            t.HasCheckConstraint("CK_AccountTransactions_Debt", "(\"AccountId\" = 'a1100000-0000-0000-0000-000000000004' AND \"DebtItemId\" IS NOT NULL AND \"CustomerId\" IS NOT NULL) OR (\"AccountId\" <> 'a1100000-0000-0000-0000-000000000004' AND \"DebtItemId\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_AccountTransactions_Sequence", "\"Sequence\" BETWEEN 1 AND 1000");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.AuditLog", b =>
@@ -592,7 +587,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("CustomerContacts", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.JournalEntry", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.CustomerDebtAccount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -604,37 +599,17 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<DateOnly>("EntryDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("EntryNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid?>("ReferenceId")
+                    b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ReferenceType")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                    b.Property<DateTimeOffset>("LastActivityAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("bytea");
 
-                    b.Property<decimal>("TotalCredit")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TotalDebit")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -643,21 +618,16 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EntryNumber")
+                    b.HasIndex("CustomerId")
                         .IsUnique();
 
-                    b.HasIndex("ReferenceType", "ReferenceId");
-
-                    b.ToTable("JournalEntries", (string)null);
+                    b.ToTable("CustomerDebtAccounts", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.JournalLine", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.DebtItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -666,18 +636,362 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<decimal>("Credit")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("Debit")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
+                    b.Property<Guid>("DebtAccountId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique()
+                        .HasFilter("\"InvoiceId\" IS NOT NULL");
+
+                    b.HasIndex("DebtAccountId", "EffectiveDate", "Id");
+
+                    b.ToTable("DebtItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DebtItems_Amount", "\"OriginalAmount\" > 0");
+
+                            t.HasCheckConstraint("CK_DebtItems_Source", "(\"Kind\" = 1 AND \"InvoiceId\" IS NOT NULL) OR (\"Kind\" = 2 AND \"InvoiceId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ChangeAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedByFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CustomerName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<int?>("DiscountType")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("LastActionAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("LegacyInvoiceTypeCode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("JournalEntryId")
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<Guid?>("ParentInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("RemainingAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ParentInvoiceId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("Invoices", (string)null);
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.InvoiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProductBatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(15, 3)
+                        .HasColumnType("numeric(15,3)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("ProductBatchId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("InvoiceItems", (string)null);
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.InvoiceStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ActionAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ActorFullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("FromStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("PaymentAmount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<int?>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("ToStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("InvoiceId", "ActionAt");
+
+                    b.HasIndex("InvoiceId", "OperationId")
+                        .IsUnique();
+
+                    b.ToTable("InvoiceStatusHistory", (string)null);
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.LedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly>("EntryDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PostingKey")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<Guid>("ReferenceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ReferenceType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("ReversesEntryId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -688,11 +1002,36 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId");
+                    b.HasIndex("ActorId");
 
-                    b.HasIndex("JournalEntryId");
+                    b.HasIndex("InvoiceId");
 
-                    b.ToTable("JournalLines", (string)null);
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("PostingKey")
+                        .IsUnique();
+
+                    b.HasIndex("ReversesEntryId")
+                        .IsUnique()
+                        .HasFilter("\"ReversesEntryId\" IS NOT NULL");
+
+                    b.HasIndex("EntryDate", "Id");
+
+                    b.ToTable("LedgerEntries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 6 AND \"ReferenceType\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");
+
+                            t.HasCheckConstraint("CK_LedgerEntries_Reversal", "(\"Kind\" = 6) = (\"ReversesEntryId\" IS NOT NULL) AND (\"ReversesEntryId\" IS NULL OR (\"ReferenceType\" = 4 AND \"ReferenceId\" = \"ReversesEntryId\"))");
+
+                            t.HasCheckConstraint("CK_LedgerEntries_Source", "(\"ReferenceType\" <> 1 OR \"InvoiceId\" IS NOT DISTINCT FROM \"ReferenceId\") AND (\"ReferenceType\" <> 2 OR \"PaymentId\" IS NOT DISTINCT FROM \"ReferenceId\")");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.OtpChallenge", b =>
@@ -765,6 +1104,9 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -782,16 +1124,20 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<int>("PaymentType")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("PurchaseInvoiceId")
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecordedByFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ReturnInvoiceId")
                         .HasColumnType("uuid");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("bytea");
-
-                    b.Property<Guid?>("SalesInvoiceId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uuid");
@@ -806,18 +1152,21 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("InvoiceId");
+
                     b.HasIndex("PaymentDate");
 
                     b.HasIndex("PaymentNumber")
                         .IsUnique();
 
-                    b.HasIndex("PurchaseInvoiceId");
-
-                    b.HasIndex("SalesInvoiceId");
+                    b.HasIndex("ReturnInvoiceId");
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Payments_Purpose", "\"Purpose\" BETWEEN 0 AND 3");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Permission", b =>
@@ -1021,155 +1370,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("ProductBatches", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.PurchaseInvoice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset>("InvoiceDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("InvoiceNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<int>("PaymentStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("PurchaseOrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("RemainingAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<Guid>("SupplierId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("TaxAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WarehouseId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique();
-
-                    b.HasIndex("PurchaseOrderId");
-
-                    b.HasIndex("SupplierId");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("PurchaseInvoices", (string)null);
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.PurchaseInvoiceItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<Guid?>("ProductBatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PurchaseInvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(15, 3)
-                        .HasColumnType("numeric(15,3)");
-
-                    b.Property<decimal>("TaxAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TaxRate")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductBatchId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("PurchaseInvoiceId");
-
-                    b.ToTable("PurchaseInvoiceItems", (string)null);
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1314,40 +1514,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("RecycleBinEntries", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
-
-                    b.ToTable("Roles", "security");
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.RolePermission", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -1361,174 +1527,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions", "security");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("ChangeAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset>("InvoiceDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("InvoiceNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("InvoiceType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<Guid?>("ParentInvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("PaymentMethod")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PaymentStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("RemainingAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("SubTotal")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TaxAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WarehouseId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique();
-
-                    b.HasIndex("ParentInvoiceId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("WarehouseId");
-
-                    b.ToTable("SalesInvoices", (string)null);
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoiceItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("DiscountAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ProductBatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Quantity")
-                        .HasPrecision(15, 3)
-                        .HasColumnType("numeric(15,3)");
-
-                    b.Property<decimal>("TaxAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("TaxRate")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("UnitCost")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(15, 2)
-                        .HasColumnType("numeric(15,2)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.HasIndex("ProductBatchId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("SalesInvoiceItems", (string)null);
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.SecurityEmailMessage", b =>
@@ -1918,21 +1916,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("Units", (string)null);
                 });
 
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.UserRole", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("UserRoles", "security");
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.Warehouse", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1996,6 +1979,173 @@ namespace NEXT.Infrastructure.Migrations
                     b.ToTable("Warehouses", (string)null);
                 });
 
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("AvatarUrl")
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletionReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastInvalidLoginAttempt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("RequiresAdministratorUnlock")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("TemporaryPasswordExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("TemporaryPasswordUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("Users", "security");
+                });
+
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("Roles", "security");
+                });
+
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.UserRole", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles", "security");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("NEXT.Infrastructure.Identity.Entities.Role", null)
@@ -2032,16 +2182,6 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.Account", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.Account", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Parent");
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.AccountSecurityGrant", b =>
                 {
                     b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
@@ -2051,15 +2191,35 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.AccountTransaction", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.Branch", "Branch")
+                    b.HasOne("NEXT.Domain.Entities.Account", "Account")
                         .WithMany()
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Branch");
+                    b.HasOne("NEXT.Domain.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Domain.Entities.DebtItem", "DebtItem")
+                        .WithMany()
+                        .HasForeignKey("DebtItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Domain.Entities.LedgerEntry", "LedgerEntry")
+                        .WithMany("Lines")
+                        .HasForeignKey("LedgerEntryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("DebtItem");
+
+                    b.Navigation("LedgerEntry");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.AuditLog", b =>
@@ -2099,23 +2259,133 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.JournalLine", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.CustomerDebtAccount", b =>
                 {
-                    b.HasOne("NEXT.Domain.Entities.Account", "Account")
-                        .WithMany("JournalLines")
-                        .HasForeignKey("AccountId")
+                    b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
+                        .WithOne()
+                        .HasForeignKey("NEXT.Domain.Entities.CustomerDebtAccount", "CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("NEXT.Domain.Entities.JournalEntry", "JournalEntry")
-                        .WithMany("Lines")
-                        .HasForeignKey("JournalEntryId")
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.DebtItem", b =>
+                {
+                    b.HasOne("NEXT.Domain.Entities.CustomerDebtAccount", "DebtAccount")
+                        .WithMany()
+                        .HasForeignKey("DebtAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DebtAccount");
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.Invoice", b =>
+                {
+                    b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
+                        .WithMany("Invoices")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "ParentInvoice")
+                        .WithMany("Returns")
+                        .HasForeignKey("ParentInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("ParentInvoice");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.InvoiceItem", b =>
+                {
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")
+                        .WithMany("Items")
+                        .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Account");
+                    b.HasOne("NEXT.Domain.Entities.ProductBatch", "ProductBatch")
+                        .WithMany()
+                        .HasForeignKey("ProductBatchId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("JournalEntry");
+                    b.HasOne("NEXT.Domain.Entities.Product", "Product")
+                        .WithMany("InvoiceItems")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductBatch");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.InvoiceStatusHistory", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.LedgerEntry", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Domain.Entities.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Domain.Entities.LedgerEntry", null)
+                        .WithMany()
+                        .HasForeignKey("ReversesEntryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Invoice");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.OtpChallenge", b =>
@@ -2134,14 +2404,14 @@ namespace NEXT.Infrastructure.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("NEXT.Domain.Entities.PurchaseInvoice", "PurchaseInvoice")
+                    b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")
                         .WithMany()
-                        .HasForeignKey("PurchaseInvoiceId")
+                        .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("NEXT.Domain.Entities.SalesInvoice", "SalesInvoice")
+                    b.HasOne("NEXT.Domain.Entities.Invoice", null)
                         .WithMany()
-                        .HasForeignKey("SalesInvoiceId")
+                        .HasForeignKey("ReturnInvoiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("NEXT.Domain.Entities.Supplier", "Supplier")
@@ -2151,9 +2421,7 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.Navigation("Customer");
 
-                    b.Navigation("PurchaseInvoice");
-
-                    b.Navigation("SalesInvoice");
+                    b.Navigation("Invoice");
 
                     b.Navigation("Supplier");
                 });
@@ -2199,58 +2467,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.PurchaseInvoice", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.PurchaseOrder", "PurchaseOrder")
-                        .WithMany()
-                        .HasForeignKey("PurchaseOrderId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("NEXT.Domain.Entities.Supplier", "Supplier")
-                        .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("NEXT.Domain.Entities.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PurchaseOrder");
-
-                    b.Navigation("Supplier");
-
-                    b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.PurchaseInvoiceItem", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.ProductBatch", "ProductBatch")
-                        .WithMany()
-                        .HasForeignKey("ProductBatchId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("NEXT.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("NEXT.Domain.Entities.PurchaseInvoice", "PurchaseInvoice")
-                        .WithMany("Items")
-                        .HasForeignKey("PurchaseInvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductBatch");
-
-                    b.Navigation("PurchaseInvoice");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.PurchaseOrder", b =>
@@ -2306,63 +2522,6 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Permission");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoice", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
-                        .WithMany("SalesInvoices")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("NEXT.Domain.Entities.SalesInvoice", "ParentInvoice")
-                        .WithMany("Returns")
-                        .HasForeignKey("ParentInvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("NEXT.Domain.Entities.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("ParentInvoice");
-
-                    b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoiceItem", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.SalesInvoice", "Invoice")
-                        .WithMany("Items")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("NEXT.Domain.Entities.ProductBatch", "ProductBatch")
-                        .WithMany()
-                        .HasForeignKey("ProductBatchId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("NEXT.Domain.Entities.Product", "Product")
-                        .WithMany("SalesInvoiceItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("ProductBatch");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.SecurityEmailMessage", b =>
@@ -2431,6 +2590,27 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("BaseUnit");
                 });
 
+            modelBuilder.Entity("NEXT.Domain.Entities.Warehouse", b =>
+                {
+                    b.HasOne("NEXT.Domain.Entities.Branch", "Branch")
+                        .WithMany("Warehouses")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("NEXT.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.UserRole", b =>
                 {
                     b.HasOne("NEXT.Infrastructure.Identity.Entities.Role", "Role")
@@ -2450,28 +2630,6 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.Warehouse", b =>
-                {
-                    b.HasOne("NEXT.Domain.Entities.Branch", "Branch")
-                        .WithMany("Warehouses")
-                        .HasForeignKey("BranchId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Branch");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.Account", b =>
-                {
-                    b.Navigation("Children");
-
-                    b.Navigation("JournalLines");
-                });
-
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
-                {
-                    b.Navigation("UserRoles");
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.Branch", b =>
                 {
                     b.Navigation("Warehouses");
@@ -2488,10 +2646,17 @@ namespace NEXT.Infrastructure.Migrations
                 {
                     b.Navigation("Contacts");
 
-                    b.Navigation("SalesInvoices");
+                    b.Navigation("Invoices");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.JournalEntry", b =>
+            modelBuilder.Entity("NEXT.Domain.Entities.Invoice", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Returns");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.LedgerEntry", b =>
                 {
                     b.Navigation("Lines");
                 });
@@ -2505,37 +2670,18 @@ namespace NEXT.Infrastructure.Migrations
                 {
                     b.Navigation("Batches");
 
-                    b.Navigation("PurchaseOrderItems");
+                    b.Navigation("InvoiceItems");
 
-                    b.Navigation("SalesInvoiceItems");
+                    b.Navigation("PurchaseOrderItems");
 
                     b.Navigation("StockMovements");
 
                     b.Navigation("Stocks");
                 });
 
-            modelBuilder.Entity("NEXT.Domain.Entities.PurchaseInvoice", b =>
-                {
-                    b.Navigation("Items");
-                });
-
             modelBuilder.Entity("NEXT.Domain.Entities.PurchaseOrder", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
-                {
-                    b.Navigation("RolePermissions");
-
-                    b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("NEXT.Domain.Entities.SalesInvoice", b =>
-                {
-                    b.Navigation("Items");
-
-                    b.Navigation("Returns");
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Supplier", b =>
@@ -2562,6 +2708,18 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("StockMovements");
 
                     b.Navigation("Stocks");
+                });
+
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("NEXT.Infrastructure.Identity.Entities.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

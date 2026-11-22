@@ -1,0 +1,33 @@
+@model FinancialAccountsView
+@{
+    ViewData["Title"] = L["FinancialAccounts"];
+}
+<section class="page-heading">
+    <div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialAccounts"]</h1><p>@L["FinancialAccountsDescription"]</p></div>
+</section>
+<section class="content-card">
+    <form method="get" class="modal-field-grid mb-3">
+        <label class="form-label">@L["From"]<input type="date" name="from" class="form-control" value="@Model.From?.ToString("yyyy-MM-dd")" /></label>
+        <label class="form-label">@L["To"]<input type="date" name="to" class="form-control" value="@Model.To?.ToString("yyyy-MM-dd")" /></label>
+        <div class="align-self-end"><button class="btn btn-primary" type="submit">@L["Search"]</button></div>
+    </form>
+    <div class="table-responsive" tabindex="0" role="region" aria-label="@L["FinancialAccounts"]">
+        <table class="table align-middle financial-account-balances">
+            <caption class="visually-hidden">@L["FinancialAccounts"]</caption>
+            <thead><tr><th>@L["Account"]</th><th>@L["AccountingOpeningBalance"]</th><th>@L["AccountingDebit"]</th><th>@L["AccountingCredit"]</th><th>@L["AccountingClosingBalance"]</th><th>@L["Actions"]</th></tr></thead>
+            <tbody>
+            @foreach (var account in Model.Accounts)
+            {
+                <tr>
+                    <td>@L["FinancialAccount" + account.Type] @if (account.IsTechnical) { <small class="text-muted">(@L["AccountingTechnicalAccount"])</small> }</td>
+                    <td><bdi>@account.OpeningBalance.ToString("N2") SDG</bdi></td>
+                    <td><bdi>@account.Debit.ToString("N2") SDG</bdi></td>
+                    <td><bdi>@account.Credit.ToString("N2") SDG</bdi></td>
+                    <td><bdi>@account.Balance.ToString("N2") SDG</bdi></td>
+                    <td><a class="btn btn-sm btn-light" asp-action="Movements" asp-route-Account="@account.Type" asp-route-From="@Model.From?.ToString("yyyy-MM-dd")" asp-route-To="@Model.To?.ToString("yyyy-MM-dd")">@L["AccountMovements"]</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

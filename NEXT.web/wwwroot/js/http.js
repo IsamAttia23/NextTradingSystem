@@ -20,10 +20,13 @@
     async function problemMessage(response, messages) {
         const problem = await response.json().catch(() => null);
         const guidance = messageFor(response.status, messages);
-        if (problem?.errors) {
-            return guidance + "\n" + Object.values(problem.errors).flat().join("\n");
-        }
-        return typeof problem?.userMessage === "string" ? problem.userMessage : guidance;
+        const message = problem?.errors
+            ? guidance + "\n" + Object.values(problem.errors).flat().join("\n")
+            : typeof problem?.userMessage === "string" ? problem.userMessage : guidance;
+        const trace = problem?.traceId ?? response.headers?.get?.("X-Request-Id");
+        const label = messages.referenceLabel ?? document.getElementById("workspaceModal")?.dataset.referenceLabel ?? "Error reference";
+        return typeof trace === "string" && trace.length > 0
+            ? message + "\n" + label + ": " + trace : message;
     }
     function setBusy(
         form,

@@ -25,5 +25,5 @@ public class Customer : IsDeletableEntity<Guid>, IHasProfileImage
     public byte[] RowVersion { get; set; } = [];
 
     public ICollection<CustomerContact> Contacts { get; set; } = new List<CustomerContact>();
-    public ICollection<SalesInvoice> SalesInvoices { get; set; } = new List<SalesInvoice>();
+    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
