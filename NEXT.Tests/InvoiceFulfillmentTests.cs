@@ -279,6 +279,7 @@ public sealed class InvoiceFulfillmentTests
         Assert.Equal("تسليم مباشر", await page.Locator("#modalTitle").InnerTextAsync());
         await page.Locator("#modalBody [name=TargetStatus]").SelectOptionAsync("Shipped");
         await page.Locator("#modalBody [name=Note]").FillAsync("شُحنت للعميل");
+        await page.Locator("#modalBody [name=CustomerPhone]").FillAsync("+249123456789");
         Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
         Assert.True(await page.Locator("#modalBody .table-responsive").EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth"));
         var qa = Environment.GetEnvironmentVariable("NEXT_PDF_QA_DIRECTORY");
@@ -324,7 +325,7 @@ public sealed class InvoiceFulfillmentTests
     private static Task<HttpResponseMessage> Fulfill(HttpClient client, Invoice invoice, string token, Guid operation,
         InvoiceStatus target, string note = "") => WorkspaceUiTests.Post(client, $"/Invoices/Fulfill/{invoice.Id}", token,
             ("OperationId", operation.ToString()), ("RowVersion", Convert.ToBase64String(invoice.RowVersion)),
-            ("TargetStatus", target.ToString()), ("Note", note));
+            ("TargetStatus", target.ToString()), ("Note", note), ("CustomerPhone", "+249123456789"));
 
     private static Task<HttpResponseMessage> Pay(HttpClient client, Invoice invoice, string token, string amount) =>
         WorkspaceUiTests.Post(client, $"/Invoices/RecordPayment/{invoice.Id}", token,

@@ -47,7 +47,7 @@
         @L["ScrollTableHint"]
     </div>
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L[Model.Title]">
-        <table class="table align-middle">
+        <table class="@(Model.CssClass is null ? "table align-middle" : "table align-middle " + Model.CssClass)">
             <caption class="visually-hidden">@L[Model.Title]</caption>
             <thead>
                 <tr>
@@ -96,6 +96,18 @@
                                         _ => ""
                                     };
                                     <span class="status-tag @statusClass">@L[row.Cells[i]]</span>
+                                }
+                                else if (row.CellLinks is not null && row.CellLinks.TryGetValue(i, out var link))
+                                {
+                                    var position = row.Cells[i].IndexOf(link.Text, StringComparison.Ordinal);
+                                    @if (position >= 0)
+                                    {
+                                        <bdi>@row.Cells[i][..position]</bdi><a href="@link.Url"><bdi>@link.Text</bdi></a><bdi>@row.Cells[i][(position + link.Text.Length)..]</bdi>
+                                    }
+                                    else
+                                    {
+                                        <bdi>@row.Cells[i]</bdi> <a href="@link.Url"><bdi>@link.Text</bdi></a>
+                                    }
                                 }
                                 else
                                 {

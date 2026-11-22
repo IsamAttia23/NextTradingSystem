@@ -14,6 +14,7 @@ public sealed class QueryFilterPresenter(FormFieldPresenter fields)
         var result = new List<FormField> { new("SearchTerm", "SearchAll", query.SearchTerm, "search", MaxLength: 200) };
         foreach (var property in query.GetType().GetProperties().Where(p => !Common.Contains(p.Name)))
         {
+            if (query is AccountingQuery && property.Name is "CustomerId" or "InvoiceId" or "PaymentId") continue;
             if (query is ProductQueryModel product)
             {
                 if (property.Name == nameof(ProductQueryModel.IsAvailable))

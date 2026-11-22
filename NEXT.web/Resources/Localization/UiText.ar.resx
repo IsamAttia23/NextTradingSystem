@@ -769,4 +769,45 @@
   <data name="AccountingBalanceLimit" xml:space="preserve"><value>الرصيد الناتج يتجاوز الحد المسموح.</value></data>
   <data name="AccountingDebtAccountImmutable" xml:space="preserve"><value>لا يمكن حذف حساب الدين أو تغيير صاحبه.</value></data>
   <data name="AccountingPaymentMismatch" xml:space="preserve"><value>قيد الخزينة لا يطابق مبلغ الدفعة أو نوعها.</value></data>
+  <data name="AccountingChooseInvoiceCustomer" xml:space="preserve"><value>اختر العميل المطابق من القائمة قبل فتح الدين.</value></data>
+  <data name="AccountingCustomerPhoneRequired" xml:space="preserve"><value>رقم هاتف العميل إلزامي قبل ترحيل الدين.</value></data>
+  <data name="AccountingDispatchDebtNotice" xml:space="preserve"><value>سيُسجّل المتبقي دينًا مرتبطًا بهذه الفاتورة عند الشحن أو التسليم المباشر.</value></data>
+  <data name="AccountingInvoiceAlreadyRecognized" xml:space="preserve"><value>تم إثبات مبيعات هذه الفاتورة من قبل.</value></data>
+  <data name="AccountingInvoiceDebtMissing" xml:space="preserve"><value>بند دين الفاتورة غير موجود. راجع الربط المالي قبل السداد.</value></data>
+  <data name="AccountingInvoiceReviewRequired" xml:space="preserve"><value>مبالغ الفاتورة أو دفعاتها السابقة تحتاج تسوية مالية قبل الشحن.</value></data>
+  <data name="AccountingTaxNotConfigured" xml:space="preserve"><value>يلزم إعداد حساب الضريبة قبل ترحيل فاتورة بضريبة غير صفرية.</value></data>
+  <data name="FinancialAccounts" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="FinancialAccountsDescription" xml:space="preserve"><value>أرصدة الحسابات وحركات الفترة من القيود المعتمدة</value></data>
+  <data name="FinanceGroup" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="AccountMovements" xml:space="preserve"><value>حركات الحسابات</value></data>
+  <data name="AccountMovementsDescription" xml:space="preserve"><value>حركات مدينة ودائنة مرتبطة بالفواتير والدفعات</value></data>
+  <data name="AccountingDebit" xml:space="preserve"><value>مدين</value></data>
+  <data name="AccountingCredit" xml:space="preserve"><value>دائن</value></data>
+  <data name="AccountingOpeningBalance" xml:space="preserve"><value>الرصيد الافتتاحي</value></data>
+  <data name="AccountingClosingBalance" xml:space="preserve"><value>الرصيد الختامي</value></data>
+  <data name="AccountingTechnicalAccount" xml:space="preserve"><value>حساب تقني</value></data>
+  <data name="AccountingOperationType" xml:space="preserve"><value>نوع العملية</value></data>
+  <data name="FinancialAccountSales" xml:space="preserve"><value>المبيعات</value></data>
+  <data name="FinancialAccountPurchases" xml:space="preserve"><value>المشتريات</value></data>
+  <data name="FinancialAccountExpenses" xml:space="preserve"><value>المنصرفات</value></data>
+  <data name="FinancialAccountReceivables" xml:space="preserve"><value>الديون</value></data>
+  <data name="FinancialAccountTreasury" xml:space="preserve"><value>الخزينة</value></data>
+  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>مقدمات العملاء والمستحق للرد</value></data>
+  <data name="FinancialAccountOpeningBalances" xml:space="preserve"><value>مقابل الأرصدة الافتتاحية</value></data>
+  <data name="AccountingEntrySalesRecognition" xml:space="preserve"><value>إثبات مبيعات</value></data>
+  <data name="AccountingEntryReceipt" xml:space="preserve"><value>قبض</value></data>
+  <data name="AccountingEntryOpeningBalance" xml:space="preserve"><value>رصيد افتتاحي</value></data>
+  <data name="AccountingEntrySalesReturn" xml:space="preserve"><value>مرتجع مبيعات</value></data>
+  <data name="AccountingEntryRefund" xml:space="preserve"><value>رد مبلغ للعميل</value></data>
+  <data name="AccountingEntryReversal" xml:space="preserve"><value>قيد عكسي</value></data>
+  <data name="AccountingPurposeInvoiceReceipt" xml:space="preserve"><value>سداد فاتورة</value></data>
+  <data name="AccountingPurposeDebtReceipt" xml:space="preserve"><value>سداد دين</value></data>
+  <data name="AccountingPurposeCustomerRefund" xml:space="preserve"><value>رد مبلغ للعميل</value></data>
+  <data name="Receivables" xml:space="preserve"><value>الديون</value></data>
+  <data name="Treasury" xml:space="preserve"><value>الخزينة</value></data>
+  <data name="CustomerAdvances" xml:space="preserve"><value>مقدمات العملاء</value></data>
+  <data name="OpeningBalances" xml:space="preserve"><value>مقابل الأرصدة الافتتاحية</value></data>
+  <data name="Account" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Purchases" xml:space="preserve"><value>المشتريات</value></data>
+  <data name="Expenses" xml:space="preserve"><value>المنصرفات</value></data>
 </root>

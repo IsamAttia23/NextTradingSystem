@@ -8,13 +8,15 @@ using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
+using MediatR;
+using NEXT.Application.Features.Invoices.Events;
 
 namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoiceRepository invoices,
     IRepository<InvoiceStatusHistory> history, IRepository<Payment> payments, IReadRepository<Warehouse> warehouses,
     IReadRepository<Product> products, ICurrentUserService currentUser, IUserQueryService users,
-    IInvoiceStateMachine stateMachine, IUnitOfWork unitOfWork, TimeProvider clock, IQueryExecutor executor)
+    IInvoiceStateMachine stateMachine, IUnitOfWork unitOfWork, TimeProvider clock, IQueryExecutor executor, IPublisher publisher)
 {
     public Task<Guid> ConfirmAsync(Guid id, ConfirmInvoiceInput input, CancellationToken ct)
     {
@@ -82,15 +84,17 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
                 stock.LastUpdated = now;
             }
 
+            Payment? payment = null;
             if (input.Amount > 0)
             {
-                var payment = new Payment
+                payment = new Payment
                 {
                     Id = input.OperationId,
                     CreatedBy = actor.Id,
                     PaymentNumber = "PAY-" + input.OperationId.ToString("N"),
                     RecordedByFullName = RequestValidation.Text(actor.FullName, "RecordedByFullName", 200),
                     PaymentType = PaymentType.Receipt,
+                    Purpose = PaymentPurpose.InvoiceReceipt,
                     InvoiceId = invoice.Id,
                     CustomerId = invoice.CustomerId,
                     Amount = input.Amount,
@@ -114,6 +118,7 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
             invoice.RemainingAmount = invoice.TotalAmount - paid;
             invoice.PaymentStatus = paymentStatus;
             if (selectedMethod is not null) invoice.PaymentMethod = selectedMethod;
+            if (payment is not null) await publisher.Publish(new InvoicePaymentRecorded(invoice, payment), token);
             return id;
         }, ct);
     }

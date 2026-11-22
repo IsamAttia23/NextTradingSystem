@@ -10,13 +10,15 @@ using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
+using MediatR;
+using NEXT.Application.Features.Invoices.Events;
 
 namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceFulfillment(IInvoiceConfirmationStore store, IInvoiceRepository invoices,
     IRepository<InvoiceStatusHistory> history, IReadRepository<Payment> payments, IInventoryService inventory,
     ICurrentUserService currentUser, IUserQueryService users, IInvoiceStateMachine stateMachine,
-    IUnitOfWork unitOfWork, TimeProvider clock)
+    IUnitOfWork unitOfWork, TimeProvider clock, IPublisher publisher)
 {
     public Task<Guid> ExecuteAsync(Guid id, InvoiceFulfillmentInput input, CancellationToken ct)
     {
@@ -38,7 +40,8 @@ public sealed class InvoiceFulfillment(IInvoiceConfirmationStore store, IInvoice
             var previous = await history.FirstOrDefaultAsync(item => item.InvoiceId == id && item.OperationId == input.OperationId, token);
             if (previous is not null)
             {
-                if (previous.ActorId != actor.Id || previous.ToStatus != input.TargetStatus || previous.Reason != note)
+                if (previous.ActorId != actor.Id || previous.ToStatus != input.TargetStatus || previous.Reason != note ||
+                    (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
                     throw new ConflictException("InvoiceFulfillmentConflict");
                 return id;
             }
@@ -64,8 +67,11 @@ public sealed class InvoiceFulfillment(IInvoiceConfirmationStore store, IInvoice
                 ActionAt = now, ActorId = actor.Id, ActorFullName = RequestValidation.Text(actor.FullName, "ActorFullName", 200),
                 Reason = note
             }, token);
-            invoice.Status = stateMachine.Transition(invoice.Status, input.TargetStatus);
+            var from = invoice.Status;
+            invoice.Status = stateMachine.Transition(from, input.TargetStatus);
             invoice.LastActionAt = now;
+            await publisher.Publish(new InvoiceStatusChanged(invoice, from, invoice.Status, input.OperationId, actor.Id,
+                input.CustomerId, input.CustomerPhone, DateOnly.FromDateTime(clock.GetLocalNow().DateTime)), token);
             return id;
         }, ct);
     }

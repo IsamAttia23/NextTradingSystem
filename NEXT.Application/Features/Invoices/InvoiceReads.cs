@@ -14,7 +14,7 @@ namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator,
     IReadRepository<InvoiceStatusHistory> history, IQueryExecutor executor, IReadRepository<Payment> payments,
-    IInvoiceStateMachine stateMachine)
+    IInvoiceStateMachine stateMachine, IReadRepository<Customer> customers)
 {
     public Task<TPaginationQueryModel<InvoiceSummary>> ListAsync(InvoiceQueryModel query, CancellationToken ct)
     {
@@ -42,6 +42,11 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
                 item.PaymentDate, item.CreatedAt, item.RecordedByFullName)), ct);
         var salesInvoice = invoice.Type == InvoiceType.Sales && invoice.LegacyInvoiceTypeCode is null && invoice.ParentInvoiceId is null;
         var transitions = salesInvoice ? stateMachine.GetAllowedTransitions(invoice.Status) : Array.Empty<InvoiceStatus>();
+        var normalizedName = invoice.CustomerName?.Trim().ToUpperInvariant();
+        var candidates = invoice.CustomerId is null && invoice.RemainingAmount > 0 && normalizedName is not null
+            ? await executor.ToListAsync(customers.Query(customer => customer.IsActive && customer.Name.ToUpper() == normalizedName)
+                .OrderBy(customer => customer.Id).Select(customer => new InvoiceCustomerOption(customer.Id, customer.Name, customer.Phone)), ct)
+            : Array.Empty<InvoiceCustomerOption>();
         return new(summary, invoice.CreatedByFullName ?? invoice.User?.FullName, invoice.SubTotal,
             invoice.DiscountAmount, invoice.PaidAmount, invoice.RemainingAmount, invoice.Items
             .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id)
@@ -52,6 +57,7 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
             FulfillmentTargets = transitions.Where(status => status is InvoiceStatus.Shipped or InvoiceStatus.Delivered).ToArray(),
             CanRecordPayment = salesInvoice && InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount),
             CustomerId = invoice.CustomerId, Notes = invoice.Notes,
+            CustomerPhone = invoice.Customer?.Phone, DebtCustomerCandidates = candidates,
             LastActionAt = invoice.LastActionAt, History = entries, Payments = receipts
         };
     }

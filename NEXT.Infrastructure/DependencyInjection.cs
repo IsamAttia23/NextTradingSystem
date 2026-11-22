@@ -27,6 +27,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<Mapster.IRegister, IdentityMappingRegister>();
         services.AddScoped<IAccountingStore, AccountingStore>();
+        services.AddScoped<IInvoiceAccountingStore, InvoiceAccountingStore>();
         services.AddScoped<NEXT.Application.Features.Dashboard.IDashboardAccountCounts, DashboardAccountCounts>();
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         var connectionString = configuration.GetConnectionString("NEXTDatabase");

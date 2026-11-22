@@ -769,4 +769,45 @@
   <data name="AccountingBalanceLimit" xml:space="preserve"><value>The resulting balance exceeds the supported limit.</value></data>
   <data name="AccountingDebtAccountImmutable" xml:space="preserve"><value>A debt account cannot be deleted or reassigned.</value></data>
   <data name="AccountingPaymentMismatch" xml:space="preserve"><value>The treasury entry does not match the payment amount or type.</value></data>
+  <data name="AccountingChooseInvoiceCustomer" xml:space="preserve"><value>Select the matching customer before opening the debt.</value></data>
+  <data name="AccountingCustomerPhoneRequired" xml:space="preserve"><value>The customer phone number is required before posting a debt.</value></data>
+  <data name="AccountingDispatchDebtNotice" xml:space="preserve"><value>The remaining amount will be recorded as invoice debt on dispatch or direct delivery.</value></data>
+  <data name="AccountingInvoiceAlreadyRecognized" xml:space="preserve"><value>Sales for this invoice have already been recognized.</value></data>
+  <data name="AccountingInvoiceDebtMissing" xml:space="preserve"><value>The invoice debt item is missing. Review its accounting link before payment.</value></data>
+  <data name="AccountingInvoiceReviewRequired" xml:space="preserve"><value>Invoice amounts or historical payments require reconciliation before dispatch.</value></data>
+  <data name="AccountingTaxNotConfigured" xml:space="preserve"><value>A tax account must be configured before posting an invoice with nonzero tax.</value></data>
+  <data name="FinancialAccounts" xml:space="preserve"><value>Accounts</value></data>
+  <data name="FinancialAccountsDescription" xml:space="preserve"><value>Account balances and period movements from posted entries</value></data>
+  <data name="FinanceGroup" xml:space="preserve"><value>Finance</value></data>
+  <data name="AccountMovements" xml:space="preserve"><value>Account movements</value></data>
+  <data name="AccountMovementsDescription" xml:space="preserve"><value>Debit and credit movements linked to invoices and payments</value></data>
+  <data name="AccountingDebit" xml:space="preserve"><value>Debit</value></data>
+  <data name="AccountingCredit" xml:space="preserve"><value>Credit</value></data>
+  <data name="AccountingOpeningBalance" xml:space="preserve"><value>Opening balance</value></data>
+  <data name="AccountingClosingBalance" xml:space="preserve"><value>Closing balance</value></data>
+  <data name="AccountingTechnicalAccount" xml:space="preserve"><value>Technical account</value></data>
+  <data name="AccountingOperationType" xml:space="preserve"><value>Operation type</value></data>
+  <data name="FinancialAccountSales" xml:space="preserve"><value>Sales</value></data>
+  <data name="FinancialAccountPurchases" xml:space="preserve"><value>Purchases</value></data>
+  <data name="FinancialAccountExpenses" xml:space="preserve"><value>Expenses</value></data>
+  <data name="FinancialAccountReceivables" xml:space="preserve"><value>Receivables</value></data>
+  <data name="FinancialAccountTreasury" xml:space="preserve"><value>Treasury</value></data>
+  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>Customer advances and refunds payable</value></data>
+  <data name="FinancialAccountOpeningBalances" xml:space="preserve"><value>Opening balance counterpart</value></data>
+  <data name="AccountingEntrySalesRecognition" xml:space="preserve"><value>Sales recognition</value></data>
+  <data name="AccountingEntryReceipt" xml:space="preserve"><value>Receipt</value></data>
+  <data name="AccountingEntryOpeningBalance" xml:space="preserve"><value>Opening balance</value></data>
+  <data name="AccountingEntrySalesReturn" xml:space="preserve"><value>Sales return</value></data>
+  <data name="AccountingEntryRefund" xml:space="preserve"><value>Customer refund</value></data>
+  <data name="AccountingEntryReversal" xml:space="preserve"><value>Reversal</value></data>
+  <data name="AccountingPurposeInvoiceReceipt" xml:space="preserve"><value>Invoice payment</value></data>
+  <data name="AccountingPurposeDebtReceipt" xml:space="preserve"><value>Debt payment</value></data>
+  <data name="AccountingPurposeCustomerRefund" xml:space="preserve"><value>Customer refund</value></data>
+  <data name="Receivables" xml:space="preserve"><value>Receivables</value></data>
+  <data name="Treasury" xml:space="preserve"><value>Treasury</value></data>
+  <data name="CustomerAdvances" xml:space="preserve"><value>Customer advances</value></data>
+  <data name="OpeningBalances" xml:space="preserve"><value>Opening balances</value></data>
+  <data name="Account" xml:space="preserve"><value>Account</value></data>
+  <data name="Purchases" xml:space="preserve"><value>Purchases</value></data>
+  <data name="Expenses" xml:space="preserve"><value>Expenses</value></data>
 </root>

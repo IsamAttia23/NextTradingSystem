@@ -19,6 +19,30 @@
             <dt>@L["PaidAmount"]</dt><dd><bdi>@invoice.PaidAmount.ToString("N2") SDG</bdi></dd>
             <dt>@L["RemainingAmount"]</dt><dd><bdi>@invoice.RemainingAmount.ToString("N2") SDG</bdi></dd>
         </dl>
+        @if (invoice.RemainingAmount > 0)
+        {
+            <p class="form-text">@L["AccountingDispatchDebtNotice"]</p>
+            @if (invoice.CustomerId is null && invoice.DebtCustomerCandidates.Count > 0)
+            {
+                <label class="form-label w-100">@L["CustomerName"]
+                    <select name="CustomerId" class="form-select" required>
+                        <option value="">@L["Select"]</option>
+                        @foreach (var customer in invoice.DebtCustomerCandidates)
+                        {
+                            <option value="@customer.Id">@customer.Name · @(customer.Phone ?? "—")</option>
+                        }
+                    </select>
+                </label>
+            }
+            @if (string.IsNullOrWhiteSpace(invoice.CustomerPhone))
+            {
+                <label class="form-label w-100">@L["Phone"]
+                    <input name="CustomerPhone" type="tel" class="form-control" maxlength="32"
+                           required="@(invoice.DebtCustomerCandidates.Count == 0)" autocomplete="tel" />
+                    <span class="form-text">@L["AccountingCustomerPhoneRequired"]</span>
+                </label>
+            }
+        }
     }
     @if (invoice.FulfillmentTargets.Count > 1)
     {

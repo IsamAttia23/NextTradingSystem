@@ -763,6 +763,13 @@ footer {
     overflow-wrap: anywhere;
 }
 
+.table.financial-movements { min-width: 1550px; table-layout: auto; }
+.table.financial-account-balances { min-width: 1000px; table-layout: auto; }
+.financial-movements th, .financial-movements td,
+.financial-account-balances th, .financial-account-balances td { white-space: nowrap; }
+.financial-movements th:nth-child(3), .financial-movements td:nth-child(3) { min-width: 320px; }
+.financial-movements th:nth-child(4), .financial-movements td:nth-child(4) { min-width: 180px; }
+
 .reference-empty {
     padding: 10px;
     margin: 0;

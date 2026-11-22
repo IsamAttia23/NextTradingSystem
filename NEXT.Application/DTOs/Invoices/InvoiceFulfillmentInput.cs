@@ -10,6 +10,10 @@ public sealed class InvoiceFulfillmentInput
     public byte[] RowVersion { get; set; } = [];
     [EnumDataType(typeof(InvoiceStatus))]
     public InvoiceStatus TargetStatus { get; set; }
+    [NEXT.Application.Validation.NotEmptyGuid]
+    public Guid? CustomerId { get; set; }
+    [Phone, StringLength(32)]
+    public string? CustomerPhone { get; set; }
     [StringLength(500)]
     public string? Note { get; set; }
 }

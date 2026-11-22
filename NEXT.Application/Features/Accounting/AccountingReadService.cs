@@ -10,7 +10,8 @@ using NEXT.Domain.Enums;
 namespace NEXT.Application.Features.Accounting;
 
 public sealed class AccountingReadService(IReadRepository<Account> accounts, IReadRepository<AccountTransaction> movements,
-    IQueryExecutor executor, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator) : IAccountingReadService
+    IQueryExecutor executor, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator,
+    IReadRepository<Payment> payments, IReadRepository<Customer> customers) : IAccountingReadService
 {
     public async Task<IReadOnlyList<AccountSummaryDto>> GetAccountsAsync(DateOnly? from, DateOnly? to, CancellationToken ct)
     {
@@ -46,19 +47,35 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
             (!accountId.HasValue || line.AccountId == accountId) &&
             (!query.From.HasValue || line.LedgerEntry.EntryDate >= query.From.Value) &&
             (!query.To.HasValue || line.LedgerEntry.EntryDate <= query.To.Value) &&
-            (!query.CustomerId.HasValue || line.CustomerId == query.CustomerId) &&
+            (!query.CustomerId.HasValue || line.CustomerId == query.CustomerId ||
+                (line.LedgerEntry.Invoice != null && line.LedgerEntry.Invoice.CustomerId == query.CustomerId)) &&
             (!query.PaymentId.HasValue || line.LedgerEntry.PaymentId == query.PaymentId) &&
             (!query.InvoiceId.HasValue || line.LedgerEntry.InvoiceId == query.InvoiceId ||
-                (line.DebtItem != null && line.DebtItem.InvoiceId == query.InvoiceId)) &&
-            (term == "" || line.LedgerEntry.Description.Contains(term) || (line.Description != null && line.Description.Contains(term))))
-            .OrderByDescending(line => line.LedgerEntry.EntryDate).ThenByDescending(line => line.LedgerEntry.CreatedAt)
-            .ThenBy(line => line.LedgerEntryId).ThenBy(line => line.Sequence);
-        return pagination.GetPagedList(lines, source => source.Select(line => new AccountTransactionDto(line.Id,
-            line.LedgerEntryId, line.Account.Type, line.LedgerEntry.EntryDate, line.Description ?? line.LedgerEntry.Description,
-            line.Debit, line.Credit, line.CustomerId, line.DebtItem != null ? line.DebtItem.InvoiceId : line.LedgerEntry.InvoiceId,
-            line.DebtItem != null && line.DebtItem.Invoice != null ? line.DebtItem.Invoice.InvoiceNumber :
-                line.LedgerEntry.Invoice != null ? line.LedgerEntry.Invoice.InvoiceNumber : null,
-            line.LedgerEntry.PaymentId, line.LedgerEntry.ActorName)), query, ct);
+                (line.DebtItem != null && line.DebtItem.InvoiceId == query.InvoiceId)));
+        var joined = from line in lines
+            join payment in payments.Query(_ => true) on line.LedgerEntry.PaymentId equals (Guid?)payment.Id into paymentGroup
+            from payment in paymentGroup.DefaultIfEmpty()
+            join customer in customers.Query(_ => true) on line.CustomerId equals (Guid?)customer.Id into customerGroup
+            from customer in customerGroup.DefaultIfEmpty()
+            select new { Line = line, Payment = payment, Customer = customer };
+        var ordered = joined.Where(row => term == "" || row.Line.LedgerEntry.Description.Contains(term) ||
+                (row.Line.Description != null && row.Line.Description.Contains(term)) ||
+                (row.Customer != null && row.Customer.Name.Contains(term)) ||
+                (row.Payment != null && row.Payment.PaymentNumber.Contains(term)) ||
+                (row.Line.LedgerEntry.Invoice != null &&
+                    (row.Line.LedgerEntry.Invoice.InvoiceNumber.Contains(term) ||
+                     (row.Line.LedgerEntry.Invoice.CustomerName != null && row.Line.LedgerEntry.Invoice.CustomerName.Contains(term)))))
+            .OrderByDescending(row => row.Line.LedgerEntry.EntryDate)
+            .ThenByDescending(row => row.Line.LedgerEntry.CreatedAt).ThenBy(row => row.Line.LedgerEntryId).ThenBy(row => row.Line.Sequence);
+        return pagination.GetPagedList(ordered, source => source.Select(row => new AccountTransactionDto(row.Line.Id,
+            row.Line.LedgerEntryId, row.Line.Account.Type, row.Line.LedgerEntry.EntryDate, row.Line.Description ?? row.Line.LedgerEntry.Description,
+            row.Line.Debit, row.Line.Credit, row.Line.CustomerId, row.Line.DebtItem != null ? row.Line.DebtItem.InvoiceId : row.Line.LedgerEntry.InvoiceId,
+            row.Line.DebtItem != null && row.Line.DebtItem.Invoice != null ? row.Line.DebtItem.Invoice.InvoiceNumber :
+                row.Line.LedgerEntry.Invoice != null ? row.Line.LedgerEntry.Invoice.InvoiceNumber : null,
+            row.Line.LedgerEntry.PaymentId, row.Line.LedgerEntry.ActorName,
+            row.Payment != null ? row.Payment.PaymentMethod : null, row.Payment != null ? row.Payment.PaymentNumber : null,
+            row.Customer != null ? row.Customer.Name : row.Line.LedgerEntry.Invoice != null ? row.Line.LedgerEntry.Invoice.CustomerName : null,
+            row.Line.LedgerEntry.Kind, row.Payment != null ? row.Payment.Purpose : null)), query, ct);
     }
 
     private static void Dates(DateOnly? from, DateOnly? to)

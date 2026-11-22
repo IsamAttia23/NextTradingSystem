@@ -11,5 +11,7 @@ public sealed record InvoiceDetails(InvoiceSummary Summary, string? CreatedByFul
     public DateTimeOffset? LastActionAt { get; init; }
     public IReadOnlyList<InvoiceStatusEntry> History { get; init; } = [];
     public Guid? CustomerId { get; init; }
+    public string? CustomerPhone { get; init; }
+    public IReadOnlyList<InvoiceCustomerOption> DebtCustomerCandidates { get; init; } = [];
     public string? Notes { get; init; }
 }

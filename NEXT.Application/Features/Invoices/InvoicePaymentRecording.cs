@@ -8,13 +8,15 @@ using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
+using MediatR;
+using NEXT.Application.Features.Invoices.Events;
 
 namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IInvoiceRepository invoices,
     IRepository<Payment> payments, IReadRepository<InvoiceStatusHistory> history,
     ICurrentUserService currentUser, IUserQueryService users, IUnitOfWork unitOfWork,
-    IQueryExecutor executor, TimeProvider clock)
+    IQueryExecutor executor, TimeProvider clock, IPublisher publisher)
 {
     public Task<Guid> RecordAsync(Guid id, RecordInvoicePaymentInput input, CancellationToken ct)
     {
@@ -64,7 +66,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             var payment = new Payment
             {
                 Id = input.OperationId, PaymentNumber = "PAY-" + input.OperationId.ToString("N"),
-                PaymentType = PaymentType.Receipt, InvoiceId = id, CustomerId = invoice.CustomerId,
+                PaymentType = PaymentType.Receipt, Purpose = PaymentPurpose.InvoiceReceipt, InvoiceId = id, CustomerId = invoice.CustomerId,
                 Amount = input.Amount, PaymentMethod = input.PaymentMethod!.Value,
                 PaymentDate = DateOnly.FromDateTime(clock.GetLocalNow().DateTime),
                 CreatedBy = actor.Id,
@@ -74,6 +76,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             invoice.PaidAmount = paid;
             invoice.RemainingAmount = invoice.TotalAmount - paid;
             invoice.PaymentStatus = status;
+            await publisher.Publish(new InvoicePaymentRecorded(invoice, payment), token);
             return id;
         }, ct);
     }
