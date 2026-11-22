@@ -408,15 +408,12 @@
   <data name="RelatedRecords" xml:space="preserve"><value>Related records &amp; activity</value></data>
   <data name="NoRelatedRecords" xml:space="preserve"><value>No related records</value></data>
   <data name="NoRelatedRecordsHint" xml:space="preserve"><value>Activity will appear here when records are linked to this entity.</value></data>
-  <data name="SalesInvoice" xml:space="preserve"><value>Sales invoices &amp; returns</value></data>
-  <data name="SalesInvoiceItem" xml:space="preserve"><value>Sales invoice items</value></data>
-  <data name="PurchaseInvoice" xml:space="preserve"><value>Purchase invoices</value></data>
-  <data name="PurchaseInvoiceItem" xml:space="preserve"><value>Purchase invoice items</value></data>
+  <data name="Invoice" xml:space="preserve"><value>Invoices</value></data>
+  <data name="InvoiceItem" xml:space="preserve"><value>Invoice items</value></data>
+  <data name="Sales" xml:space="preserve"><value>Sales</value></data>
   <data name="PurchaseOrder" xml:space="preserve"><value>Purchase orders</value></data>
   <data name="PurchaseOrderItem" xml:space="preserve"><value>Purchase order items</value></data>
   <data name="Payment" xml:space="preserve"><value>Payments &amp; receipts</value></data>
-  <data name="JournalEntry" xml:space="preserve"><value>Journal entries</value></data>
-  <data name="JournalLine" xml:space="preserve"><value>Journal lines</value></data>
   <data name="CustomerContact" xml:space="preserve"><value>Contacts</value></data>
   <data name="StockMovement" xml:space="preserve"><value>Stock movements</value></data>
   <data name="Stock" xml:space="preserve"><value>Stock balances</value></data>
@@ -672,4 +669,75 @@
   <data name="OpeningWarehouseRequired" xml:space="preserve"><value>Choose a warehouse for the opening stock.</value></data>
   <data name="OpeningQuantityRequired" xml:space="preserve"><value>Enter an opening quantity greater than zero.</value></data>
   <data name="BaseUnitCost" xml:space="preserve"><value>Cost per base unit</value></data>
+  <data name="SalesGroup" xml:space="preserve"><value>Sales</value></data>
+  <data name="Invoices" xml:space="preserve"><value>Invoices</value></data>
+  <data name="InvoicesDescription" xml:space="preserve"><value>Review and create sales invoices.</value></data>
+  <data name="CreateInvoice" xml:space="preserve"><value>Create sales invoice</value></data>
+  <data name="InvoiceCreatedBy" xml:space="preserve"><value>Created by</value></data>
+  <data name="AddInvoiceLine" xml:space="preserve"><value>Add item</value></data>
+  <data name="InvoiceProductHint" xml:space="preserve"><value>Search by product name or barcode</value></data>
+  <data name="InvoiceCustomerHint" xml:space="preserve"><value>Type a name or choose a customer</value></data>
+  <data name="InvoiceLineTotal" xml:space="preserve"><value>Line total</value></data>
+  <data name="InvoiceItems" xml:space="preserve"><value>Invoice items</value></data>
+  <data name="InvoiceDiscountType" xml:space="preserve"><value>Discount type</value></data>
+  <data name="NoInvoiceDiscount" xml:space="preserve"><value>No discount</value></data>
+  <data name="InvoiceDiscountValue" xml:space="preserve"><value>Discount value</value></data>
+  <data name="SaveInvoice" xml:space="preserve"><value>Save invoice</value></data>
+  <data name="InvoiceInsufficientStock" xml:space="preserve"><value>The requested quantities exceed available stock.</value></data>
+  <data name="CustomerName" xml:space="preserve"><value>Customer name</value></data>
+  <data name="SubTotal" xml:space="preserve"><value>Subtotal</value></data>
+  <data name="DiscountAmount" xml:space="preserve"><value>Discount</value></data>
+  <data name="Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Percentage" xml:space="preserve"><value>Percentage</value></data>
+  <data name="FixedAmount" xml:space="preserve"><value>Fixed amount</value></data>
+  <data name="ConfirmInvoice" xml:space="preserve"><value>Confirm invoice</value></data>
+  <data name="InvoiceConfirmationPayment" xml:space="preserve"><value>Payment on confirmation</value></data>
+  <data name="InvoiceReservationNotice" xml:space="preserve"><value>Confirming reserves the invoice quantities. Stock is issued during shipping or delivery.</value></data>
+  <data name="InvoiceLastAction" xml:space="preserve"><value>Last action</value></data>
+  <data name="InvoiceStatusHistory" xml:space="preserve"><value>Status history</value></data>
+  <data name="InvoicePaymentInvalid" xml:space="preserve"><value>Enter an amount between zero and the invoice total, with at most two decimal places.</value></data>
+  <data name="InvoicePaymentMethodRequired" xml:space="preserve"><value>Choose a valid payment method.</value></data>
+  <data name="InvoiceActorUnavailable" xml:space="preserve"><value>Your user account could not be verified.</value></data>
+  <data name="InvoiceNotFound" xml:space="preserve"><value>Invoice not found.</value></data>
+  <data name="InvoiceConfirmationConflict" xml:space="preserve"><value>This confirmation request conflicts with an earlier request.</value></data>
+  <data name="InvoiceTransitionInvalid" xml:space="preserve"><value>This invoice cannot be confirmed in its current state.</value></data>
+  <data name="InvoiceWarehouseUnavailable" xml:space="preserve"><value>The invoice warehouse is unavailable.</value></data>
+  <data name="InvoiceExistingPayments" xml:space="preserve"><value>Review the existing invoice payments before confirming.</value></data>
+  <data name="InvoiceProductUnavailable" xml:space="preserve"><value>An invoice product is no longer available.</value></data>
+  <data name="InvoiceLinesInvalid" xml:space="preserve"><value>The invoice lines contain invalid products or quantities.</value></data>
+  <data name="Partial" xml:space="preserve"><value>Partially paid</value></data>
+  <data name="PaymentMethod" xml:space="preserve"><value>Payment method</value></data>
+  <data name="Cash" xml:space="preserve"><value>Cash</value></data>
+  <data name="Card" xml:space="preserve"><value>Card</value></data>
+  <data name="Wallet" xml:space="preserve"><value>Wallet</value></data>
+  <data name="BankTransfer" xml:space="preserve"><value>Bank transfer</value></data>
+  <data name="Cheque" xml:space="preserve"><value>Cheque</value></data>
+  <data name="Other" xml:space="preserve"><value>Other</value></data>
+  <data name="RecordInvoicePayment" xml:space="preserve"><value>Record payment</value></data>
+  <data name="InvoicePaymentAmount" xml:space="preserve"><value>Payment amount</value></data>
+  <data name="InvoiceRemainingAfterPayment" xml:space="preserve"><value>Remaining after payment</value></data>
+  <data name="InvoicePaymentHistory" xml:space="preserve"><value>Payment history</value></data>
+  <data name="InvoiceNoPayments" xml:space="preserve"><value>No payments have been recorded.</value></data>
+  <data name="InvoicePaymentRecordedAt" xml:space="preserve"><value>Recorded at</value></data>
+  <data name="InvoicePaymentRecordedBy" xml:space="preserve"><value>Recorded by</value></data>
+  <data name="InvoicePaymentConflict" xml:space="preserve"><value>The invoice or payment has changed. Refresh the invoice and review its payments before trying again.</value></data>
+  <data name="InvoicePaymentUnavailable" xml:space="preserve"><value>Payments require a confirmed, shipped or delivered invoice with an outstanding balance.</value></data>
+  <data name="InvoiceLaterPaymentInvalid" xml:space="preserve"><value>Enter a positive payment no greater than the outstanding balance, with at most two decimal places.</value></data>
+  <data name="Shipped" xml:space="preserve"><value>Shipped</value></data>
+  <data name="Delivered" xml:space="preserve"><value>Delivered</value></data>
+  <data name="ShipInvoice" xml:space="preserve"><value>Ship invoice</value></data>
+  <data name="DirectDelivery" xml:space="preserve"><value>Direct handover</value></data>
+  <data name="ConfirmDelivery" xml:space="preserve"><value>Confirm delivery</value></data>
+  <data name="InvoiceFulfillmentAction" xml:space="preserve"><value>Action</value></data>
+  <data name="InvoiceFulfillmentNote" xml:space="preserve"><value>Optional note</value></data>
+  <data name="InvoiceDispatchNotice" xml:space="preserve"><value>The invoice's reserved items will leave the warehouse once.</value></data>
+  <data name="InvoiceDeliveryNotice" xml:space="preserve"><value>Record customer receipt. Stock was issued when the invoice shipped.</value></data>
+  <data name="InvoiceFulfillmentUnavailable" xml:space="preserve"><value>This action is unavailable for the current invoice status.</value></data>
+  <data name="InvoiceFulfillmentConflict" xml:space="preserve"><value>The invoice or operation has changed. Refresh the invoice and review its history before trying again.</value></data>
+  <data name="InvoiceReservedStockInsufficient" xml:space="preserve"><value>The stock balance or reserved quantity is insufficient. Review inventory before dispatch.</value></data>
+  <data name="InvoiceValidBatchesInsufficient" xml:space="preserve"><value>There is not enough stock in valid, unexpired batches to dispatch this invoice.</value></data>
+  <data name="ChangeInvoiceStatus" xml:space="preserve"><value>Change invoice status</value></data>
+  <data name="InvoiceProductMerged" xml:space="preserve"><value>Product merged into the existing line. You can adjust its total quantity.</value></data>
+  <data name="Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Reference" xml:space="preserve"><value>Reference</value></data>
 </root>

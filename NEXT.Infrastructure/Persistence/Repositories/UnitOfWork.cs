@@ -8,7 +8,14 @@ namespace NEXT.Infrastructure.Persistence.Repositories;
 public sealed class UnitOfWork(NEXTDbContext context, ILogger<UnitOfWork>? logger = null) : IUnitOfWork
 {
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => context.SaveChangesAsync(ct);
-    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken ct = default)
+    public Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken ct = default) =>
+        ExecuteAsync(operation, IsolationLevel.Serializable, ct);
+
+    public Task<TResult> ExecuteReadCommittedAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken ct = default) =>
+        ExecuteAsync(operation, IsolationLevel.ReadCommitted, ct);
+
+    private async Task<TResult> ExecuteAsync<TResult>(Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolation, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(operation);
         context.EnsureTransactionUsable();
@@ -19,7 +26,7 @@ public sealed class UnitOfWork(NEXTDbContext context, ILogger<UnitOfWork>? logge
         Exception? failure = null;
         try
         {
-            transaction = await PersistenceTransaction.BeginAsync(context, ct, IsolationLevel.Serializable);
+            transaction = await PersistenceTransaction.BeginAsync(context, ct, isolation);
             var result = await operation(ct);
             await SaveChangesAsync(ct);
             context.EnsureTransactionUsable();

@@ -1,0 +1,35 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@using NEXT.Domain.Enums
+<form asp-action="Confirm" asp-route-id="@Model.Summary.Id" method="post"
+      data-modal-form data-title="@L["ConfirmInvoice"]" data-invoice-confirmation
+      data-paid-before="@Model.PaidAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-payment-error="@L["InvoicePaymentInvalid"]"
+      data-unpaid="@L["Unpaid"]" data-partial="@L["Partial"]" data-paid="@L["Paid"]">
+    <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+    <p><bdi>@Model.Summary.Number</bdi> · <bdi>@Model.Summary.CustomerName</bdi></p>
+    <div class="modal-field-grid mt-3">
+        <label class="form-label">@L["InvoiceConfirmationPayment"]
+            <input name="Amount" class="form-control" type="number" required min="0" step="0.01"
+                   max="@Model.RemainingAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                   value="0" data-confirm-amount />
+        </label>
+        <label class="form-label">@L["PaymentMethod"]
+            <select name="PaymentMethod" class="form-select" data-confirm-method>
+                @foreach (var method in Enum.GetValues<PaymentMethod>())
+                {
+                    <option value="@method">@L[method.ToString()]</option>
+                }
+            </select>
+        </label>
+    </div>
+    <dl class="invoice-totals mt-3" aria-live="polite">
+        <dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd>
+        <dt>@L["RemainingAmount"]</dt><dd><bdi data-confirm-remaining></bdi></dd>
+        <dt>@L["PaymentStatus"]</dt><dd data-confirm-payment-status></dd>
+    </dl>
+    <p class="form-text">@L["InvoiceReservationNotice"]</p>
+    <div class="modal-form-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
+        <button type="submit" class="btn btn-primary">@L["ConfirmInvoice"]</button>
+    </div>
+</form>

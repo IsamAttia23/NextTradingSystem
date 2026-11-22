@@ -10,12 +10,76 @@ using NEXT.Domain.Services;
 
 namespace NEXT.Application.Services.Inventory;
 
-/// <summary>All balance, batch and ledger writes occur in one serializable transaction.</summary>
+/// <summary>Balance, batch and ledger writes share one transaction per inventory operation.</summary>
 public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKeyRepository<Warehouse, Guid> warehouses,
     IRepository<Stock> stocks, IRepository<StockMovement> movements, IRepository<ProductBatch> batches,
     IUnitOfWork unitOfWork, IEntityValidator<ReceiveStockDto> receiptValidator,
-    IEntityValidator<TransferStockDto> transferValidator, ExchangeRateReader exchangeRates) : IInventoryService
+    IEntityValidator<TransferStockDto> transferValidator, ExchangeRateReader exchangeRates,
+    IInvoiceConfirmationStore invoiceStore) : IInventoryService
 {
+    public async Task IssueReservedInvoiceAsync(InvoiceDispatchInput input, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        RequestValidation.Identifier(input.InvoiceId, nameof(input.InvoiceId));
+        RequestValidation.Identifier(input.WarehouseId, nameof(input.WarehouseId));
+        if (input.Quantities is null || input.Quantities.Count == 0 || input.Quantities.Any(item => item.Key == Guid.Empty ||
+            item.Value <= 0 || item.Value > InventoryValuation.MaximumQuantity || decimal.Round(item.Value, 3) != item.Value))
+            Fail("Lines", "InvoiceLinesInvalid");
+        var quantities = input.Quantities.ToDictionary(item => item.Key, item => item.Value);
+        var productIds = quantities.Keys.Order().ToArray();
+        var lockedStocks = await invoiceStore.LockStocksAsync(input.WarehouseId, productIds, ct);
+        if (await movements.AnyAsync(item => item.ReferenceType == "Invoice" && item.ReferenceId == input.InvoiceId &&
+            item.Type == StockMovementType.Sale, ct))
+            throw new ConflictException("InvoiceFulfillmentConflict");
+        var warehouse = await warehouses.GetByIdAsync(input.WarehouseId, ct);
+        if (warehouse is null || !warehouse.IsActive)
+            Fail("WarehouseId", "InvoiceWarehouseUnavailable");
+        var selectedProducts = new Dictionary<Guid, Product>();
+        foreach (var id in productIds)
+        {
+            var product = await products.GetByIdAsync(id, ct);
+            if (product is null || !product.IsActive)
+                Fail("Lines", "InvoiceProductUnavailable");
+            selectedProducts.Add(id, product);
+        }
+        if (lockedStocks.Count != quantities.Count || lockedStocks.Any(stock =>
+            stock.Quantity < quantities[stock.ProductId] || stock.ReservedQuantity < quantities[stock.ProductId]))
+            Fail("Lines", "InvoiceReservedStockInsufficient");
+        var today = DateOnly.FromDateTime(input.ActionAt.UtcDateTime);
+        var expiryProducts = productIds.Where(id => selectedProducts[id].HasExpiry).ToArray();
+        var lockedBatches = expiryProducts.Length == 0 ? Array.Empty<ProductBatch>() :
+            await invoiceStore.LockBatchesAsync(input.WarehouseId, expiryProducts, today, ct);
+        foreach (var stock in lockedStocks)
+        {
+            var quantity = quantities[stock.ProductId];
+            if (selectedProducts[stock.ProductId].HasExpiry)
+            {
+                var candidates = lockedBatches.Where(batch => batch.ProductId == stock.ProductId)
+                    .OrderBy(batch => batch.ExpiryDate).ThenBy(batch => batch.Id).ToArray();
+                if (candidates.Sum(batch => batch.Quantity) < quantity)
+                    Fail("Lines", "InvoiceValidBatchesInsufficient");
+                var remaining = quantity;
+                foreach (var batch in candidates)
+                {
+                    var issued = Math.Min(remaining, batch.Quantity);
+                    batch.Quantity -= issued;
+                    await movements.AddAsync(Movement(stock.ProductId, issued, input.InvoiceId, input.WarehouseId,
+                        StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt, "Batch: " + batch.BatchNumber), ct);
+                    remaining -= issued;
+                    if (remaining == 0) break;
+                }
+            }
+            else
+            {
+                await movements.AddAsync(Movement(stock.ProductId, quantity, input.InvoiceId, input.WarehouseId,
+                    StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt), ct);
+            }
+            stock.Quantity -= quantity;
+            stock.ReservedQuantity -= quantity;
+            stock.LastUpdated = input.ActionAt;
+        }
+    }
+
     public Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -220,18 +284,23 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         stock.Quantity += quantity;
         stock.LastUpdated = now;
     }
-    private static StockMovement Movement(InventoryOperationDto input, Guid warehouse, StockMovementType type, decimal cost, string reference, DateTimeOffset now) => new()
+    private static StockMovement Movement(InventoryOperationDto input, Guid warehouse, StockMovementType type, decimal cost, string reference, DateTimeOffset now) =>
+        Movement(input.ProductId, input.Quantity, input.OperationId, warehouse, type, cost, reference, now,
+            string.IsNullOrWhiteSpace(input.BatchNumber) ? input.Notes : "Batch: " + input.BatchNumber.Trim() + "\n" + input.Notes);
+
+    private static StockMovement Movement(Guid product, decimal quantity, Guid referenceId, Guid warehouse,
+        StockMovementType type, decimal cost, string reference, DateTimeOffset now, string? notes = null) => new()
     {
         Id = Guid.NewGuid(),
         CreatedAt = now,
-        ProductId = input.ProductId,
+        ProductId = product,
         WarehouseId = warehouse,
         Type = type,
-        Quantity = input.Quantity,
+        Quantity = quantity,
         UnitCost = cost,
-        ReferenceId = input.OperationId,
+        ReferenceId = referenceId,
         ReferenceType = reference,
-        Notes = string.IsNullOrWhiteSpace(input.BatchNumber) ? input.Notes : "Batch: " + input.BatchNumber.Trim() + "\n" + input.Notes
+        Notes = notes
     };
     private static void ValidateBatch(Product product, string? number)
     {

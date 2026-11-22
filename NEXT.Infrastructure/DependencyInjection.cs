@@ -86,6 +86,8 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(TRepository<>));
         services.AddScoped(typeof(IKeyRepository<,>), typeof(KeyRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IInvoiceConfirmationStore, InvoiceConfirmationStore>();
+        services.AddScoped<NEXT.Application.Abstractions.Services.IInvoiceNumberGenerator, InvoiceNumberGenerator>();
         services.AddScoped<IQueryExecutor, QueryExecutor>();
         services.AddScoped<IRelatedRecordsReader, RelatedRecordsReader>();
         // Register only dedicated repository contracts, without a service locator in UnitOfWork.

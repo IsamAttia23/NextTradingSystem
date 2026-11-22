@@ -190,10 +190,18 @@ public sealed class CrmTests
         var db = fixture.Db;
         await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261107121526_AddAccountSecurity");
         var tag = new Tag { Name = "Legacy tag", Color = "#147550" };
-        var customer = new Customer { Name = "Legacy customer", Tag = tag };
+        var customer = new Customer { Id = Guid.NewGuid(), Name = "Legacy customer", Tag = tag };
         var supplier = new Supplier { Name = "Legacy supplier", Tag = tag };
-        var contact = new CustomerContact { Name = "Legacy contact", Customer = customer };
-        db.AddRange(tag, customer, supplier, contact);
+        var contact = new CustomerContact { Name = "Legacy contact", CustomerId = customer.Id };
+        db.AddRange(tag, supplier);
+        await db.SaveChangesAsync();
+        // Seed the historical schema directly: the current model also contains AccountId.
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Customers" ("Id", "Type", "Name", "Category", "CreditLimit", "CurrentBalance",
+                "PaymentTermsDays", "IsActive", "TagId", "CreatedAt", "RowVersion")
+            VALUES ({customer.Id}, {0}, {customer.Name}, {0}, {0m}, {0m}, {0}, {true}, {tag.Id}, {DateTimeOffset.UtcNow}, {Guid.NewGuid().ToByteArray()})
+            """);
+        db.Add(contact);
         await db.SaveChangesAsync();
         await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"CustomerContacts\" SET \"Phone\" = NULL WHERE \"Id\" = {contact.Id}");
         db.ChangeTracker.Clear();

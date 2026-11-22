@@ -10,11 +10,17 @@ using NEXT.Domain.Entities;
 using NEXT.Domain.Enums;
 using Mapster;
 namespace NEXT.Infrastructure.Persistence;
-/// <summary>Read-only related-record graph, including invoice/payment ledger references without physical foreign keys.</summary>
+/// <summary>Read-only related-record graph, including inventory references without physical foreign keys.</summary>
 public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig mapping) : IRelatedRecordsReader
 {
     public async Task<ActivityPageDto> ReadAsync<TEntity>(Guid id, string? kind, int page, CancellationToken ct) where TEntity : class
     {
+        kind = kind switch
+        {
+            "SalesInvoice" => nameof(Invoice),
+            "SalesInvoiceItem" => nameof(InvoiceItem),
+            _ => kind
+        };
         var root = Set(typeof(TEntity));
         var p = Expression.Parameter(typeof(TEntity), "root");
         root = Where(root, Expression.Lambda(Expression.Equal(Expression.Property(p, "Id"), Expression.Constant(id)), p));
@@ -75,15 +81,9 @@ public sealed class RelatedRecordsReader(NEXTDbContext db, TypeAdapterConfig map
             }
             await AddChild(childType, Child(parent, childType, fk.Properties[0].Name, fk.PrincipalKey.Properties[0].Name), path, found, ct);
         }
-        if (parentType == typeof(SalesInvoice)
-            || parentType == typeof(PurchaseInvoice)
+        if (parentType == typeof(Invoice)
             || parentType == typeof(Payment))
         {
-            var reference = parentType == typeof(SalesInvoice) ? JournalReferenceType.SalesInvoice : parentType == typeof(PurchaseInvoice) ? JournalReferenceType.PurchaseInvoice : JournalReferenceType.Payment;
-            if (!path.Contains(typeof(JournalEntry)))
-            {
-                await AddChild(typeof(JournalEntry), Child(parent, typeof(JournalEntry), "ReferenceId", "Id", "ReferenceType", reference), path, found, ct);
-            }
             if (!path.Contains(typeof(StockMovement)))
             {
                 await AddChild(typeof(StockMovement), Child(parent, typeof(StockMovement), "ReferenceId", "Id", "ReferenceType", parentType.Name), path, found, ct);

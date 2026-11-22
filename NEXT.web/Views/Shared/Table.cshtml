@@ -9,7 +9,11 @@
         <h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1>
         <p>@L[Model.Description]</p>
     </div>
-    @if (Model.Create is not null)
+    @if (Model.Create is { Modal: false })
+    {
+        <a class="btn btn-primary" href="@Model.Create.Url">@L[Model.Create.Label]</a>
+    }
+    else if (Model.Create is not null)
     {
         <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button>
     }
@@ -82,7 +86,7 @@
                                 {
                                     <partial name="_UserActivationToggle" model="activation" />
                                 }
-                                else if (Model.Columns[i] is "Status" or "Type" or "MovementType")
+                                else if (Model.Columns[i] is "Status" or "Type" or "MovementType" or "AccountPosition")
                                 {
                                     var statusClass = row.Cells[i] switch
                                     {

@@ -29,7 +29,7 @@ public sealed class ProjectionReadTests
         string Sql<T>() where T : class => db.Set<T>().AsNoTracking().OrderBy(x => EF.Property<Guid>(x, "Id"))
             .Skip(1).Take(10).ProjectToType<RelatedRecordDto>(mapping).ToQueryString();
         foreach (var sql in new[] { Sql<Customer>(), Sql<CustomerContact>(), Sql<Product>(), Sql<Category>(),
-                     Sql<Stock>(), Sql<StockMovement>(), Sql<SalesInvoice>(), Sql<Payment>(), Sql<JournalEntry>() })
+                     Sql<Stock>(), Sql<StockMovement>(), Sql<Invoice>(), Sql<Payment>() })
         {
             Assert.Contains("LIMIT", sql);
             Assert.Contains("OFFSET", sql);

@@ -1,0 +1,112 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@{
+    ViewData["Title"] = Model.Summary.Number;
+}
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">@L["Invoices"] / @L["Details"]</span>
+        <h1><bdi>@Model.Summary.Number</bdi></h1>
+        <p>@L[Model.Summary.Status.ToString()] · @Model.Summary.Date.ToLocalTime().ToString("g")</p>
+    </div>
+    <div class="details-actions">
+        <a class="btn btn-light" asp-action="Index">@L["BackToList"]</a>
+        @if (Model.CanConfirm)
+        {
+            <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("Confirm", new { id = Model.Summary.Id })">@L["ConfirmInvoice"]</button>
+        }
+        @if (Model.CanRecordPayment)
+        {
+            <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("RecordPayment", new { id = Model.Summary.Id })">@L["RecordInvoicePayment"]</button>
+        }
+        @if (Model.FulfillmentTargets.Count > 0)
+        {
+            <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("Fulfill", new { id = Model.Summary.Id })">@L["ChangeInvoiceStatus"]</button>
+        }
+    </div>
+</section>
+<section class="content-card">
+    <dl class="detail-grid detail-pairs">
+        <div><dt>@L["CustomerName"]</dt><dd><bdi>@(Model.Summary.CustomerName ?? "—")</bdi></dd></div>
+        <div><dt>@L["InvoiceCreatedBy"]</dt><dd data-invoice-created-by><bdi>@(Model.CreatedByFullName ?? "—")</bdi></dd></div>
+    </dl>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <caption class="visually-hidden">@L["InvoiceItems"]</caption>
+            <thead><tr><th scope="col">@L["Product"]</th><th scope="col">@L["Quantity"]</th><th scope="col">@L["UnitPrice"]</th><th scope="col">@L["InvoiceLineTotal"]</th></tr></thead>
+            <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr>
+                        <td><bdi>@(line.ProductName ?? "—")</bdi></td>
+                        <td><bdi>@NEXT.web.Services.FormFieldPresenter.Quantity(line.Quantity)</bdi></td>
+                        <td><bdi>@line.UnitPrice.ToString("N2") SDG</bdi></td>
+                        <td><bdi>@line.Total.ToString("N2") SDG</bdi></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <dl class="detail-grid detail-pairs">
+        <div><dt>@L["SubTotal"]</dt><dd><bdi>@Model.SubTotal.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["DiscountAmount"]</dt><dd><bdi>@Model.DiscountAmount.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["PaidAmount"]</dt><dd><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["RemainingAmount"]</dt><dd><bdi>@Model.RemainingAmount.ToString("N2") SDG</bdi></dd></div>
+        <div><dt>@L["PaymentStatus"]</dt><dd>@L[Model.Summary.PaymentStatus.ToString()]</dd></div>
+        @if (Model.LastActionAt is { } actionAt)
+        {
+            <div><dt>@L["InvoiceLastAction"]</dt><dd><bdi>@actionAt.ToLocalTime().ToString("g")</bdi></dd></div>
+        }
+    </dl>
+    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+    {
+        <div class="invoice-document-notes"><strong>@L["Notes"]</strong><p>@Model.Notes</p></div>
+    }
+</section>
+<section class="content-card mt-3">
+    <div class="card-heading"><h2>@L["InvoicePaymentHistory"]</h2></div>
+    @if (Model.Payments.Count == 0)
+    {
+        <p>@L["InvoiceNoPayments"]</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <caption class="visually-hidden">@L["InvoicePaymentHistory"]</caption>
+                <thead><tr><th scope="col">@L["PaymentNumber"]</th><th scope="col">@L["InvoicePaymentAmount"]</th><th scope="col">@L["PaymentMethod"]</th><th scope="col">@L["InvoicePaymentRecordedAt"]</th><th scope="col">@L["InvoicePaymentRecordedBy"]</th></tr></thead>
+                <tbody>
+                    @foreach (var payment in Model.Payments)
+                    {
+                        <tr>
+                            <td><bdi>@payment.Number</bdi></td>
+                            <td><bdi>@payment.Amount.ToString("N2") SDG</bdi></td>
+                            <td>@L[payment.Method.ToString()]</td>
+                            <td><bdi>@payment.RecordedAt.ToLocalTime().ToString("g")</bdi></td>
+                            <td><bdi>@(payment.RecordedByFullName ?? "—")</bdi></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+@if (Model.History.Count > 0)
+{
+    <section class="content-card mt-3">
+        <div class="card-heading"><h2>@L["InvoiceStatusHistory"]</h2></div>
+        <div class="activity-records">
+            @foreach (var entry in Model.History)
+            {
+                <article class="activity-record">
+                    <strong>@L[entry.FromStatus.ToString()] ← @L[entry.ToStatus.ToString()]</strong>
+                    <p><bdi>@entry.ActorFullName</bdi> · <bdi>@entry.ActionAt.ToLocalTime().ToString("g")</bdi></p>
+                    @if (!string.IsNullOrWhiteSpace(entry.Reason))
+                    {
+                        <p>@entry.Reason</p>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+}

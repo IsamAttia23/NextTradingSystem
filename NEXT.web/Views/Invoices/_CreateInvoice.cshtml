@@ -1,0 +1,70 @@
+<form asp-action="Create" method="post" data-modal-form="true" data-title="@L["CreateInvoice"]" data-invoice-form
+      data-customers-url="@Url.Action("Customers")" data-products-url="@Url.Action("Products")"
+      data-search-error="@L["RequestFailed"]" data-empty-results="@L["NoResults"]"
+      data-available-label="@L["AvailableQuantity"]" data-stock-error="@L["InvoiceInsufficientStock"]"
+      data-product-merged="@L["InvoiceProductMerged"]">
+    <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+    <div class="invoice-picker mb-3" data-invoice-picker="customer">
+        <label class="form-label" id="invoice-customer-label" for="invoice-customer-name">@L["CustomerName"]</label>
+        <input class="form-control" id="invoice-customer-name" name="CustomerName" data-invoice-search type="text"
+               required maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-controls="invoice-customer-options" placeholder="@L["InvoiceCustomerHint"]" />
+        <input name="CustomerId" type="hidden" data-invoice-id />
+        <div class="reference-options invoice-options" id="invoice-customer-options" data-invoice-options role="listbox"
+             aria-labelledby="invoice-customer-label" hidden></div>
+        <small data-invoice-search-status role="status"></small>
+    </div>
+    <fieldset class="modal-field-group">
+        <legend>@L["InvoiceItems"]</legend>
+        <div data-invoice-lines></div>
+        <p class="text-danger mb-0" data-invoice-stock-warning aria-live="polite"></p>
+        <button type="button" class="btn btn-outline-primary mt-2" data-add-invoice-line disabled>
+            <partial name="_Icon" model='@("plus")' /> @L["AddInvoiceLine"]
+        </button>
+    </fieldset>
+    <template data-invoice-line-template>
+        <div class="invoice-line">
+            <div class="invoice-picker" data-invoice-picker="product">
+                <label class="form-label" data-product-label>@L["Product"]</label>
+                <input class="form-control" type="text" maxlength="200" data-invoice-search autocomplete="off"
+                       role="combobox" aria-autocomplete="list" aria-expanded="false" placeholder="@L["InvoiceProductHint"]" />
+                <input type="hidden" data-invoice-id />
+                <input type="hidden" data-quoted-price />
+                <div class="reference-options invoice-options" data-invoice-options role="listbox" hidden></div>
+                <small data-invoice-search-status role="status"></small>
+            </div>
+            <label class="form-label">@L["Quantity"]
+                <input class="form-control" type="number" min="0.001" max="999999999999.999" step="0.001" data-invoice-quantity />
+            </label>
+            <div class="form-label">@L["UnitPrice"] <output class="invoice-value" data-invoice-price>—</output></div>
+            <div class="form-label">@L["InvoiceLineTotal"] <output class="invoice-value" data-invoice-line-total>—</output></div>
+            <button type="button" class="btn btn-light text-danger" data-remove-invoice-line>@L["Delete"]</button>
+        </div>
+    </template>
+    <div class="invoice-summary-grid">
+        <div class="modal-field-grid">
+            <label class="form-label">@L["InvoiceDiscountType"]
+                <select name="DiscountType" class="form-select" data-invoice-discount>
+                    <option value="">@L["NoInvoiceDiscount"]</option>
+                    <option value="Percentage">@L["Percentage"]</option>
+                    <option value="FixedAmount">@L["FixedAmount"]</option>
+                </select>
+            </label>
+            <label class="form-label" data-invoice-discount-field hidden>@L["InvoiceDiscountValue"]
+                <input name="DiscountValue" class="form-control" type="number" min="0" step="0.01" value="0" data-invoice-discount-value />
+            </label>
+        </div>
+        <dl class="invoice-totals" aria-live="polite">
+            <dt>@L["SubTotal"]</dt><dd><bdi data-invoice-subtotal></bdi></dd>
+            <dt>@L["DiscountAmount"]</dt><dd><bdi data-invoice-discount-amount></bdi></dd>
+            <dt>@L["TotalAmount"]</dt><dd><bdi data-invoice-total></bdi></dd>
+        </dl>
+    </div>
+    <label class="form-label w-100">@L["Notes"]
+        <textarea name="Notes" class="form-control" rows="3" maxlength="2000"></textarea>
+    </label>
+    <div class="modal-form-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
+        <button type="submit" class="btn btn-primary" data-save-invoice disabled>@L["SaveInvoice"]</button>
+    </div>
+</form>
