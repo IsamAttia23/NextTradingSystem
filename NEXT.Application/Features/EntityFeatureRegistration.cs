@@ -53,6 +53,9 @@ public static class EntityFeatureRegistration
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Customer>("Customers",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Customer>>(),
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), sp.GetRequiredService<Mapster.TypeAdapterConfig>()));
+        services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Supplier>("Suppliers",
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Supplier>>(),
+            sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), sp.GetRequiredService<Mapster.TypeAdapterConfig>(), supplier => supplier.IsActive && supplier.DeletedAt == null));
         services.AddScoped<IReferenceSource>(sp => new ReferenceSource<Tag>("Tags",
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IRepository<Tag>>(),
             sp.GetRequiredService<NEXT.Application.Abstractions.Persistence.IQueryExecutor>(), sp.GetRequiredService<Mapster.TypeAdapterConfig>()));

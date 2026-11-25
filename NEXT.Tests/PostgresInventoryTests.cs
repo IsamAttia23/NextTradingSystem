@@ -367,7 +367,7 @@ public sealed class PostgresInventoryTests
         var form = await client.GetStringAsync("/Inventory/Receive");
         var token = WorkspaceUiTests.Token(form);
         var operation = Guid.NewGuid().ToString();
-        var receipt = new[] { ("ProductId", f.Product.ToString()), ("WarehouseId", f.Source.ToString()), ("Quantity", "10.125"),
+        var receipt = new[] { ("SupplierId", f.Supplier.ToString()), ("ProductId", f.Product.ToString()), ("WarehouseId", f.Source.ToString()), ("Quantity", "10.125"),
             ("BatchNumber", "HTTP-BATCH"), ("ExpiryDate", DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)), ("OperationId", operation) };
         Assert.Equal(System.Net.HttpStatusCode.OK, (await WorkspaceUiTests.Post(client, "/Inventory/Receive", token, receipt)).StatusCode);
         Assert.Equal(System.Net.HttpStatusCode.Conflict, (await WorkspaceUiTests.Post(client, "/Inventory/Receive", token, receipt)).StatusCode);
@@ -632,11 +632,14 @@ public sealed class PostgresInventoryTests
         var purchaseId = Guid.NewGuid();
         var movement = new StockMovement
         {
-            ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 2,
+            Id = Guid.NewGuid(), ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 2,
             ReferenceType = "SalesInvoice", ReferenceId = saleId
         };
-        db.Add(movement);
-        await db.SaveChangesAsync();
+        // This database deliberately has the historical schema; seed its historical columns explicitly.
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "StockMovements" ("Id", "ProductId", "WarehouseId", "Type", "Quantity", "UnitCost", "ReferenceType", "ReferenceId", "CreatedAt")
+            VALUES ({movement.Id}, {fixture.Product}, {fixture.Source}, 0, 2, 0, 'SalesInvoice', {saleId}, now())
+            """);
 
         await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO "SalesInvoices" (
@@ -932,6 +935,21 @@ public sealed class PostgresInventoryTests
         public Guid Branch { get; private set; }
         public NEXTDbContext Db { get; private set; } = null!;
         public Guid Product { get; private set; }
+        private Guid supplierId;
+        public Guid Supplier
+        {
+            get
+            {
+                if (supplierId == Guid.Empty)
+                {
+                    var supplier = new Supplier { Name = "Receipt supplier" };
+                    Db.Add(supplier);
+                    Db.SaveChanges();
+                    supplierId = supplier.Id;
+                }
+                return supplierId;
+            }
+        }
         public Guid Source { get; private set; }
         public Guid Target { get; private set; }
         private Database(string connection) => adminConnection = new NpgsqlConnectionStringBuilder(connection)
@@ -1024,7 +1042,8 @@ public sealed class PostgresInventoryTests
             return new(new KeyRepository<Product, Guid>(db), new KeyRepository<Warehouse, Guid>(db), new TRepository<Stock>(db),
                 new TRepository<StockMovement>(db), new TRepository<ProductBatch>(db), new UnitOfWork(db),
                 new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>(),
-                new ExchangeRateReader(new SystemSettingRepository(db)), new InvoiceConfirmationStore(db));
+                new ExchangeRateReader(new SystemSettingRepository(db)), new InvoiceConfirmationStore(db),
+                InventoryTestServices.Posting(db, Branch), new KeyRepository<Supplier, Guid>(db), TimeProvider.System);
         }
         public async Task SetProductCostAsync(decimal cost)
         {
@@ -1034,6 +1053,7 @@ public sealed class PostgresInventoryTests
         }
         public ReceiveStockDto Receipt(decimal quantity) => new()
         {
+            SupplierId = Supplier,
             ProductId = Product,
             WarehouseId = Source,
             Quantity = quantity

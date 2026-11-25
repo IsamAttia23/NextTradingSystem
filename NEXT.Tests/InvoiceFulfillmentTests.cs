@@ -21,7 +21,7 @@ public sealed class InvoiceFulfillmentTests
         await WorkspaceUiTests.Login(client, "ui-admin");
         var actor = await f.Db.Users.SingleAsync(item => item.UserName == "ui-admin");
         var invoice = NewInvoice(actor.Id, f.Source, f.Product, "SHIP-BATCHES", 4);
-        var stock = new Stock { ProductId = f.Product, WarehouseId = f.Source, Quantity = 10, ReservedQuantity = 4, AverageCost = 7.5m };
+        var stock = new Stock { ProductId = f.Product, WarehouseId = f.Source, Quantity = 10, ReservedQuantity = 4, AverageCost = 7.5m, TotalCost = 75m };
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         f.Db.AddRange(invoice, stock, Batch(f, "EXPIRED", today.AddDays(-1), 3), Batch(f, "UNDATED", null, 1),
             Batch(f, "TODAY", today, 1), Batch(f, "NEAR", today.AddDays(1), 1), Batch(f, "LATER", today.AddDays(5), 4));

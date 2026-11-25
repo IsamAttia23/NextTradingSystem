@@ -242,11 +242,11 @@ public sealed class InvoiceCancellationTests
         var script = migrator.GenerateScript(previous, null, MigrationsSqlGenerationOptions.Idempotent);
         await f.Db.Database.ExecuteSqlRawAsync(script);
         await f.Db.Database.ExecuteSqlRawAsync(script);
-        Assert.Equal(8, await f.Db.Accounts.CountAsync());
+        Assert.Equal(12, await f.Db.Accounts.CountAsync());
         await migrator.MigrateAsync(previous);
         Assert.Equal(7, await f.Db.Accounts.CountAsync());
         await f.Db.Database.ExecuteSqlRawAsync(script);
-        Assert.Equal(8, await f.Db.Accounts.CountAsync());
+        Assert.Equal(12, await f.Db.Accounts.CountAsync());
         var error = await Assert.ThrowsAsync<PostgresException>(() => f.Db.Database.ExecuteSqlRawAsync("UPDATE \"Accounts\" SET \"Name\" = 'Changed' WHERE \"Type\" = 8"));
         Assert.Equal("23514", error.SqlState);
     }

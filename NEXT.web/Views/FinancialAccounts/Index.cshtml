@@ -1,25 +1,41 @@
+@using NEXT.Domain.Enums
 @model FinancialAccountsView
 @{
     ViewData["Title"] = L["FinancialAccounts"];
 }
 <section class="page-heading">
-    <div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialAccounts"]</h1><p>@L["FinancialAccountsDescription"]</p></div>
+    <div><span class="eyebrow">@L["FinanceGroup"]</span><h1><partial name="_Icon" model='@("grid")' /> @L["FinancialAccounts"]</h1><p>@L["FinancialAccountsDescription"]</p></div>
 </section>
+<partial name="_FinanceNavigation" />
+<div class="stats-grid finance-summary">
+    @foreach (var type in new[] { AccountType.Treasury, AccountType.Receivables, AccountType.Inventory, AccountType.CustomerRefunds })
+    {
+        var account = Model.Accounts.SingleOrDefault(item => item.Type == type);
+        <article class="stat-card">
+            <div><span>@L["FinancialAccount" + type]</span><span class="stat-icon" aria-hidden="true"><partial name="_Icon" model='@("grid")' /></span></div>
+            <strong><bdi>@((account?.Balance ?? 0).ToString("N2")) <small>SDG</small></bdi></strong>
+            <small>@L["AccountingBalanceAtEnd"]</small>
+        </article>
+    }
+</div>
 <section class="content-card">
-    <form method="get" class="financial-date-filter mb-3" role="search">
+    <div class="card-heading"><h2>@L["FinancialAccounts"]</h2><span class="count-pill">@Model.Accounts.Count</span></div>
+    <form method="get" class="financial-date-filter" role="search">
         <label class="form-label">@L["From"]<input type="date" name="from" class="form-control" value="@Model.From?.ToString("yyyy-MM-dd")" /></label>
         <label class="form-label">@L["To"]<input type="date" name="to" class="form-control" value="@Model.To?.ToString("yyyy-MM-dd")" /></label>
-        <div class="align-self-end"><button class="btn btn-primary" type="submit">@L["Search"]</button></div>
+        <div class="finance-filter-actions"><a asp-action="Index" class="btn btn-light">@L["ResetFilters"]</a><button class="btn btn-primary" type="submit">@L["Search"]</button></div>
     </form>
+    <p class="finance-balance-note">@L["AccountingInventoryTransitionNotice"]</p>
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L["FinancialAccounts"]">
         <table class="table align-middle financial-account-balances">
             <caption class="visually-hidden">@L["FinancialAccounts"]</caption>
-            <thead><tr><th scope="col">@L["Account"]</th><th scope="col" class="numeric-cell">@L["AccountingOpeningBalance"]</th><th scope="col" class="numeric-cell">@L["AccountingDebit"]</th><th scope="col" class="numeric-cell">@L["AccountingCredit"]</th><th scope="col" class="numeric-cell">@L["AccountingClosingBalance"]</th><th scope="col">@L["Actions"]</th></tr></thead>
+            <thead><tr><th scope="col">@L["Account"]</th><th scope="col">@L["AccountingCategory"]</th><th scope="col" class="numeric-cell">@L["AccountingOpeningBalance"]</th><th scope="col" class="numeric-cell">@L["AccountingDebit"]</th><th scope="col" class="numeric-cell">@L["AccountingCredit"]</th><th scope="col" class="numeric-cell">@L["AccountingClosingBalance"]</th><th scope="col">@L["Actions"]</th></tr></thead>
             <tbody>
             @foreach (var account in Model.Accounts)
             {
                 <tr>
                     <td>@L["FinancialAccount" + account.Type] @if (account.IsTechnical) { <small class="text-muted">(@L["AccountingTechnicalAccount"])</small> }</td>
+                    <td data-label="@L["AccountingCategory"]"><span class="status-tag">@L["AccountingCategory" + account.Category]</span></td>
                     <td class="numeric-cell" data-label="@L["AccountingOpeningBalance"]"><bdi>@account.OpeningBalance.ToString("N2") SDG</bdi></td>
                     <td class="numeric-cell" data-label="@L["AccountingDebit"]"><bdi>@account.Debit.ToString("N2") SDG</bdi></td>
                     <td class="numeric-cell" data-label="@L["AccountingCredit"]"><bdi>@account.Credit.ToString("N2") SDG</bdi></td>

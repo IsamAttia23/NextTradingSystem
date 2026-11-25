@@ -146,7 +146,7 @@ public sealed class InvoiceRevisionTests
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
         Assert.DoesNotContain(db.Model.GetEntityTypes(), entity => entity.ClrType.Name is "JournalEntry" or "JournalLine");
-        Assert.Equal(8, await db.Accounts.CountAsync());
+        Assert.Equal(12, await db.Accounts.CountAsync());
         Assert.False(await db.SystemSettings.AnyAsync(item => item.Key == "Accounting.InvoiceAccounts"));
     }
 

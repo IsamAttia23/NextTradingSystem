@@ -1,6 +1,9 @@
 using NEXT.Application.Abstractions.IServices;
 using NEXT.Application.Abstractions.Persistence;
 using NEXT.Application.DTOs.Inventory;
+using NEXT.Application.DTOs.Accounting;
+using NEXT.Application.Abstractions.Services;
+using NEXT.Application.Features.Accounting;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Validation;
 using NEXT.Application.Services.Currencies;
@@ -15,7 +18,8 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
     IRepository<Stock> stocks, IRepository<StockMovement> movements, IRepository<ProductBatch> batches,
     IUnitOfWork unitOfWork, IEntityValidator<ReceiveStockDto> receiptValidator,
     IEntityValidator<TransferStockDto> transferValidator, ExchangeRateReader exchangeRates,
-    IInvoiceConfirmationStore invoiceStore) : IInventoryService
+    IInvoiceConfirmationStore invoiceStore, IAccountingPostingService posting,
+    IKeyRepository<Supplier, Guid> suppliers, TimeProvider clock) : IInventoryService
 {
     public async Task IssueReservedInvoiceAsync(InvoiceDispatchInput input, CancellationToken ct = default)
     {
@@ -52,6 +56,9 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         foreach (var stock in lockedStocks)
         {
             var quantity = quantities[stock.ProductId];
+            var issuedCost = InventoryValuation.IssueValue(stock.Quantity, stock.TotalCost, quantity);
+            var unallocatedQuantity = quantity;
+            var unallocatedCost = issuedCost;
             if (selectedProducts[stock.ProductId].HasExpiry)
             {
                 var candidates = lockedBatches.Where(batch => batch.ProductId == stock.ProductId)
@@ -63,37 +70,59 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
                 {
                     var issued = Math.Min(remaining, batch.Quantity);
                     batch.Quantity -= issued;
-                    await movements.AddAsync(Movement(stock.ProductId, issued, input.InvoiceId, input.WarehouseId,
-                        StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt, "Batch: " + batch.BatchNumber), ct);
+                    var batchCost = InventoryValuation.IssueValue(unallocatedQuantity, unallocatedCost, issued);
+                    var movement = Movement(stock.ProductId, issued, input.InvoiceId, input.WarehouseId,
+                        StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt, "Batch: " + batch.BatchNumber);
+                    movement.TotalCost = batchCost;
+                    await movements.AddAsync(movement, ct);
+                    unallocatedQuantity -= issued;
+                    unallocatedCost -= batchCost;
                     remaining -= issued;
                     if (remaining == 0) break;
                 }
             }
             else
             {
-                await movements.AddAsync(Movement(stock.ProductId, quantity, input.InvoiceId, input.WarehouseId,
-                    StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt), ct);
+                var movement = Movement(stock.ProductId, quantity, input.InvoiceId, input.WarehouseId,
+                    StockMovementType.Sale, stock.AverageCost, "Invoice", input.ActionAt);
+                movement.TotalCost = issuedCost;
+                await movements.AddAsync(movement, ct);
             }
+            stock.TotalCost -= issuedCost;
             stock.Quantity -= quantity;
+            stock.AverageCost = InventoryValuation.Average(stock.Quantity, stock.TotalCost);
             stock.ReservedQuantity -= quantity;
             stock.LastUpdated = input.ActionAt;
         }
     }
 
-    public Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default)
+    public Task ReceiveAsync(ReceiveStockDto input, CancellationToken ct = default) => ReceiveAsync(input, false, ct);
+
+    // Only the product creation workflow invokes this; the receipt HTTP form cannot choose equity as its counteraccount.
+    public Task ReceiveOpeningAsync(ReceiveStockDto input, CancellationToken ct = default) => ReceiveAsync(input, true, ct);
+
+    private Task ReceiveAsync(ReceiveStockDto input, bool opening, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         receiptValidator.Validate(input);
         ValidateOperation(input);
-        return unitOfWork.ExecuteInTransactionAsync(token => ReceiveInTransactionAsync(input, token), ct);
+        return unitOfWork.ExecuteInTransactionAsync(token => ReceiveInTransactionAsync(input, opening, token), ct);
     }
 
-    private async Task ReceiveInTransactionAsync(ReceiveStockDto input, CancellationToken ct)
+    private async Task ReceiveInTransactionAsync(ReceiveStockDto input, bool opening, CancellationToken ct)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.GetUtcNow();
         await EnsureNewOperation(input.OperationId, ct);
         var product = await Product(input.ProductId, ct);
         await Warehouse(input.WarehouseId, ct);
+        if (!opening)
+        {
+            if (input.SupplierId is not { } supplierId || supplierId == Guid.Empty)
+                Fail(nameof(input.SupplierId), "InventorySupplierRequired");
+            var supplier = await suppliers.GetByIdAsync(input.SupplierId!.Value, ct);
+            if (supplier is null || !supplier.IsActive || supplier.DeletedAt.HasValue)
+                Fail(nameof(input.SupplierId), "InventorySupplierUnavailable");
+        }
         ValidateReceiptExpiry(product, input, DateOnly.FromDateTime(now.UtcDateTime));
         var quantity = ReceiptQuantity(product, input);
         EnsureCapacity(0, quantity);
@@ -109,10 +138,21 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         {
             await ReceiveBatchAsync(input, quantity, cost, ct);
         }
-        Receive(stock, quantity, cost, now);
-        var movement = Movement(input, input.WarehouseId, StockMovementType.Purchase, cost, "Receipt", now);
+        decimal value;
+        try { value = InventoryValuation.ReceiptValue(quantity, cost); }
+        catch (ArgumentOutOfRangeException) { Fail("ProductId", "ReceiptCostOutOfRange"); throw; }
+        Receive(stock, quantity, value, now);
+        var movement = Movement(input, input.WarehouseId, opening ? StockMovementType.OpeningBalance : StockMovementType.Purchase, cost, "Receipt", now);
         movement.Quantity = quantity;
+        movement.TotalCost = value;
+        movement.SupplierId = opening ? null : input.SupplierId;
         await movements.AddAsync(movement, ct);
+        if (value > 0)
+            await posting.PostAsync(new(input.OperationId, LedgerEntryKind.GoodsReceipt, AccountingReferenceType.InventoryReceipt,
+                input.OperationId, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, clock.LocalTimeZone).DateTime),
+                opening ? AccountingDescriptions.InventoryOpening : AccountingDescriptions.GoodsReceipt,
+                [new(AccountType.Inventory, value, 0),
+                 new(opening ? AccountType.OpeningBalances : AccountType.GoodsReceivedNotInvoiced, 0, value)]), ct);
     }
 
     private static decimal ReceiptQuantity(Product product, ReceiveStockDto input)
@@ -165,7 +205,7 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
 
     private async Task TransferInTransactionAsync(TransferStockDto input, CancellationToken ct)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.GetUtcNow();
         await EnsureNewOperation(input.OperationId, ct);
         var product = await Product(input.ProductId, ct);
         await Warehouse(input.SourceWarehouseId, ct);
@@ -179,14 +219,17 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         var target = await GetOrCreateStock(input.ProductId, input.DestinationWarehouseId, ct);
         EnsureCapacity(target.Quantity, input.Quantity);
         var cost = source.AverageCost;
+        var value = InventoryValuation.IssueValue(source.Quantity, source.TotalCost, input.Quantity);
         if (product.HasExpiry)
         {
             await TransferBatchAsync(input, cost, DateOnly.FromDateTime(now.UtcDateTime), ct);
         }
         source.Quantity -= input.Quantity;
+        source.TotalCost -= value;
+        source.AverageCost = InventoryValuation.Average(source.Quantity, source.TotalCost);
         source.LastUpdated = now;
-        Receive(target, input.Quantity, cost, now);
-        await RecordTransferAsync(input, cost, now, ct);
+        Receive(target, input.Quantity, value, now);
+        await RecordTransferAsync(input, cost, value, now, ct);
     }
 
     private async Task TransferBatchAsync(TransferStockDto input, decimal cost, DateOnly today, CancellationToken ct)
@@ -208,10 +251,13 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         batch.Quantity -= input.Quantity;
     }
 
-    private async Task RecordTransferAsync(TransferStockDto input, decimal cost, DateTimeOffset now, CancellationToken ct)
+    private async Task RecordTransferAsync(TransferStockDto input, decimal cost, decimal value, DateTimeOffset now, CancellationToken ct)
     {
-        await movements.AddAsync(Movement(input, input.SourceWarehouseId, StockMovementType.TransferOut, cost, "Transfer", now), ct);
-        await movements.AddAsync(Movement(input, input.DestinationWarehouseId, StockMovementType.TransferIn, cost, "Transfer", now), ct);
+        var outgoing = Movement(input, input.SourceWarehouseId, StockMovementType.TransferOut, cost, "Transfer", now);
+        var incoming = Movement(input, input.DestinationWarehouseId, StockMovementType.TransferIn, cost, "Transfer", now);
+        outgoing.TotalCost = incoming.TotalCost = value;
+        await movements.AddAsync(outgoing, ct);
+        await movements.AddAsync(incoming, ct);
     }
 
     private async Task<Product> Product(Guid id, CancellationToken ct)
@@ -278,10 +324,12 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         await batches.AddAsync(batch, ct);
         return batch;
     }
-    private static void Receive(Stock stock, decimal quantity, decimal cost, DateTimeOffset now)
+    private static void Receive(Stock stock, decimal quantity, decimal value, DateTimeOffset now)
     {
-        stock.AverageCost = InventoryValuation.ReceiveCost(stock.Quantity, stock.AverageCost, quantity, cost);
+        if (!MoneyRules.IsValid(stock.TotalCost + value)) Fail("ProductId", "ReceiptCostOutOfRange");
+        stock.TotalCost += value;
         stock.Quantity += quantity;
+        stock.AverageCost = InventoryValuation.Average(stock.Quantity, stock.TotalCost);
         stock.LastUpdated = now;
     }
     private static StockMovement Movement(InventoryOperationDto input, Guid warehouse, StockMovementType type, decimal cost, string reference, DateTimeOffset now) =>

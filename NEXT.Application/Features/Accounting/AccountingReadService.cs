@@ -28,7 +28,7 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
             var total = totals.SingleOrDefault(item => item.AccountId == account.Id) ?? new(account.Id, 0, 0, 0);
             var sign = account.NormalSide == DebitCreditSide.Debit ? 1 : -1;
             return new AccountSummaryDto(account.Id, account.Type, account.Name, account.IsTechnical,
-                sign * total.Opening, total.Debit, total.Credit, sign * (total.Opening + total.Debit - total.Credit));
+                sign * total.Opening, total.Debit, total.Credit, sign * (total.Opening + total.Debit - total.Credit), account.Category);
         }).ToArray();
     }
 

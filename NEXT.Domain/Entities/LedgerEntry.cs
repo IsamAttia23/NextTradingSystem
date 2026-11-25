@@ -56,6 +56,7 @@ public sealed class LedgerEntry : AuditableEntity<Guid>
             LedgerEntryKind.Receipt or LedgerEntryKind.Refund => ReferenceType == AccountingReferenceType.Payment,
             LedgerEntryKind.OpeningBalance => ReferenceType is AccountingReferenceType.DebtOpening or AccountingReferenceType.Adjustment,
             LedgerEntryKind.Reversal => ReferenceType == AccountingReferenceType.Adjustment,
+            LedgerEntryKind.GoodsReceipt => ReferenceType == AccountingReferenceType.InventoryReceipt && InvoiceId is null && PaymentId is null,
             _ => false
         };
         if (!validSource) throw new ArgumentException("AccountingInvalidReference");

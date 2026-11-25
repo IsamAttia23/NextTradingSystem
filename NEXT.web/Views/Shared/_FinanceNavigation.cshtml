@@ -1,0 +1,12 @@
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var account = Context.Request.Query["Account"].ToString();
+    var from = Context.Request.Query["From"].ToString();
+    var to = Context.Request.Query["To"].ToString();
+}
+<nav class="section-tabs finance-tabs" aria-label="@L["FinanceGroup"]">
+    <a asp-controller="FinancialAccounts" asp-action="Index" asp-route-from="@from" asp-route-to="@to" class="@(action == "Index" ? "selected" : null)" aria-current="@(action == "Index" ? "page" : null)">@L["FinancialAccounts"]</a>
+    <a asp-controller="FinancialAccounts" asp-action="Movements" asp-route-From="@from" asp-route-To="@to" class="@(action == "Movements" && account == "" ? "selected" : null)">@L["AccountMovements"]</a>
+    <a asp-controller="FinancialAccounts" asp-action="Movements" asp-route-Account="Treasury" asp-route-From="@from" asp-route-To="@to" class="@(account == "Treasury" ? "selected" : null)">@L["FinancialAccountTreasury"]</a>
+    <a asp-controller="FinancialAccounts" asp-action="Movements" asp-route-Account="CustomerRefunds" asp-route-From="@from" asp-route-To="@to" class="@(account == "CustomerRefunds" ? "selected" : null)">@L["FinancialAccountCustomerRefunds"]</a>
+</nav>

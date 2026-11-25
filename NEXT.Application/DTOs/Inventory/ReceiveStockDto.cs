@@ -7,6 +7,8 @@ public sealed class ReceiveStockDto : InventoryOperationDto
     [NEXT.Application.Validation.NotEmptyGuid]
     public Guid WarehouseId { get; set; }
 
+    public Guid? SupplierId { get; set; }
+
     public bool ReceiveInPackages { get; set; }
 
     public DateOnly? ExpiryDate { get; set; }

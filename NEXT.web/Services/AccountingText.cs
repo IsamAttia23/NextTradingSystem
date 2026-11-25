@@ -14,7 +14,8 @@ public sealed class AccountingText(IStringLocalizer<UiText> text)
     private static readonly CultureInfo[] Cultures = [CultureInfo.GetCultureInfo("ar"), CultureInfo.GetCultureInfo("en")];
 
     public string Description(AccountTransactionDto item) => AccountingDescriptions.Template(item) is { } key
-        ? text[key, item.InvoiceNumber!].Value : item.Description;
+        ? text[key, item.InvoiceNumber!].Value : item.Description is AccountingDescriptions.GoodsReceipt or AccountingDescriptions.InventoryOpening
+        ? text[item.Description].Value : item.Description;
 
     public AccountingSearchMatches Search(string? value)
     {
@@ -27,6 +28,7 @@ public sealed class AccountingText(IStringLocalizer<UiText> text)
                 LedgerEntryKind.SalesRecognition => Matches(AccountingDescriptions.InvoiceSale),
                 LedgerEntryKind.InvoiceCancellation => Matches(AccountingDescriptions.InvoiceCancellation),
                 LedgerEntryKind.Refund => Matches(AccountingDescriptions.InvoiceRefund),
+                LedgerEntryKind.GoodsReceipt => Matches(AccountingDescriptions.GoodsReceipt) || Matches(AccountingDescriptions.InventoryOpening),
                 _ => false
             })).ToArray(),
             Enum.GetValues<PaymentPurpose>().Where(purpose => Matches("AccountingPurpose" + purpose)).ToArray(),

@@ -70,6 +70,31 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
             item.DebtAccount.Customer.Phone, item.Kind, item.OriginalAmount, totals.GetValueOrDefault(item.Id), item.InvoiceId)).ToArray();
     }
 
+    public async Task<InventoryPostingState> GetInventorySourceAsync(Guid id, bool invoice, CancellationToken ct)
+    {
+        var reference = invoice ? "Invoice" : "Receipt";
+        var saved = await db.StockMovements.AsNoTracking().Where(m => m.ReferenceId == id && m.ReferenceType == reference).ToListAsync(ct);
+        var pending = db.ChangeTracker.Entries<StockMovement>().Where(e => e.State == EntityState.Added &&
+            e.Entity.ReferenceId == id && e.Entity.ReferenceType == reference).Select(e => e.Entity);
+        var movements = saved.Concat(pending).DistinctBy(m => m.Id).ToArray();
+        var valid = movements.Length > 0 && movements.All(m => NEXT.Domain.Services.MoneyRules.IsValid(m.TotalCost) && m.Quantity > 0 &&
+            (invoice ? m.Type == NEXT.Domain.Enums.StockMovementType.Sale :
+                m.Type is NEXT.Domain.Enums.StockMovementType.Purchase or NEXT.Domain.Enums.StockMovementType.OpeningBalance));
+        if (invoice)
+        {
+            var items = await db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == id)
+                .Select(i => new { i.ProductId, i.Quantity }).ToListAsync(ct);
+            var expected = items.GroupBy(i => i.ProductId).ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
+            var actual = movements.GroupBy(m => m.ProductId).ToDictionary(g => g.Key, g => g.Sum(m => m.Quantity));
+            var warehouse = await db.Invoices.Where(i => i.Id == id).Select(i => i.WarehouseId).SingleAsync(ct);
+            valid &= movements.All(m => m.WarehouseId == warehouse) && expected.Count > 0 && actual.Count == expected.Count && expected.All(p => actual.GetValueOrDefault(p.Key) == p.Value);
+        }
+        else valid &= movements.Length == 1;
+        return new(movements.Sum(m => m.TotalCost), movements.Length, valid,
+            movements.Length == 1 && movements[0].Type == NEXT.Domain.Enums.StockMovementType.OpeningBalance,
+            movements.Length == 1 ? movements[0].SupplierId : null);
+    }
+
     public async Task AppendAsync(LedgerEntry entry, DateTimeOffset postedAt, CancellationToken ct)
     {
         RequireTransaction();

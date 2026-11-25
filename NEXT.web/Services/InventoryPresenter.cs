@@ -9,16 +9,16 @@ namespace NEXT.web.Services;
 public sealed class InventoryPresenter(IInventoryQueryService queries, TablePresenter tables, FormFieldPresenter fields, Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText> text)
 {
     public async Task<TableModel> StocksAsync(PaginationQuery query, CancellationToken ct) =>
-        await tables.BuildAsync("Stocks", ["Product", "Warehouse", "Quantity", "ReservedQuantity", "AvailableQuantity", "CostPrice"],
+        await tables.BuildAsync("Stocks", ["Product", "Warehouse", "Quantity", "ReservedQuantity", "AvailableQuantity", "CostPrice", "AverageCost", "InventoryCarryingValue"],
             await queries.StocksAsync(query, ct), query,
-            x => new TableRow([x.ProductName, x.WarehouseName, InventoryQuantityDisplay.Format(x.Quantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.ReservedQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.AvailableQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), x.CostPrice.ToString("N2")],
+            x => new TableRow([x.ProductName, x.WarehouseName, InventoryQuantityDisplay.Format(x.Quantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.ReservedQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.AvailableQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), x.CostPrice.ToString("N2"), x.AverageCost.ToString("N2"), x.TotalCost.ToString("N2")],
                 [new("Transfer", "/Inventory/Transfer?productId=" + x.ProductId + "&sourceWarehouseId=" + x.WarehouseId)]),
             [new("Quantity", "Quantity"), new("ReservedQuantity", "ReservedQuantity"), new("CreatedAt", "CreatedAt")], ct, new("Receive", "/Inventory/Receive"));
 
     public async Task<TableModel> MovementsAsync(StockMovementQueryModel query, CancellationToken ct) =>
-        await tables.BuildAsync("StockMovements", ["Product", "Warehouse", "MovementType", "Quantity", "UnitCost", "OperationId", "CreatedAt"],
+        await tables.BuildAsync("StockMovements", ["Product", "Warehouse", "MovementType", "Quantity", "UnitCost", "InventoryMovementValue", "Supplier", "OperationId", "CreatedAt"],
             await queries.MovementsAsync(query, ct), query,
-            x => new TableRow([x.ProductName, x.WarehouseName, x.Type, InventoryQuantityDisplay.Format(x.Quantity, null, x.BaseUnitName, null, text), x.UnitCost.ToString("N2"), x.ReferenceId?.ToString() ?? "—", x.CreatedAt.ToLocalTime().ToString("g")], []),
+            x => new TableRow([x.ProductName, x.WarehouseName, x.Type, InventoryQuantityDisplay.Format(x.Quantity, null, x.BaseUnitName, null, text), x.UnitCost.ToString("N2"), x.TotalCost.ToString("N2"), x.SupplierName ?? "—", x.ReferenceId?.ToString() ?? "—", x.CreatedAt.ToLocalTime().ToString("g")], []),
             [new("CreatedAt", "CreatedAt")], ct);
 
     public async Task<TableModel> BatchesAsync(PaginationQuery query, CancellationToken ct) =>
@@ -39,6 +39,7 @@ public sealed class InventoryPresenter(IInventoryQueryService queries, TablePres
                     UnitsPerPackage: product.UnitsPerPackage)).ToArray())
         ];
         formFields.Add(new("WarehouseId", "Warehouse", Type: "select", Required: true, Options: await fields.OptionsAsync("Warehouses", ct)));
+        formFields.Add(new("SupplierId", "Supplier", Type: "select", Required: true, Options: await fields.OptionsAsync("Suppliers", ct)));
         formFields.Add(new("ReceiveInPackages", "QuantityUnit", "false", "select", Options: InventoryQuantityDisplay.UnitOptions));
         formFields.Add(new("Quantity", "Quantity", Type: "number", Required: true));
         formFields.Add(new("ReceiptQuantityPreview", "ReceiptQuantityPreview", Type: "quantity-output"));

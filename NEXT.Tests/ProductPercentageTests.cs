@@ -70,6 +70,9 @@ public sealed class ProductPercentageTests
         Assert.Contains("data-stock-level=\"empty\"", list);
         Assert.Contains("stock-unavailable-tag\">Unavailable", list);
         Assert.Contains($"/Inventory/Receive?productId={product.Id}", list);
+        var supplier = new Supplier { Name = "Test receipt supplier" };
+        db.Add(supplier);
+        await db.SaveChangesAsync();
         var receive = await client.GetStringAsync($"/Inventory/Receive?productId={product.Id}");
         Assert.Matches($"""<option value="{product.Id}" selected=""".TrimEnd(), receive);
         var receiveToken = WorkspaceUiTests.Token(receive);
@@ -101,7 +104,7 @@ public sealed class ProductPercentageTests
         {
             var response = await WorkspaceUiTests.Post(client, "/Inventory/Receive", receiveToken,
                 ("OperationId", Guid.NewGuid().ToString()), ("ProductId", product.Id.ToString()),
-                ("WarehouseId", second.Id.ToString()), ("Quantity", quantity.ToString(CultureInfo.InvariantCulture)), ("UnitCost", "100"));
+                ("SupplierId", supplier.Id.ToString()), ("WarehouseId", second.Id.ToString()), ("Quantity", quantity.ToString(CultureInfo.InvariantCulture)), ("UnitCost", "100"));
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
@@ -138,11 +141,14 @@ public sealed class ProductPercentageTests
             [..fields, ("OpeningWarehouseId", warehouse.Id.ToString())]);
         Assert.Equal(HttpStatusCode.OK, created.StatusCode);
         var product = await db.Products.AsNoTracking().SingleAsync();
+        var supplier = new Supplier { Name = "Test receipt supplier" };
+        db.Add(supplier);
+        await db.SaveChangesAsync();
         var receive = await client.GetStringAsync($"/Inventory/Receive?productId={product.Id}&culture=en");
         Assert.Contains("data-units-per-package=\"12\"", receive);
         Assert.DoesNotContain("name=\"UnitCost\"", receive);
         using var received = await WorkspaceUiTests.Post(client, "/Inventory/Receive", WorkspaceUiTests.Token(receive),
-            ("ProductId", product.Id.ToString()), ("WarehouseId", warehouse.Id.ToString()), ("Quantity", "3"),
+            ("SupplierId", supplier.Id.ToString()), ("ProductId", product.Id.ToString()), ("WarehouseId", warehouse.Id.ToString()), ("Quantity", "3"),
             ("ReceiveInPackages", "true"), ("UnitCost", "999"));
         Assert.Equal(HttpStatusCode.OK, received.StatusCode);
         var balance = await db.Stocks.AsNoTracking().SingleAsync();

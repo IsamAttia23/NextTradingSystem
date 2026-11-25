@@ -9,5 +9,9 @@ public enum AccountType
     Treasury = 5,
     CustomerAdvances = 6,
     OpeningBalances = 7,
-    CustomerRefunds = 8
+    CustomerRefunds = 8,
+    Inventory = 9,
+    CostOfSales = 10,
+    GoodsReceivedNotInvoiced = 11,
+    Payables = 12
 }

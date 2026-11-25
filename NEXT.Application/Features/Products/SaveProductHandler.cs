@@ -68,7 +68,7 @@ public sealed class SaveProductHandler(IKeyRepository<Product, Guid> repository,
         await unitOfWork.SaveChangesAsync(ct);
         if (opening is not null)
         {
-            await inventory.ReceiveAsync(opening, ct);
+            await inventory.ReceiveOpeningAsync(opening, ct);
         }
         return await GetEntityByIdQueryHandler<Product, ProductDto>.ReadAsync(repository, executor,
             product.Id, pricing.ReadMapping(rate), ct);

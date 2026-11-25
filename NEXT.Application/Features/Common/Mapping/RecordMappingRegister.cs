@@ -26,6 +26,7 @@ public sealed class RecordMappingRegister : IRegister
             .Map(d => d.AvailableQuantity, s => s.Stocks.Sum(stock => stock.Quantity - stock.ReservedQuantity));
         config.NewConfig<StockMovement, StockMovementDto>()
             .Map(d => d.Type, s => s.Type.ToString())
+            .Map(d => d.SupplierName, s => s.Supplier == null ? null : s.Supplier.Name)
             .Map(d => d.BaseUnitName, s => s.Product.UnitOfMeasure == null ? null : s.Product.UnitOfMeasure.Name);
         config.NewConfig<ProductBatch, ProductBatchDto>()
             .Map(d => d.UnitsPerPackage, s => s.Product.UnitsPerPackage)
@@ -33,7 +34,7 @@ public sealed class RecordMappingRegister : IRegister
             .Map(d => d.PackagingUnitName, s => s.Product.PackagingUnit == null ? null : s.Product.PackagingUnit.Name);
         config.NewConfig<Branch, BranchOption>();
         foreach (var type in new[] { typeof(Customer), typeof(Tag), typeof(Category), typeof(Branch),
-                     typeof(Warehouse), typeof(Product), typeof(UnitOfMeasure) })
+                     typeof(Warehouse), typeof(Product), typeof(Supplier), typeof(UnitOfMeasure) })
         {
             config.ForType(type, typeof(ReferenceOptionDto)).Map("Value", "Id").Map("Label", "Name");
         }

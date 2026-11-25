@@ -11,17 +11,34 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
 {
     public async Task ValidateAsync(LedgerEntry entry, CancellationToken ct)
     {
+        var inventoryAccounts = new[] { Account.IdFor(AccountType.Inventory), Account.IdFor(AccountType.CostOfSales), Account.IdFor(AccountType.GoodsReceivedNotInvoiced) };
+        if (entry.Kind is not (LedgerEntryKind.SalesRecognition or LedgerEntryKind.GoodsReceipt) && entry.Lines.Any(l => inventoryAccounts.Contains(l.AccountId)))
+            throw new ConflictException("AccountingUseSourceCorrection");
+        await InventoryReceiptAsync(entry, ct);
         await ReversalAsync(entry, ct);
         await InvoiceAsync(entry, ct);
         await PaymentAsync(entry, ct);
         await DebtsAsync(entry, ct);
     }
 
+    private async Task InventoryReceiptAsync(LedgerEntry entry, CancellationToken ct)
+    {
+        if (entry.Kind != LedgerEntryKind.GoodsReceipt) return;
+        var source = await store.GetInventorySourceAsync(entry.ReferenceId, false, ct);
+        var counter = Account.IdFor(source.IsOpening ? AccountType.OpeningBalances : AccountType.GoodsReceivedNotInvoiced);
+        if (!source.IsValidSource || source.TotalCost <= 0 || entry.Lines.Count != 2 ||
+            (!source.IsOpening && source.SupplierId is null) ||
+            entry.Lines.Any(l => l.CustomerId.HasValue || l.DebtItemId.HasValue) ||
+            !entry.Lines.Any(l => l.AccountId == Account.IdFor(AccountType.Inventory) && l.Debit == source.TotalCost) ||
+            !entry.Lines.Any(l => l.AccountId == counter && l.Credit == source.TotalCost))
+            throw new ConflictException("AccountingInventoryPostingMismatch");
+    }
+
     private async Task ReversalAsync(LedgerEntry entry, CancellationToken ct)
     {
         if (entry.ReversesEntryId is not { } id) return;
         var original = await store.FindEntryAsync(id, ct) ?? throw new NotFoundException("AccountingEntryNotFound");
-        if (original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
+        if (original.Kind == LedgerEntryKind.GoodsReceipt || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
             throw new ConflictException("AccountingUseSourceCorrection");
         if (original.PostedAt is null || original.Kind == LedgerEntryKind.Reversal || entry.EntryDate < original.EntryDate ||
             entry.InvoiceId != original.InvoiceId || entry.PaymentId != original.PaymentId || await store.HasReversalAsync(id, ct))
@@ -86,14 +103,17 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
             invoice.CustomerId is null || entry.Lines.Any(line => line.CustomerId != invoice.CustomerId))
             throw new ConflictException("AccountingInvoicePostingMismatch");
         decimal Net(AccountType type) => entry.Lines.Where(line => line.AccountId == Account.IdFor(type)).Sum(line => line.Debit - line.Credit);
+        var inventory = entry.Kind == LedgerEntryKind.SalesRecognition ? await store.GetInventorySourceAsync(id, true, ct) : null;
+        var cost = inventory?.TotalCost ?? 0;
         var valid = entry.Kind switch
         {
             LedgerEntryKind.SalesRecognition => invoice.Status is (InvoiceStatus.Shipped or InvoiceStatus.Delivered) &&
-                invoice.Tax == 0 && invoice.Total > 0 && invoice.Paid >= 0 && invoice.Remaining >= 0 &&
+                inventory!.IsValidSource && invoice.Tax == 0 && invoice.Total >= 0 && invoice.Paid >= 0 && invoice.Remaining >= 0 &&
                 await store.GetInvoiceCreditBalanceAsync(id, AccountType.CustomerAdvances, ct) == invoice.Paid &&
                 invoice.Paid + invoice.Remaining == invoice.Total && Net(AccountType.Sales) == -invoice.Total &&
                 Net(AccountType.CustomerAdvances) == invoice.Paid && Net(AccountType.Receivables) == invoice.Remaining &&
-                entry.Lines.Count == 1 + (invoice.Paid > 0 ? 1 : 0) + (invoice.Remaining > 0 ? 1 : 0),
+                Net(AccountType.CostOfSales) == cost && Net(AccountType.Inventory) == -cost &&
+                entry.Lines.Count == (invoice.Total > 0 ? 1 : 0) + (invoice.Paid > 0 ? 1 : 0) + (invoice.Remaining > 0 ? 1 : 0) + (cost > 0 ? 2 : 0),
             LedgerEntryKind.InvoiceCancellation => invoice.Status == InvoiceStatus.Cancelled && invoice.Remaining == 0 && invoice.Paid > 0 &&
                 await store.GetInvoiceCreditBalanceAsync(id, AccountType.CustomerAdvances, ct) == invoice.Paid &&
                 Net(AccountType.CustomerAdvances) == invoice.Paid && Net(AccountType.CustomerRefunds) == -invoice.Paid && entry.Lines.Count == 2,

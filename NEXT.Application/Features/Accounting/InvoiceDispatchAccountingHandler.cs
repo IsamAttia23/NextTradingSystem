@@ -35,7 +35,9 @@ public sealed class InvoiceDispatchAccountingHandler(IReadRepository<Payment> pa
             item.PostedAt != null && item.PaymentId.HasValue && ids.Contains(item.PaymentId.Value) &&
             !reversals.Any(reversal => reversal.ReversesEntryId == item.Id), ct) != ids.Length)
             throw new ConflictException("AccountingInvoiceReviewRequired");
-        if (invoice.TotalAmount == 0) return;
+        var inventory = await ledger.GetInventorySourceAsync(invoice.Id, true, ct);
+        if (!inventory.IsValidSource) throw new ConflictException("AccountingInventoryPostingMismatch");
+        if (invoice.TotalAmount == 0 && inventory.TotalCost == 0) return;
         DebtItem? debt = null;
         if (invoice.RemainingAmount > 0)
             debt = await debtResolver.ResolveAsync(invoice, notification.ActorId, notification.CustomerId,
@@ -48,7 +50,12 @@ public sealed class InvoiceDispatchAccountingHandler(IReadRepository<Payment> pa
         {
             lines.Add(new(AccountType.Receivables, invoice.RemainingAmount, 0, invoice.CustomerId, debt!.Id));
         }
-        lines.Add(new(AccountType.Sales, 0, invoice.TotalAmount, invoice.CustomerId));
+        if (invoice.TotalAmount > 0) lines.Add(new(AccountType.Sales, 0, invoice.TotalAmount, invoice.CustomerId));
+        if (inventory.TotalCost > 0)
+        {
+            lines.Add(new(AccountType.CostOfSales, inventory.TotalCost, 0, invoice.CustomerId));
+            lines.Add(new(AccountType.Inventory, 0, inventory.TotalCost, invoice.CustomerId));
+        }
         await posting.PostAsync(new(notification.OperationId, LedgerEntryKind.SalesRecognition, AccountingReferenceType.Invoice,
             invoice.Id, notification.Date, AccountingDescriptions.InvoiceSale, lines, invoice.Id), ct);
     }

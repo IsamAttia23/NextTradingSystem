@@ -38,7 +38,7 @@ internal static class AccountingWriteGuard
                 if (entry.State != EntityState.Added) throw new ConflictException("AccountingFixedAccountsImmutable");
                 var expected = Enum.IsDefined(account.Type) ? Account.Create(account.Type) : null;
                 if (expected is null || account.Id != expected.Id || account.Code != expected.Code || account.Name != expected.Name ||
-                    account.NormalSide != expected.NormalSide || account.IsTechnical != expected.IsTechnical)
+                    account.NormalSide != expected.NormalSide || account.IsTechnical != expected.IsTechnical || account.Category != expected.Category)
                     throw new ConflictException("AccountingFixedAccountsImmutable");
             }
             if (entry.Entity is AccountTransaction line)
@@ -58,6 +58,8 @@ internal static class AccountingWriteGuard
                     ledger.PostedAt is null || entry.Properties.Any(property => property.IsModified && property.Metadata.Name != nameof(LedgerEntry.PostedAt)))
                     throw new ConflictException("AccountingEntryImmutable");
             }
+            if (entry.Entity is StockMovement && entry.State != EntityState.Added)
+                throw new ConflictException("AccountingPostedInventoryImmutable");
             if (entry.Entity is DebtItem && entry.State != EntityState.Added)
                 throw new ConflictException("AccountingEntryImmutable");
             if (entry.Entity is CustomerDebtAccount && (entry.State == EntityState.Deleted ||

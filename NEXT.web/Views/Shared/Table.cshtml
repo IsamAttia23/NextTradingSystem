@@ -18,6 +18,10 @@
         <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button>
     }
 </section>
+@if (Model.SectionLabel == "FinanceGroup")
+{
+    <partial name="_FinanceNavigation" />
+}
 @if (ViewData["Sections"] is string[] sections)
 {
     <nav class="section-tabs" aria-label="@L["RecycleBin"]">

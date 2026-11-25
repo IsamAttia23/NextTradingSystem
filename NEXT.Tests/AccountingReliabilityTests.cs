@@ -141,7 +141,7 @@ public sealed class AccountingReliabilityTests
             """);
         var error = await Assert.ThrowsAsync<PostgresException>(() => transaction.CommitAsync());
         Assert.Equal("23514", error.SqlState);
-        Assert.Contains("AccountingInvoicePostingMismatch", error.MessageText);
+        Assert.Contains("AccountingInventoryPostingMismatch", error.MessageText);
     }
 
     private static Task<HttpResponseMessage> Post(HttpClient client, Invoice invoice, string token, string action,

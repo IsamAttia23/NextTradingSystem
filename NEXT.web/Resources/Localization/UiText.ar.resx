@@ -849,4 +849,25 @@
   <data name="AccountingPostingDateInvalid" xml:space="preserve"><value>اختر تاريخ ترحيل صحيحًا لا يتجاوز تاريخ اليوم.</value></data>
   <data name="AccountingUseSourceCorrection" xml:space="preserve"><value>صحّح المستند المصدر؛ لا يمكن عكس قيده منفصلًا عن الفاتورة أو الدفعة أو الدين.</value></data>
   <data name="AccountingRecognizedInvoiceImmutable" xml:space="preserve"><value>لا يمكن تغيير بيانات فاتورة أُثبتت مبيعاتها. استخدم مستند التصحيح أو المرتجع.</value></data>
+  <data name="FinancialAccountInventory" xml:space="preserve"><value>المخزون</value></data>
+  <data name="FinancialAccountCostOfSales" xml:space="preserve"><value>تكلفة المبيعات</value></data>
+  <data name="FinancialAccountGoodsReceivedNotInvoiced" xml:space="preserve"><value>بضاعة مستلمة غير مفوترة</value></data>
+  <data name="FinancialAccountPayables" xml:space="preserve"><value>الموردون</value></data>
+  <data name="AccountingCategory" xml:space="preserve"><value>تصنيف الحساب</value></data>
+  <data name="AccountingCategoryAsset" xml:space="preserve"><value>أصول</value></data>
+  <data name="AccountingCategoryLiability" xml:space="preserve"><value>التزامات</value></data>
+  <data name="AccountingCategoryEquity" xml:space="preserve"><value>حقوق ملكية</value></data>
+  <data name="AccountingCategoryRevenue" xml:space="preserve"><value>إيرادات</value></data>
+  <data name="AccountingCategoryExpense" xml:space="preserve"><value>مصروفات</value></data>
+  <data name="AccountingEntryGoodsReceipt" xml:space="preserve"><value>استلام بضاعة / رصيد مخزون افتتاحي</value></data>
+  <data name="AccountingDescriptionGoodsReceipt" xml:space="preserve"><value>استلام بضاعة غير مفوترة</value></data>
+  <data name="AccountingDescriptionInventoryOpening" xml:space="preserve"><value>رصيد مخزون افتتاحي</value></data>
+  <data name="AccountingInventoryPostingMismatch" xml:space="preserve"><value>القيد لا يطابق قيمة أو كميات حركة المخزون.</value></data>
+  <data name="AccountingPostedInventoryImmutable" xml:space="preserve"><value>لا يمكن تعديل حركة مخزون مرحّلة أو حذفها؛ يلزم تصحيح مستندها.</value></data>
+  <data name="InventorySupplierRequired" xml:space="preserve"><value>اختر المورد الذي استُلمت منه البضاعة.</value></data>
+  <data name="InventorySupplierUnavailable" xml:space="preserve"><value>اختر موردًا نشطًا غير محذوف.</value></data>
+  <data name="InventoryCarryingValue" xml:space="preserve"><value>قيمة المخزون (ج.س)</value></data>
+  <data name="InventoryMovementValue" xml:space="preserve"><value>قيمة الحركة (ج.س)</value></data>
+  <data name="AccountingBalanceAtEnd" xml:space="preserve"><value>الرصيد حتى نهاية الفترة المحددة</value></data>
+  <data name="AccountingInventoryTransitionNotice" xml:space="preserve"><value>تعرض الأرصدة القيود المرحّلة. يلزم اعتماد أرصدة المخزون السابقة ضمن مرحلة الأرصدة الافتتاحية قبل المطابقة النهائية.</value></data>
 </root>

@@ -764,7 +764,7 @@ footer {
 }
 
 .table.financial-movements { min-width: 1080px; width: 100%; table-layout: auto; }
-.table.financial-account-balances { min-width: 720px; width: 100%; table-layout: auto; }
+.table.financial-account-balances { min-width: 900px; width: 100%; table-layout: auto; }
 .financial-movements th, .financial-movements td,
 .financial-account-balances th, .financial-account-balances td { text-align: start; vertical-align: middle; }
 .table .numeric-cell { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -2589,4 +2589,18 @@ a.page-number:hover {
     .customer-account-invoices { min-width: 0; table-layout: fixed; }
     .customer-account-invoices th, .customer-account-invoices td { padding: 12px 6px; overflow-wrap: anywhere; }
     .customer-account-invoices .btn { padding: 9px 10px; white-space: normal; }
+}
+
+/* Finance uses the workspace cards, tabs, buttons and table conventions. */
+.finance-tabs { overflow-x: auto; flex-wrap: nowrap; }
+.finance-tabs a { white-space: nowrap; }
+.finance-summary { margin-block-end: 24px; }
+.finance-summary .stat-card > strong { font-size: clamp(21px, 2.2vw, 30px); overflow-wrap: anywhere; }
+.finance-summary strong small { font-size: 12px; font-weight: 500; color: var(--muted); }
+.financial-date-filter { margin-inline: 24px; padding-block-end: 20px; margin-block-end: 18px; border-bottom: 1px solid var(--line); }
+.finance-filter-actions { display: flex; gap: 8px; }
+.finance-balance-note { padding-inline: 24px; color: var(--muted); font-size: 13px; line-height: 1.8; margin-block-end: 16px; }
+@media (max-width: 575.98px) {
+    .finance-filter-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .finance-summary { gap: 12px; }
 }

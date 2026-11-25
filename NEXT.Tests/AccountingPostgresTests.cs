@@ -182,7 +182,7 @@ public sealed class AccountingPostgresTests
         }
         await f.Db.GetService<IMigrator>().MigrateAsync("20261121093105_RemoveAccountingSystem");
         await f.Db.Database.MigrateAsync();
-        Assert.Equal(8, await f.Db.Accounts.CountAsync());
+        Assert.Equal(12, await f.Db.Accounts.CountAsync());
         Assert.Empty(await f.Db.Database.GetPendingMigrationsAsync());
     }
 }

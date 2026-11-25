@@ -849,4 +849,25 @@
   <data name="AccountingPostingDateInvalid" xml:space="preserve"><value>Choose a valid posting date that is not in the future.</value></data>
   <data name="AccountingUseSourceCorrection" xml:space="preserve"><value>Correct the source document; its ledger entry cannot be reversed independently.</value></data>
   <data name="AccountingRecognizedInvoiceImmutable" xml:space="preserve"><value>A recognized invoice cannot be rewritten. Use a correction or return document.</value></data>
+  <data name="FinancialAccountInventory" xml:space="preserve"><value>Inventory</value></data>
+  <data name="FinancialAccountCostOfSales" xml:space="preserve"><value>Cost of sales</value></data>
+  <data name="FinancialAccountGoodsReceivedNotInvoiced" xml:space="preserve"><value>Goods received, not invoiced</value></data>
+  <data name="FinancialAccountPayables" xml:space="preserve"><value>Trade payables</value></data>
+  <data name="AccountingCategory" xml:space="preserve"><value>Account category</value></data>
+  <data name="AccountingCategoryAsset" xml:space="preserve"><value>Assets</value></data>
+  <data name="AccountingCategoryLiability" xml:space="preserve"><value>Liabilities</value></data>
+  <data name="AccountingCategoryEquity" xml:space="preserve"><value>Equity</value></data>
+  <data name="AccountingCategoryRevenue" xml:space="preserve"><value>Revenue</value></data>
+  <data name="AccountingCategoryExpense" xml:space="preserve"><value>Expenses</value></data>
+  <data name="AccountingEntryGoodsReceipt" xml:space="preserve"><value>Goods receipt / inventory opening</value></data>
+  <data name="AccountingDescriptionGoodsReceipt" xml:space="preserve"><value>Goods received pending supplier invoice</value></data>
+  <data name="AccountingDescriptionInventoryOpening" xml:space="preserve"><value>Opening inventory balance</value></data>
+  <data name="AccountingInventoryPostingMismatch" xml:space="preserve"><value>The entry does not match the inventory movement quantity or value.</value></data>
+  <data name="AccountingPostedInventoryImmutable" xml:space="preserve"><value>A posted inventory movement cannot be edited or deleted. Correct its source document.</value></data>
+  <data name="InventorySupplierRequired" xml:space="preserve"><value>Select the supplier who delivered the goods.</value></data>
+  <data name="InventorySupplierUnavailable" xml:space="preserve"><value>Select an active supplier.</value></data>
+  <data name="InventoryCarryingValue" xml:space="preserve"><value>Inventory value (SDG)</value></data>
+  <data name="InventoryMovementValue" xml:space="preserve"><value>Movement value (SDG)</value></data>
+  <data name="AccountingBalanceAtEnd" xml:space="preserve"><value>Balance through the selected period end</value></data>
+  <data name="AccountingInventoryTransitionNotice" xml:space="preserve"><value>Balances reflect posted entries. Existing inventory requires an approved opening balance before final reconciliation.</value></data>
 </root>

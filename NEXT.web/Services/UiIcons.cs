@@ -26,6 +26,7 @@ public static class UiIcons
         "Receive" or "Create" or "CreateUser" or "CreateRole" or "CreatePermission" => "plus",
         "AssignPermission" => "link",
         "Dashboard" => "home",
+        "FinancialAccounts" or "AccountMovements" => "grid",
         "CurrencySettings" => "transfer",
         _ => "grid"
     };

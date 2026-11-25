@@ -116,6 +116,9 @@ namespace NEXT.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -145,15 +148,18 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.ToTable("Accounts", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Accounts_Category", "\"Category\" BETWEEN 1 AND 5");
+
                             t.HasCheckConstraint("CK_Accounts_NormalSide", "\"NormalSide\" IN (0, 1)");
 
-                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 8");
+                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 12");
                         });
 
                     b.HasData(
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000001"),
+                            Category = 4,
                             Code = "SALES",
                             IsTechnical = false,
                             Name = "المبيعات",
@@ -163,6 +169,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000002"),
+                            Category = 5,
                             Code = "PURCHASES",
                             IsTechnical = false,
                             Name = "المشتريات",
@@ -172,6 +179,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000003"),
+                            Category = 5,
                             Code = "EXPENSES",
                             IsTechnical = false,
                             Name = "المنصرفات",
@@ -181,6 +189,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000004"),
+                            Category = 1,
                             Code = "RECEIVABLES",
                             IsTechnical = false,
                             Name = "الديون",
@@ -190,6 +199,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000005"),
+                            Category = 1,
                             Code = "TREASURY",
                             IsTechnical = false,
                             Name = "الخزينة",
@@ -199,6 +209,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000006"),
+                            Category = 2,
                             Code = "CUSTOMER-ADVANCES",
                             IsTechnical = true,
                             Name = "مقدمات العملاء والمستحق للرد",
@@ -208,6 +219,7 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000007"),
+                            Category = 3,
                             Code = "OPENING-BALANCES",
                             IsTechnical = true,
                             Name = "مقابل الأرصدة الافتتاحية",
@@ -217,11 +229,52 @@ namespace NEXT.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("a1100000-0000-0000-0000-000000000008"),
+                            Category = 2,
                             Code = "CUSTOMER-REFUNDS",
                             IsTechnical = false,
                             Name = "المردودات المستحقة للعملاء",
                             NormalSide = 1,
                             Type = 8
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000009"),
+                            Category = 1,
+                            Code = "INVENTORY",
+                            IsTechnical = false,
+                            Name = "المخزون",
+                            NormalSide = 0,
+                            Type = 9
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000010"),
+                            Category = 5,
+                            Code = "COST-OF-SALES",
+                            IsTechnical = false,
+                            Name = "تكلفة المبيعات",
+                            NormalSide = 0,
+                            Type = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000011"),
+                            Category = 2,
+                            Code = "GOODS-RECEIVED",
+                            IsTechnical = false,
+                            Name = "بضاعة مستلمة غير مفوترة",
+                            NormalSide = 1,
+                            Type = 11
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000012"),
+                            Category = 2,
+                            Code = "PAYABLES",
+                            IsTechnical = false,
+                            Name = "الموردون",
+                            NormalSide = 1,
+                            Type = 12
                         });
                 });
 
@@ -1037,7 +1090,7 @@ namespace NEXT.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 7 AND \"ReferenceType\" BETWEEN 1 AND 4");
+                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 8 AND \"ReferenceType\" BETWEEN 1 AND 5");
 
                             t.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");
 
@@ -1658,6 +1711,10 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<decimal>("TotalCost")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1674,7 +1731,10 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasIndex("ProductId", "WarehouseId")
                         .IsUnique();
 
-                    b.ToTable("Stocks", (string)null);
+                    b.ToTable("Stocks", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Stocks_TotalCost", "\"TotalCost\" >= 0 AND (\"Quantity\" <> 0 OR \"TotalCost\" = 0)");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.StockMovement", b =>
@@ -1705,6 +1765,13 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<string>("ReferenceType")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
@@ -1723,6 +1790,8 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SupplierId");
+
                     b.HasIndex("WarehouseId");
 
                     b.HasIndex("ReferenceId", "Type")
@@ -1731,7 +1800,10 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasIndex("ProductId", "WarehouseId", "CreatedAt");
 
-                    b.ToTable("StockMovements", (string)null);
+                    b.ToTable("StockMovements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_StockMovements_TotalCost", "\"TotalCost\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Supplier", b =>
@@ -2573,6 +2645,11 @@ namespace NEXT.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("NEXT.Domain.Entities.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NEXT.Domain.Entities.Warehouse", "Warehouse")
                         .WithMany("StockMovements")
                         .HasForeignKey("WarehouseId")
@@ -2580,6 +2657,8 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+
+                    b.Navigation("Supplier");
 
                     b.Navigation("Warehouse");
                 });
