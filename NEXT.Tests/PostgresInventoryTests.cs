@@ -472,7 +472,7 @@ public sealed class PostgresInventoryTests
         var user = await db.Users.SingleAsync(item => item.UserName == "ui-admin");
         var invoice = new Invoice
         {
-            InvoiceNumber = "FAIL-PAYMENT", UserId = user.Id, WarehouseId = fixture.Source, TotalAmount = 10,
+            InvoiceNumber = "FAIL-PAYMENT", CustomerName = "Payment rollback customer", UserId = user.Id, WarehouseId = fixture.Source, TotalAmount = 10,
             RemainingAmount = 10, Items = [new InvoiceItem { ProductId = fixture.Product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }]
         };
         db.AddRange(invoice, new Stock { ProductId = fixture.Product, WarehouseId = fixture.Source, Quantity = 5 });

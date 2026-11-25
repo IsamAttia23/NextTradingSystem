@@ -27,9 +27,31 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
 
     public async Task<PaymentPostingState?> FindPaymentAsync(Guid id, CancellationToken ct)
     {
-        var payment = db.Payments.Local.FirstOrDefault(item => item.Id == id) ??
-            await db.Payments.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, ct);
-        return payment is null ? null : new(payment.InvoiceId, payment.CustomerId, payment.Amount, payment.PaymentType, payment.PaymentDate);
+        RequireTransaction();
+        var pending = db.ChangeTracker.Entries<Payment>().SingleOrDefault(item => item.Entity.Id == id && item.State == EntityState.Added)?.Entity;
+        var query = db.Database.IsNpgsql()
+            ? db.Payments.FromSqlInterpolated($"SELECT * FROM \"Payments\" WHERE \"Id\" = {id} FOR UPDATE")
+            : db.Payments.Where(item => item.Id == id);
+        var payment = pending ?? await query.AsNoTracking().SingleOrDefaultAsync(ct);
+        return payment is null ? null : new(payment.InvoiceId, payment.CustomerId, payment.Amount, payment.PaymentType, payment.PaymentDate, payment.Purpose);
+    }
+
+    public async Task<InvoicePostingState?> LockInvoiceAsync(Guid id, CancellationToken ct)
+    {
+        RequireTransaction();
+        var query = db.Database.IsNpgsql()
+            ? db.Invoices.FromSqlInterpolated($"SELECT * FROM \"Invoices\" WHERE \"Id\" = {id} FOR UPDATE")
+            : db.Invoices.Where(item => item.Id == id);
+        var invoice = await query.AsTracking().SingleOrDefaultAsync(ct);
+        return invoice is null ? null : new(invoice.Id, invoice.Type, invoice.Status, invoice.TotalAmount,
+            invoice.PaidAmount, invoice.RemainingAmount, invoice.CustomerId, invoice.TaxAmount, invoice.LegacyInvoiceTypeCode, invoice.ParentInvoiceId, invoice.InvoiceDate);
+    }
+
+    public async Task<decimal> GetInvoiceCreditBalanceAsync(Guid id, NEXT.Domain.Enums.AccountType account, CancellationToken ct)
+    {
+        var accountId = Account.IdFor(account);
+        return await db.AccountTransactions.Where(line => line.AccountId == accountId && line.LedgerEntry.InvoiceId == id &&
+            line.LedgerEntry.PostedAt != null).SumAsync(line => (decimal?)(line.Credit - line.Debit), ct) ?? 0;
     }
 
     public async Task<IReadOnlyList<DebtPostingState>> LockDebtsAsync(Guid[] ids, CancellationToken ct)
@@ -45,7 +67,7 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
             .ToDictionaryAsync(item => item.Id, item => item.Balance, ct);
         return items.Select(item => new DebtPostingState(item.Id, item.DebtAccount.CustomerId,
             item.DebtAccount.Customer.IsActive && !item.DebtAccount.Customer.DeletedAt.HasValue,
-            item.DebtAccount.Customer.Phone, item.Kind, item.OriginalAmount, totals.GetValueOrDefault(item.Id))).ToArray();
+            item.DebtAccount.Customer.Phone, item.Kind, item.OriginalAmount, totals.GetValueOrDefault(item.Id), item.InvoiceId)).ToArray();
     }
 
     public async Task AppendAsync(LedgerEntry entry, DateTimeOffset postedAt, CancellationToken ct)

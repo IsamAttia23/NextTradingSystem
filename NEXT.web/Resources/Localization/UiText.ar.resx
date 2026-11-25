@@ -844,4 +844,9 @@
   <data name="AccountingDescriptionInvoiceReceipt" xml:space="preserve"><value>سداد من قيمة فاتورة رقم {0}</value></data>
   <data name="AccountingDescriptionInvoiceCancellation" xml:space="preserve"><value>رصيد مستحق للرد عن إلغاء الفاتورة {0}</value></data>
   <data name="AccountingDescriptionInvoiceRefund" xml:space="preserve"><value>رد مبلغ عن الفاتورة الملغاة {0}</value></data>
+  <data name="AccountingInvoicePostingMismatch" xml:space="preserve"><value>القيد لا يطابق الفاتورة أو العميل أو التسوية المالية المسجلة.</value></data>
+  <data name="AccountingPostedPaymentImmutable" xml:space="preserve"><value>لا يمكن تعديل دفعة مرحّلة أو حذفها. استخدم مسار تصحيح المستند.</value></data>
+  <data name="AccountingPostingDateInvalid" xml:space="preserve"><value>اختر تاريخ ترحيل صحيحًا لا يتجاوز تاريخ اليوم.</value></data>
+  <data name="AccountingUseSourceCorrection" xml:space="preserve"><value>صحّح المستند المصدر؛ لا يمكن عكس قيده منفصلًا عن الفاتورة أو الدفعة أو الدين.</value></data>
+  <data name="AccountingRecognizedInvoiceImmutable" xml:space="preserve"><value>لا يمكن تغيير بيانات فاتورة أُثبتت مبيعاتها. استخدم مستند التصحيح أو المرتجع.</value></data>
 </root>

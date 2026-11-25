@@ -18,6 +18,8 @@ public sealed class AccountingReversalService(IAccountingStore store, IAccountin
         RequestValidation.Identifier(input.EntryId, nameof(input.EntryId));
         var reason = RequestValidation.Text(input.Reason, nameof(input.Reason), 500);
         var original = await store.FindEntryAsync(input.EntryId, ct) ?? throw new NotFoundException("AccountingEntryNotFound");
+        if (original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
+            throw new ConflictException("AccountingUseSourceCorrection");
         if (original.PostedAt is null || original.Kind == LedgerEntryKind.Reversal)
             throw new ConflictException("AccountingReversalUnavailable");
         var types = Account.SeedData().ToDictionary(item => item.Id, item => item.Type);

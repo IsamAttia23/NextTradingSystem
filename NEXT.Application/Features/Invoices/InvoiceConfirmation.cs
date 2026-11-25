@@ -10,13 +10,15 @@ using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
 using MediatR;
 using NEXT.Application.Features.Invoices.Events;
+using NEXT.Application.Features.Accounting;
 
 namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoiceRepository invoices,
     IRepository<InvoiceStatusHistory> history, IRepository<Payment> payments, IReadRepository<Warehouse> warehouses,
     IReadRepository<Product> products, ICurrentUserService currentUser, IUserQueryService users,
-    IInvoiceStateMachine stateMachine, IUnitOfWork unitOfWork, TimeProvider clock, IQueryExecutor executor, IPublisher publisher)
+    IInvoiceStateMachine stateMachine, IUnitOfWork unitOfWork, TimeProvider clock, IQueryExecutor executor, IPublisher publisher,
+    InvoiceCustomerResolver customerResolver)
 {
     public Task<Guid> ConfirmAsync(Guid id, ConfirmInvoiceInput input, CancellationToken ct)
     {
@@ -41,7 +43,8 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
             if (previous is not null)
             {
                 if (previous.FromStatus != InvoiceStatus.Pending || previous.ToStatus != InvoiceStatus.Confirmed ||
-                    previous.ActorId != actor.Id || previous.PaymentAmount != input.Amount || previous.PaymentMethod != selectedMethod)
+                    previous.ActorId != actor.Id || previous.PaymentAmount != input.Amount || previous.PaymentMethod != selectedMethod ||
+                    (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
                     throw new ConflictException("InvoiceConfirmationConflict");
                 return invoice.Id;
             }
@@ -72,6 +75,7 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
             }
 
             var quantities = RequiredQuantities(invoice);
+            await customerResolver.ResolveAsync(invoice, input.CustomerId, null, false, token);
             var productIds = quantities.Keys.Order().ToArray();
             if (await products.CountAsync(item => productIds.Contains(item.Id) && item.IsActive, token) != quantities.Count)
                 RequestValidation.Fail("Lines", "InvoiceProductUnavailable");

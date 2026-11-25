@@ -29,7 +29,7 @@ public sealed class InvoiceCancellationTests
         async Task<HttpResponseMessage> Edit(Invoice value, Guid op, string quantity = "1", string notes = "Updated notes", string name = "Cancellation customer") =>
             await WorkspaceUiTests.Post(client, $"/Invoices/Edit/{value.Id}", token,
                 ("OperationId", op.ToString()), ("RowVersion", Convert.ToBase64String(value.RowVersion)),
-                ("CustomerName", name), ("Notes", notes), ("DiscountType", "FixedAmount"), ("DiscountValue", "1"),
+                ("CustomerName", name), ("CustomerId", value.CustomerId?.ToString() ?? ""), ("Notes", notes), ("DiscountType", "FixedAmount"), ("DiscountValue", "1"),
                 ("Lines[0].ProductId", f.Product.ToString()), ("Lines[0].Quantity", quantity), ("Lines[0].QuotedUnitPrice", "5"),
                 ("Lines[1].ProductId", f.Product.ToString()), ("Lines[1].Quantity", "2"), ("Lines[1].QuotedUnitPrice", "5"));
         using (var edited = await Edit(invoice, operation)) await Success(edited);
@@ -47,11 +47,13 @@ public sealed class InvoiceCancellationTests
         var payToken = WorkspaceUiTests.Token(await client.GetStringAsync($"/Invoices/RecordPayment/{invoice.Id}"));
         using (var paid = await Money(client, saved, payToken, Guid.NewGuid(), "12")) await Success(paid);
         saved = await Reload(f);
+        var paidCustomerId = saved.CustomerId;
+        Assert.NotNull(paidCustomerId);
         f.Db.Customers.Add(new Customer { Name = "Cancellation customer" });
         await f.Db.SaveChangesAsync();
         using (var prepaidEdit = await Edit(saved, Guid.NewGuid(), notes: "Prepaid edit")) await Success(prepaidEdit);
         saved = await Reload(f);
-        Assert.Null(saved.CustomerId); // A newly matching customer must not silently reassign existing receipts.
+        Assert.Equal(paidCustomerId, saved.CustomerId); // A duplicate name must not reassign posted receipts.
         using (var belowPaid = await Edit(saved, Guid.NewGuid(), quantity: "0.1")) Assert.Equal(HttpStatusCode.BadRequest, belowPaid.StatusCode);
         using (var otherCustomer = await Edit(saved, Guid.NewGuid(), name: "Another customer")) Assert.Equal(HttpStatusCode.BadRequest, otherCustomer.StatusCode);
         var confirmToken = WorkspaceUiTests.Token(await client.GetStringAsync($"/Invoices/Confirm/{invoice.Id}"));

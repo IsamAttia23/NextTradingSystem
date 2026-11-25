@@ -12,6 +12,8 @@ public interface IAccountingStore
     Task<LedgerEntry?> FindEntryAsync(Guid id, CancellationToken ct);
     Task<bool> HasReversalAsync(Guid entryId, CancellationToken ct);
     Task<PaymentPostingState?> FindPaymentAsync(Guid id, CancellationToken ct);
+    Task<InvoicePostingState?> LockInvoiceAsync(Guid id, CancellationToken ct);
+    Task<decimal> GetInvoiceCreditBalanceAsync(Guid id, NEXT.Domain.Enums.AccountType account, CancellationToken ct);
     Task<IReadOnlyList<DebtPostingState>> LockDebtsAsync(Guid[] ids, CancellationToken ct);
     Task AppendAsync(LedgerEntry entry, DateTimeOffset postedAt, CancellationToken ct);
 }

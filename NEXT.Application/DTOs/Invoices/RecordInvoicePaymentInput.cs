@@ -6,6 +6,7 @@ namespace NEXT.Application.DTOs.Invoices;
 public sealed class RecordInvoicePaymentInput
 {
     public Guid OperationId { get; set; }
+    public Guid? CustomerId { get; set; }
     [Required]
     public byte[] RowVersion { get; set; } = [];
     public decimal Amount { get; set; }

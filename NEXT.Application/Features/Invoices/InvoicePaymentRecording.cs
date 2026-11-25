@@ -10,13 +10,14 @@ using NEXT.Domain.Enums;
 using NEXT.Domain.Services;
 using MediatR;
 using NEXT.Application.Features.Invoices.Events;
+using NEXT.Application.Features.Accounting;
 
 namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IInvoiceRepository invoices,
     IRepository<Payment> payments, IReadRepository<InvoiceStatusHistory> history,
     ICurrentUserService currentUser, IUserQueryService users, IUnitOfWork unitOfWork,
-    IQueryExecutor executor, TimeProvider clock, IPublisher publisher)
+    IQueryExecutor executor, TimeProvider clock, IPublisher publisher, InvoiceCustomerResolver customerResolver)
 {
     public Task<Guid> RecordAsync(Guid id, RecordInvoicePaymentInput input, CancellationToken ct)
     {
@@ -43,7 +44,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             {
                 if (previous.InvoiceId != id || previous.CreatedBy != actor.Id ||
                     previous.PaymentType != PaymentType.Receipt || previous.Amount != input.Amount ||
-                    previous.PaymentMethod != input.PaymentMethod)
+                    previous.PaymentMethod != input.PaymentMethod || (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
                     throw new ConflictException("InvoicePaymentConflict");
                 return id;
             }
@@ -60,6 +61,8 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
                 throw new ConflictException("InvoicePaymentConflict");
             if (input.Amount > invoice.RemainingAmount)
                 RequestValidation.Fail(nameof(input.Amount), "InvoiceLaterPaymentInvalid");
+
+            await customerResolver.ResolveAsync(invoice, input.CustomerId, null, false, token);
 
             var paid = invoice.PaidAmount + input.Amount;
             var status = InvoicePaymentRules.Status(invoice.TotalAmount, paid);

@@ -7,18 +7,7 @@
     @if (Model.PaidAmount > 0)
     {
         <div class="alert alert-info">@L["InvoiceCancellationCreditNotice"] <strong><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></strong></div>
-        @if (Model.CustomerId is null && Model.DebtCustomerCandidates.Count > 0)
-        {
-            <label class="form-label w-100">@L["CustomerName"]
-                <select name="CustomerId" class="form-select" required>
-                    <option value="">@L["AccountingChooseInvoiceCustomer"]</option>
-                    @foreach (var customer in Model.DebtCustomerCandidates)
-                    {
-                        <option value="@customer.Id">@customer.Name · @customer.Phone</option>
-                    }
-                </select>
-            </label>
-        }
+        <partial name="_InvoiceCustomerSelection" model="Model" />
     }
     <label class="form-label w-100">@L["InvoiceCancellationReason"]
         <textarea name="Reason" class="form-control" required maxlength="500" rows="3"></textarea>

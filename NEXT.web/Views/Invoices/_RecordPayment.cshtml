@@ -7,6 +7,7 @@
     <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
     <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
     <p><bdi>@Model.Summary.Number</bdi> · <bdi>@Model.Summary.CustomerName</bdi></p>
+    <partial name="_InvoiceCustomerSelection" model="Model" />
     <dl class="invoice-totals mt-3">
         <dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd>
         <dt>@L["PaidAmount"]</dt><dd><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></dd>

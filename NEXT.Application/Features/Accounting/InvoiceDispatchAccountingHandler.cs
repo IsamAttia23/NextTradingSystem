@@ -12,7 +12,8 @@ using NEXT.Domain.Services;
 namespace NEXT.Application.Features.Accounting;
 
 public sealed class InvoiceDispatchAccountingHandler(IReadRepository<Payment> payments, IReadRepository<LedgerEntry> entries,
-    IQueryExecutor executor, IAccountingStore ledger, IAccountingPostingService posting, InvoiceDebtResolver debtResolver)
+    IQueryExecutor executor, IAccountingStore ledger, IAccountingPostingService posting, InvoiceDebtResolver debtResolver,
+    InvoiceCustomerResolver customerResolver)
     : INotificationHandler<InvoiceStatusChanged>
 {
     public async Task Handle(InvoiceStatusChanged notification, CancellationToken ct)
@@ -35,13 +36,17 @@ public sealed class InvoiceDispatchAccountingHandler(IReadRepository<Payment> pa
             !reversals.Any(reversal => reversal.ReversesEntryId == item.Id), ct) != ids.Length)
             throw new ConflictException("AccountingInvoiceReviewRequired");
         if (invoice.TotalAmount == 0) return;
+        DebtItem? debt = null;
+        if (invoice.RemainingAmount > 0)
+            debt = await debtResolver.ResolveAsync(invoice, notification.ActorId, notification.CustomerId,
+                notification.CustomerPhone, notification.Date, ct);
+        else
+            await customerResolver.ResolveAsync(invoice, notification.CustomerId, null, false, ct);
         var lines = new List<PostingLineDto>();
         if (invoice.PaidAmount > 0) lines.Add(new(AccountType.CustomerAdvances, invoice.PaidAmount, 0, invoice.CustomerId));
         if (invoice.RemainingAmount > 0)
         {
-            var debt = await debtResolver.ResolveAsync(invoice, notification.ActorId, notification.CustomerId,
-                notification.CustomerPhone, notification.Date, ct);
-            lines.Add(new(AccountType.Receivables, invoice.RemainingAmount, 0, invoice.CustomerId, debt.Id));
+            lines.Add(new(AccountType.Receivables, invoice.RemainingAmount, 0, invoice.CustomerId, debt!.Id));
         }
         lines.Add(new(AccountType.Sales, 0, invoice.TotalAmount, invoice.CustomerId));
         await posting.PostAsync(new(notification.OperationId, LedgerEntryKind.SalesRecognition, AccountingReferenceType.Invoice,

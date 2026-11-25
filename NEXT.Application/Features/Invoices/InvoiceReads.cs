@@ -14,7 +14,8 @@ namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator,
     IReadRepository<InvoiceStatusHistory> history, IQueryExecutor executor, IReadRepository<Payment> payments,
-    IInvoiceStateMachine stateMachine, IReadRepository<Customer> customers, IReadRepository<AccountTransaction> movements)
+    IInvoiceStateMachine stateMachine, IReadRepository<Customer> customers, IReadRepository<AccountTransaction> movements,
+    IReadRepository<LedgerEntry> ledger)
 {
     public Task<TPaginationQueryModel<InvoiceSummary>> ListAsync(InvoiceQueryModel query, CancellationToken ct)
     {
@@ -50,8 +51,15 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
             ? (await executor.ToListAsync(movements.Query(line => line.AccountId == refundAccount && line.LedgerEntry.InvoiceId == id &&
                 line.LedgerEntry.PostedAt != null).Select(line => new { Amount = line.Credit - line.Debit }), ct)).Sum(item => item.Amount) : 0;
         var transitions = salesInvoice ? stateMachine.GetAllowedTransitions(invoice.Status) : Array.Empty<InvoiceStatus>();
+        var revenueConsistent = true;
+        if (salesInvoice && invoice.Status is (InvoiceStatus.Shipped or InvoiceStatus.Delivered) && invoice.RemainingAmount > 0)
+        {
+            var reversals = ledger.Query(item => item.ReversesEntryId != null);
+            revenueConsistent = await ledger.AnyAsync(item => item.InvoiceId == id && item.Kind == LedgerEntryKind.SalesRecognition &&
+                item.PostedAt != null && !reversals.Any(reversal => reversal.ReversesEntryId == item.Id), ct);
+        }
         var normalizedName = invoice.CustomerName?.Trim().ToUpperInvariant();
-        var candidates = invoice.CustomerId is null && (invoice.RemainingAmount > 0 || invoice.PaidAmount > 0) && normalizedName is not null
+        var candidates = invoice.CustomerId is null && (invoice.RemainingAmount > 0 || invoice.PaidAmount > 0 || transitions.Contains(InvoiceStatus.Confirmed)) && normalizedName is not null
             ? await executor.ToListAsync(customers.Query(customer => customer.IsActive && customer.Name.ToUpper() == normalizedName)
                 .OrderBy(customer => customer.Id).Select(customer => new InvoiceCustomerOption(customer.Id, customer.Name, customer.Phone)), ct)
             : Array.Empty<InvoiceCustomerOption>();
@@ -66,7 +74,7 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
             CanCancel = transitions.Contains(InvoiceStatus.Cancelled),
             RefundedAmount = refunds.Sum(item => item.Amount), RefundableAmount = refundBalance, Refunds = refunds,
             FulfillmentTargets = transitions.Where(status => status is InvoiceStatus.Shipped or InvoiceStatus.Delivered).ToArray(),
-            CanRecordPayment = salesInvoice && invoice.Status != InvoiceStatus.Cancelled && InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount),
+            CanRecordPayment = salesInvoice && revenueConsistent && invoice.Status != InvoiceStatus.Cancelled && InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount),
             CustomerId = invoice.CustomerId, Notes = invoice.Notes,
             CustomerPhone = invoice.Customer?.Phone, DebtCustomerCandidates = candidates,
             LastActionAt = invoice.LastActionAt, History = entries, Payments = receipts

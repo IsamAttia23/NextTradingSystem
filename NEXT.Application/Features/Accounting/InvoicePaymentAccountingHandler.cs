@@ -19,6 +19,8 @@ public sealed class InvoicePaymentAccountingHandler(IAccountingStore ledger, IAc
         var payment = notification.Payment;
         var recognition = await ledger.FindSourceAsync(LedgerEntry.Key(LedgerEntryKind.SalesRecognition,
             AccountingReferenceType.Invoice, invoice.Id), ct);
+        if (recognition is null && invoice.Status is (InvoiceStatus.Shipped or InvoiceStatus.Delivered))
+            throw new ConflictException("AccountingInvoiceReviewRequired");
         DebtItem? debt = null;
         var credit = AccountType.CustomerAdvances;
         if (recognition is not null)

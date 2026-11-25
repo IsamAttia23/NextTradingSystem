@@ -844,4 +844,9 @@
   <data name="AccountingDescriptionInvoiceReceipt" xml:space="preserve"><value>Payment against invoice {0}</value></data>
   <data name="AccountingDescriptionInvoiceCancellation" xml:space="preserve"><value>Refund due for cancelled invoice {0}</value></data>
   <data name="AccountingDescriptionInvoiceRefund" xml:space="preserve"><value>Refund for cancelled invoice {0}</value></data>
+  <data name="AccountingInvoicePostingMismatch" xml:space="preserve"><value>The journal entry does not match the invoice, customer or recorded settlement.</value></data>
+  <data name="AccountingPostedPaymentImmutable" xml:space="preserve"><value>A posted payment cannot be changed or deleted. Use the source correction workflow.</value></data>
+  <data name="AccountingPostingDateInvalid" xml:space="preserve"><value>Choose a valid posting date that is not in the future.</value></data>
+  <data name="AccountingUseSourceCorrection" xml:space="preserve"><value>Correct the source document; its ledger entry cannot be reversed independently.</value></data>
+  <data name="AccountingRecognizedInvoiceImmutable" xml:space="preserve"><value>A recognized invoice cannot be rewritten. Use a correction or return document.</value></data>
 </root>

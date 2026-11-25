@@ -172,7 +172,7 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
         try
         {
             transaction = await PersistenceTransaction.BeginAsync(this, cancellationToken);
-            AccountingWriteGuard.Validate(this);
+            await AccountingWriteGuard.ValidateAsync(this, cancellationToken);
             var pending = trackedChangesProcessor.Prepare(this);
             var result = await base.SaveChangesAsync(false, cancellationToken);
             var written = state.Capture();

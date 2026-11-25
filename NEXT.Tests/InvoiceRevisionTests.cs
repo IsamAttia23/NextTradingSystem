@@ -23,8 +23,23 @@ public sealed class InvoiceRevisionTests
         await WorkspaceUiTests.Login(client, "ui-admin");
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
-        var invoice = await Seed(db, status);
+        var invoice = await Seed(db, status is InvoiceStatus.Shipped or InvoiceStatus.Delivered ? InvoiceStatus.Confirmed : status);
+        if (status is InvoiceStatus.Shipped or InvoiceStatus.Delivered)
+        {
+            var product = new Product { Name = "Settled lifecycle product" };
+            invoice.Items.Add(new InvoiceItem { Product = product, Quantity = 1, UnitPrice = 10, TotalAmount = 10 });
+            db.Stocks.Add(new Stock { Product = product, WarehouseId = invoice.WarehouseId, Quantity = 1, ReservedQuantity = 1 });
+            await db.SaveChangesAsync();
+            var fulfillmentToken = WorkspaceUiTests.Token(await client.GetStringAsync($"/Invoices/Fulfill/{invoice.Id}"));
+            using var dispatched = await WorkspaceUiTests.Post(client, $"/Invoices/Fulfill/{invoice.Id}", fulfillmentToken,
+                ("OperationId", Guid.NewGuid().ToString()), ("RowVersion", Convert.ToBase64String(invoice.RowVersion)),
+                ("TargetStatus", status.ToString()), ("CustomerPhone", "+249123456789"));
+            Assert.True(dispatched.IsSuccessStatusCode, await dispatched.Content.ReadAsStringAsync());
+            db.ChangeTracker.Clear();
+            invoice = await db.Invoices.SingleAsync();
+        }
         var button = $"data-modal-url=\"/Invoices/RecordPayment/{invoice.Id}\"";
+        var historyBeforePayments = await db.InvoiceStatusHistory.CountAsync();
         Assert.Contains(button, await client.GetStringAsync($"/Invoices/Details/{invoice.Id}"));
         foreach (var amount in new[] { "3", "7" })
         {
@@ -42,7 +57,7 @@ public sealed class InvoiceRevisionTests
         Assert.Equal(0m, invoice.RemainingAmount);
         Assert.Equal(PaymentStatus.Paid, invoice.PaymentStatus);
         Assert.Equal(2, await db.Payments.CountAsync());
-        Assert.Empty(await db.InvoiceStatusHistory.ToListAsync());
+        Assert.Equal(historyBeforePayments, await db.InvoiceStatusHistory.CountAsync());
         using var unavailable = await client.GetAsync($"/Invoices/RecordPayment/{invoice.Id}");
         Assert.Equal(HttpStatusCode.Conflict, unavailable.StatusCode);
     }

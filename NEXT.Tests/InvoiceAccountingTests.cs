@@ -107,7 +107,8 @@ public sealed class InvoiceAccountingTests
         Assert.DoesNotContain("name=\"CustomerPhone\"", form);
         using (var delivered = await Fulfill(client, invoice, WorkspaceUiTests.Token(form), Guid.NewGuid(), InvoiceStatus.Delivered))
             Assert.True(delivered.IsSuccessStatusCode, await delivered.Content.ReadAsStringAsync());
-        Assert.Empty(await f.Db.Customers.ToListAsync());
+        Assert.Single(await f.Db.Customers.ToListAsync());
+        Assert.NotNull(invoice.CustomerId);
         Assert.Empty(await f.Db.CustomerDebtAccounts.ToListAsync());
         Assert.Empty(await f.Db.DebtItems.ToListAsync());
         Assert.Equal(-10m, await Net(f.Db, AccountType.Sales));

@@ -8,6 +8,28 @@ internal static class AccountingWriteGuard
 {
     public static void Validate(NEXTDbContext db)
     {
+        ValidateTrackedEntries(db);
+        var payments = ChangedPayments(db);
+        if (payments.Length > 0 && (HasPendingReferences(db, payments) || db.LedgerEntries.Any(item => item.PostedAt != null && item.PaymentId.HasValue && payments.Contains(item.PaymentId.Value))))
+            throw new ConflictException("AccountingPostedPaymentImmutable");
+    }
+
+    public static async Task ValidateAsync(NEXTDbContext db, CancellationToken ct)
+    {
+        ValidateTrackedEntries(db);
+        var payments = ChangedPayments(db);
+        if (payments.Length > 0 && (HasPendingReferences(db, payments) || await db.LedgerEntries.AnyAsync(item => item.PostedAt != null && item.PaymentId.HasValue && payments.Contains(item.PaymentId.Value), ct)))
+            throw new ConflictException("AccountingPostedPaymentImmutable");
+    }
+
+    private static Guid[] ChangedPayments(NEXTDbContext db) => db.ChangeTracker.Entries<Payment>()
+        .Where(item => item.State is EntityState.Modified or EntityState.Deleted).Select(item => item.Entity.Id).ToArray();
+
+    private static bool HasPendingReferences(NEXTDbContext db, Guid[] payments) => db.ChangeTracker.Entries<LedgerEntry>()
+        .Any(item => item.State == EntityState.Added && item.Entity.PaymentId is { } id && payments.Contains(id));
+
+    private static void ValidateTrackedEntries(NEXTDbContext db)
+    {
         db.ChangeTracker.DetectChanges();
         foreach (var entry in db.ChangeTracker.Entries().Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
         {

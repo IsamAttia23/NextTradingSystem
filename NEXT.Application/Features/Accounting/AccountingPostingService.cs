@@ -18,6 +18,8 @@ public sealed class AccountingPostingService(IAccountingStore store, IUnitOfWork
         ArgumentNullException.ThrowIfNull(input);
         RequestValidation.Identifier(input.OperationId, nameof(input.OperationId));
         RequestValidation.Identifier(input.ReferenceId, nameof(input.ReferenceId));
+        if (input.Date == default || input.Date > DateOnly.FromDateTime(clock.GetLocalNow().DateTime))
+            RequestValidation.Fail(nameof(input.Date), "AccountingPostingDateInvalid");
         if (input.Lines is not { Count: >= 2 and <= 1000 } || input.Lines.Any(line => line is null))
             RequestValidation.Fail(nameof(input.Lines), "AccountingLinesInvalid");
         var normalized = input with { Description = RequestValidation.Text(input.Description, nameof(input.Description), 500),
@@ -29,6 +31,9 @@ public sealed class AccountingPostingService(IAccountingStore store, IUnitOfWork
             var actor = await users.FindUserAsync(currentUser.UserId?.ToString() ?? "", token);
             if (actor is null || !actor.IsActive) RequestValidation.Fail("UserId", "InvoiceActorUnavailable");
             var entry = Build(normalized, actor.Id, RequestValidation.Text(actor.FullName, "ActorName", 200));
+            // Invoice workflows lock their source first; keep the same order for direct application callers.
+            if (entry.InvoiceId is { } invoiceId && await store.LockInvoiceAsync(invoiceId, token) is null)
+                throw new NotFoundException("InvoiceNotFound");
             await store.LockPostingAsync(entry.OperationId, entry.PostingKey, token);
             var previous = await store.FindOperationAsync(entry.OperationId, token);
             if (previous is not null)

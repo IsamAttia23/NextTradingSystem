@@ -7,6 +7,7 @@
     <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
     <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
     <p><bdi>@Model.Summary.Number</bdi> · <bdi>@Model.Summary.CustomerName</bdi></p>
+    <partial name="_InvoiceCustomerSelection" model="Model" />
     <div class="modal-field-grid mt-3">
         <label class="form-label">@L["InvoiceConfirmationPayment"]
             <input name="Amount" class="form-control" type="number" required min="0" step="0.01"
