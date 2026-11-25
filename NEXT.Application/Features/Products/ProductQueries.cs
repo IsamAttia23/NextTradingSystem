@@ -16,7 +16,8 @@ public sealed class ProductQueries(IReadRepository<Product> repository, IQueryEx
     IPaginationServices pagination, IEntityValidator<PaginationQuery> validator, ProductPricing pricing, TypeAdapterConfig mapping)
     : IRequestHandler<GetEntitiesQuery<ProductDto>, TPaginationQueryModel<ProductDto>>,
       IRequestHandler<GetEntityByIdQuery<ProductDto>, ProductDto>,
-      IRequestHandler<GetEntityByIdQuery<ProductEditDto>, ProductEditDto>
+      IRequestHandler<GetEntityByIdQuery<ProductEditDto>, ProductEditDto>,
+      IRequestHandler<ProductReportQuery, IReadOnlyList<ProductDto>>
 {
     public Task<ProductDto> Handle(GetEntityByIdQuery<ProductDto> request, CancellationToken ct) =>
         ReadAsync<ProductDto>(request.Id, pricing.ReadMapping, ct);
@@ -34,7 +35,20 @@ public sealed class ProductQueries(IReadRepository<Product> repository, IQueryEx
 
     public async Task<TPaginationQueryModel<ProductDto>> Handle(GetEntitiesQuery<ProductDto> request, CancellationToken ct)
     {
-        var query = request.Pagination;
+        var products = await BuildAsync(request.Pagination, ct);
+        return await pagination.GetPagedList(products, request.Pagination, ct);
+    }
+
+    public async Task<IReadOnlyList<ProductDto>> Handle(ProductReportQuery request, CancellationToken ct)
+    {
+        var products = await BuildAsync(request.Filters, ct);
+        var rows = await executor.ToListAsync(products.OrderBy(p => p.CategoryName).ThenBy(p => p.Name).ThenBy(p => p.Id).Take(10001), ct);
+        if (rows.Count > 10000) RequestValidation.Fail("Filters", "ProductReportTooLarge");
+        return rows;
+    }
+
+    private async Task<IQueryable<ProductDto>> BuildAsync(PaginationQuery query, CancellationToken ct)
+    {
         if (query is null)
         {
             RequestValidation.Fail("Pagination", "Query is required.");
@@ -76,6 +90,6 @@ public sealed class ProductQueries(IReadRepository<Product> repository, IQueryEx
                 : products.OrderBy(price).ThenBy(product => product.Id);
         }
 
-        return await pagination.GetPagedList(products, query, ct);
+        return products;
     }
 }

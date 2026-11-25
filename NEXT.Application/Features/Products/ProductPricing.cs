@@ -29,6 +29,7 @@ public sealed class ProductPricing(ExchangeRateReader rates, TypeAdapterConfig m
     {
         var config = mapping.Clone();
         config.ForType<Product, ProductDto>()
+            .Map(destination => destination.CategoryName, source => source.Category == null ? null : source.Category.Name)
             .Map(destination => destination.CostPrice, source => source.CostPrice * rate)
             .Map(destination => destination.ExchangeRate, source => (decimal?)rate)
             .Map(destination => destination.RetailPrice,

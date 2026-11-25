@@ -38,12 +38,16 @@
 {
     <partial name="_QueryFilters" model="Model" />
 }
-<section class="content-card">
+<section class="content-card @(Model.SectionLabel == "FinanceGroup" ? "finance-compact-card" : null)">
     @if (Model.Rows.Any(row => row.Activation is not null))
     {
         <div hidden data-user-activation-token>@Html.AntiForgeryToken()</div>
     }
     <div class="table-toolbar">
+        @if (Model.Title == "Products")
+        {
+            <a class="btn btn-light" data-native-navigation href="@Url.Action("Print", "ProductReports")@Context.Request.QueryString">@L["ProductPriceReport"]</a>
+        }
         <div>
             <strong>@L["AllRecords"]</strong>
             <span class="count-pill">@Model.TotalCount</span>
@@ -119,6 +123,12 @@
                                 else
                                 {
                                     <bdi>@row.Cells[i]</bdi>
+                                }
+                                @if (i == 1 && row.Details is { Count: > 0 })
+                                {
+                                    <details class="finance-row-details"><summary>@L["Details"]</summary><dl>
+                                    @foreach (var field in row.Details) { <dt>@L[field.Key]</dt><dd><bdi>@field.Value</bdi></dd> }
+                                    </dl></details>
                                 }
                                 @if (i == 0 && row.NameWarning is {} warning)
                                 {

@@ -896,4 +896,8 @@
   <data name="AccountingMatched" xml:space="preserve"><value>متطابق</value></data>
   <data name="AccountingNeedsReview" xml:space="preserve"><value>يحتاج مراجعة</value></data>
   <data name="AccountingPriorBalance" xml:space="preserve"><value>الرصيد السابق</value></data>
+
+  <data name="ProductPriceReport" xml:space="preserve"><value>تقرير أسعار المنتجات</value></data>
+  <data name="UncategorizedProducts" xml:space="preserve"><value>منتجات دون تصنيف</value></data>
+  <data name="ProductReportTooLarge" xml:space="preserve"><value>عدد المنتجات يتجاوز 10000. يرجى تحديد المنتجات باستخدام الفلاتر.</value></data>
 </root>

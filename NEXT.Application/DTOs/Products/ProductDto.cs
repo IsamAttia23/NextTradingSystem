@@ -12,6 +12,8 @@ public sealed class ProductDto : IVersionedRecordDto
     public string Name { get; set; } = "";
     public string? Barcode { get; set; }
     public string? Description { get; set; }
+    [ScaffoldColumn(false)]
+    public string? CategoryName { get; set; }
     public Guid? CategoryId { get; set; }
     public Guid? UnitOfMeasureId { get; set; }
     public Guid? PackagingUnitId { get; set; }

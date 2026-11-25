@@ -896,4 +896,8 @@
   <data name="AccountingMatched" xml:space="preserve"><value>Matched</value></data>
   <data name="AccountingNeedsReview" xml:space="preserve"><value>Needs review</value></data>
   <data name="AccountingPriorBalance" xml:space="preserve"><value>Prior balance</value></data>
+
+  <data name="ProductPriceReport" xml:space="preserve"><value>Product price report</value></data>
+  <data name="UncategorizedProducts" xml:space="preserve"><value>Uncategorized products</value></data>
+  <data name="ProductReportTooLarge" xml:space="preserve"><value>More than 10,000 products match. Please narrow the filters.</value></data>
 </root>

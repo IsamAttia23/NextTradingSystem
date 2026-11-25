@@ -2622,3 +2622,15 @@ a.page-number:hover {
 }
 
 @media (max-width: 575.98px) { .table.financial-reconciliation td:last-child { padding-inline: 40% 12px; } }
+
+.finance-compact-card { padding: 0 24px 24px; }
+.finance-compact-card .table-responsive { border: 1px solid var(--line); border-radius: 12px; }
+.finance-compact-card .table, .finance-account-list .table { min-width: 0; width: 100%; table-layout: fixed; }
+.finance-compact-card :is(td,th) { white-space: normal; overflow-wrap: anywhere; }
+.finance-compact-card .table-scroll-hint { display: none; }
+.finance-compact-card .row-number { width: 42px; }
+.finance-row-details { margin-block-start: 8px; font-size: 12px; }
+.finance-row-details summary { cursor: pointer; color: var(--primary); }
+.finance-row-details dl { margin-block: 8px 0; } .finance-row-details dd { margin: 0 0 8px; }
+.finance-tabs { flex-wrap: wrap; overflow: visible; }
+@media (max-width: 575.98px) { .finance-compact-card { padding: 0 16px 16px; } }
