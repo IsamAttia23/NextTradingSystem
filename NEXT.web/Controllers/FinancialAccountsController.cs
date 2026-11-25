@@ -25,4 +25,7 @@ public sealed class FinancialAccountsController(IAccountingReadService reads, Fi
 
     [HttpGet]
     public IActionResult Treasury() => RedirectToAction(nameof(Movements), new { Account = AccountType.Treasury });
+
+    [HttpGet]
+    public IActionResult Refunds() => RedirectToAction(nameof(Movements), new { Account = AccountType.CustomerRefunds });
 }

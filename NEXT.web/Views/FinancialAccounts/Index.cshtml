@@ -6,7 +6,7 @@
     <div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialAccounts"]</h1><p>@L["FinancialAccountsDescription"]</p></div>
 </section>
 <section class="content-card">
-    <form method="get" class="modal-field-grid mb-3">
+    <form method="get" class="financial-date-filter mb-3" role="search">
         <label class="form-label">@L["From"]<input type="date" name="from" class="form-control" value="@Model.From?.ToString("yyyy-MM-dd")" /></label>
         <label class="form-label">@L["To"]<input type="date" name="to" class="form-control" value="@Model.To?.ToString("yyyy-MM-dd")" /></label>
         <div class="align-self-end"><button class="btn btn-primary" type="submit">@L["Search"]</button></div>
@@ -14,16 +14,16 @@
     <div class="table-responsive" tabindex="0" role="region" aria-label="@L["FinancialAccounts"]">
         <table class="table align-middle financial-account-balances">
             <caption class="visually-hidden">@L["FinancialAccounts"]</caption>
-            <thead><tr><th>@L["Account"]</th><th>@L["AccountingOpeningBalance"]</th><th>@L["AccountingDebit"]</th><th>@L["AccountingCredit"]</th><th>@L["AccountingClosingBalance"]</th><th>@L["Actions"]</th></tr></thead>
+            <thead><tr><th scope="col">@L["Account"]</th><th scope="col" class="numeric-cell">@L["AccountingOpeningBalance"]</th><th scope="col" class="numeric-cell">@L["AccountingDebit"]</th><th scope="col" class="numeric-cell">@L["AccountingCredit"]</th><th scope="col" class="numeric-cell">@L["AccountingClosingBalance"]</th><th scope="col">@L["Actions"]</th></tr></thead>
             <tbody>
             @foreach (var account in Model.Accounts)
             {
                 <tr>
                     <td>@L["FinancialAccount" + account.Type] @if (account.IsTechnical) { <small class="text-muted">(@L["AccountingTechnicalAccount"])</small> }</td>
-                    <td><bdi>@account.OpeningBalance.ToString("N2") SDG</bdi></td>
-                    <td><bdi>@account.Debit.ToString("N2") SDG</bdi></td>
-                    <td><bdi>@account.Credit.ToString("N2") SDG</bdi></td>
-                    <td><bdi>@account.Balance.ToString("N2") SDG</bdi></td>
+                    <td class="numeric-cell" data-label="@L["AccountingOpeningBalance"]"><bdi>@account.OpeningBalance.ToString("N2") SDG</bdi></td>
+                    <td class="numeric-cell" data-label="@L["AccountingDebit"]"><bdi>@account.Debit.ToString("N2") SDG</bdi></td>
+                    <td class="numeric-cell" data-label="@L["AccountingCredit"]"><bdi>@account.Credit.ToString("N2") SDG</bdi></td>
+                    <td class="numeric-cell" data-label="@L["AccountingClosingBalance"]"><bdi>@account.Balance.ToString("N2") SDG</bdi></td>
                     <td><a class="btn btn-sm btn-light" asp-action="Movements" asp-route-Account="@account.Type" asp-route-From="@Model.From?.ToString("yyyy-MM-dd")" asp-route-To="@Model.To?.ToString("yyyy-MM-dd")">@L["AccountMovements"]</a></td>
                 </tr>
             }

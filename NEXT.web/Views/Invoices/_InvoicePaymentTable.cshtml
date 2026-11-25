@@ -1,0 +1,19 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Invoices.InvoicePaymentEntry>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <caption class="visually-hidden">@L["InvoiceTransactionHistory"]</caption>
+                <thead><tr><th scope="col">@L["PaymentNumber"]</th><th scope="col">@L["InvoicePaymentAmount"]</th><th scope="col">@L["PaymentMethod"]</th><th scope="col">@L["InvoicePaymentRecordedAt"]</th><th scope="col">@L["InvoicePaymentRecordedBy"]</th></tr></thead>
+                <tbody>
+                    @foreach (var payment in Model)
+                    {
+                        <tr>
+                            <td><bdi>@payment.Number</bdi></td>
+                            <td><bdi>@payment.Amount.ToString("N2") SDG</bdi></td>
+                            <td>@L[payment.Method.ToString()]</td>
+                            <td><bdi>@payment.RecordedAt.ToLocalTime().ToString("g")</bdi></td>
+                            <td><bdi>@(payment.RecordedByFullName ?? "—")</bdi></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>

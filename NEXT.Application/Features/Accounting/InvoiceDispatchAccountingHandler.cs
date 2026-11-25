@@ -45,6 +45,6 @@ public sealed class InvoiceDispatchAccountingHandler(IReadRepository<Payment> pa
         }
         lines.Add(new(AccountType.Sales, 0, invoice.TotalAmount, invoice.CustomerId));
         await posting.PostAsync(new(notification.OperationId, LedgerEntryKind.SalesRecognition, AccountingReferenceType.Invoice,
-            invoice.Id, notification.Date, "قيمة فاتورة مبيعات رقم " + invoice.InvoiceNumber, lines, invoice.Id), ct);
+            invoice.Id, notification.Date, AccountingDescriptions.InvoiceSale, lines, invoice.Id), ct);
     }
 }

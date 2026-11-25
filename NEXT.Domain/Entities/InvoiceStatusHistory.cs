@@ -14,6 +14,7 @@ public sealed class InvoiceStatusHistory : AuditableEntity<Guid>
     public Guid ActorId { get; set; }
     public string ActorFullName { get; set; } = string.Empty;
     public string? Reason { get; set; }
+    public string? RequestHash { get; set; }
     public decimal PaymentAmount { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
 }

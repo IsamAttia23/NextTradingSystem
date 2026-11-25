@@ -7,5 +7,6 @@ namespace NEXT.Application.Abstractions.Services;
 public interface IAccountingReadService
 {
     Task<IReadOnlyList<AccountSummaryDto>> GetAccountsAsync(DateOnly? from, DateOnly? to, CancellationToken ct);
-    Task<TPaginationQueryModel<AccountTransactionDto>> GetTransactionsAsync(AccountingQuery query, CancellationToken ct);
+    Task<TPaginationQueryModel<AccountTransactionDto>> GetTransactionsAsync(AccountingQuery query, CancellationToken ct,
+        AccountingSearchMatches? translatedSearch = null);
 }

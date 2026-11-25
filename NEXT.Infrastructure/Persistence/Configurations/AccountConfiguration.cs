@@ -10,7 +10,7 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.ToTable("Accounts", table =>
         {
-            table.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 7");
+            table.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 8");
             table.HasCheckConstraint("CK_Accounts_NormalSide", "\"NormalSide\" IN (0, 1)");
         });
         builder.HasKey(x => x.Id);

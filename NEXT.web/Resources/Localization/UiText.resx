@@ -792,7 +792,7 @@
   <data name="FinancialAccountExpenses" xml:space="preserve"><value>Expenses</value></data>
   <data name="FinancialAccountReceivables" xml:space="preserve"><value>Receivables</value></data>
   <data name="FinancialAccountTreasury" xml:space="preserve"><value>Treasury</value></data>
-  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>Customer advances and refunds payable</value></data>
+  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>Customer advances</value></data>
   <data name="FinancialAccountOpeningBalances" xml:space="preserve"><value>Opening balance counterpart</value></data>
   <data name="AccountingEntrySalesRecognition" xml:space="preserve"><value>Sales recognition</value></data>
   <data name="AccountingEntryReceipt" xml:space="preserve"><value>Receipt</value></data>
@@ -810,4 +810,38 @@
   <data name="Account" xml:space="preserve"><value>Account</value></data>
   <data name="Purchases" xml:space="preserve"><value>Purchases</value></data>
   <data name="Expenses" xml:space="preserve"><value>Expenses</value></data>
+  <data name="AccountingEntryInvoiceCancellation" xml:space="preserve"><value>Invoice cancellation credit</value></data>
+  <data name="CancelInvoice" xml:space="preserve"><value>Cancel invoice</value></data>
+  <data name="CustomerRefunds" xml:space="preserve"><value>Customer refunds payable</value></data>
+  <data name="EditInvoice" xml:space="preserve"><value>Edit invoice</value></data>
+  <data name="FinancialAccountCustomerRefunds" xml:space="preserve"><value>Customer refunds payable</value></data>
+  <data name="InvoiceCancellationConflict" xml:space="preserve"><value>The invoice or cancellation request has changed. Refresh and try again.</value></data>
+  <data name="InvoiceCancellationCreditNotice" xml:space="preserve"><value>The amount remains due to the customer. Refund it separately when paid out:</value></data>
+  <data name="InvoiceCancellationNotice" xml:space="preserve"><value>Cancellation releases reserved stock and prevents further payments or dispatch.</value></data>
+  <data name="InvoiceCancellationReason" xml:space="preserve"><value>Reason for cancellation</value></data>
+  <data name="InvoiceCancellationUnavailable" xml:space="preserve"><value>Only pending or confirmed sales invoices can be cancelled.</value></data>
+  <data name="InvoiceChooseRefundMethod" xml:space="preserve"><value>Choose refund payment method</value></data>
+  <data name="InvoiceConfirmRefund" xml:space="preserve"><value>Confirm refund payment</value></data>
+  <data name="InvoiceEditConflict" xml:space="preserve"><value>The invoice or request has changed. Reopen the edit form.</value></data>
+  <data name="InvoiceEdited" xml:space="preserve"><value>Invoice edited</value></data>
+  <data name="InvoiceEditUnavailable" xml:space="preserve"><value>Only pending sales invoices can be edited.</value></data>
+  <data name="InvoiceLinesRequired" xml:space="preserve"><value>Add at least one invoice item.</value></data>
+  <data name="InvoicePaidCustomerImmutable" xml:space="preserve"><value>The customer cannot be changed after receiving a payment.</value></data>
+  <data name="InvoicePriceChanged" xml:space="preserve"><value>A product price has changed. Select it again to refresh the price.</value></data>
+  <data name="InvoiceRefundableAmount" xml:space="preserve"><value>Due to customer</value></data>
+  <data name="InvoiceRefundAmount" xml:space="preserve"><value>Amount to refund</value></data>
+  <data name="InvoiceRefundConflict" xml:space="preserve"><value>The refund or invoice has changed. Reopen the refund form.</value></data>
+  <data name="InvoiceRefundedAmount" xml:space="preserve"><value>Amount refunded</value></data>
+  <data name="InvoiceRefundHistory" xml:space="preserve"><value>Refund history</value></data>
+  <data name="InvoiceRefundInvalid" xml:space="preserve"><value>Enter a positive amount no greater than the refundable balance, with at most two decimals.</value></data>
+  <data name="InvoiceRefundNotice" xml:space="preserve"><value>Confirm only after paying the customer. This records a withdrawal from treasury and reduces the customer refund balance.</value></data>
+  <data name="InvoiceRefundUnavailable" xml:space="preserve"><value>There is no refundable balance for this cancelled invoice.</value></data>
+  <data name="InvoiceTotalBelowPaid" xml:space="preserve"><value>The invoice total cannot be less than the amount already paid.</value></data>
+  <data name="InvoiceTransactionHistory" xml:space="preserve"><value>Payments and refunds</value></data>
+  <data name="RefundInvoice" xml:space="preserve"><value>Refund customer</value></data>
+  <data name="AccountingDescriptionInvoiceSale" xml:space="preserve"><value>Sales value of invoice {0}</value></data>
+  <data name="Search" xml:space="preserve"><value>Search</value></data>
+  <data name="AccountingDescriptionInvoiceReceipt" xml:space="preserve"><value>Payment against invoice {0}</value></data>
+  <data name="AccountingDescriptionInvoiceCancellation" xml:space="preserve"><value>Refund due for cancelled invoice {0}</value></data>
+  <data name="AccountingDescriptionInvoiceRefund" xml:space="preserve"><value>Refund for cancelled invoice {0}</value></data>
 </root>

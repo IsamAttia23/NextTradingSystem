@@ -792,7 +792,7 @@
   <data name="FinancialAccountExpenses" xml:space="preserve"><value>المنصرفات</value></data>
   <data name="FinancialAccountReceivables" xml:space="preserve"><value>الديون</value></data>
   <data name="FinancialAccountTreasury" xml:space="preserve"><value>الخزينة</value></data>
-  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>مقدمات العملاء والمستحق للرد</value></data>
+  <data name="FinancialAccountCustomerAdvances" xml:space="preserve"><value>مقدمات العملاء</value></data>
   <data name="FinancialAccountOpeningBalances" xml:space="preserve"><value>مقابل الأرصدة الافتتاحية</value></data>
   <data name="AccountingEntrySalesRecognition" xml:space="preserve"><value>إثبات مبيعات</value></data>
   <data name="AccountingEntryReceipt" xml:space="preserve"><value>قبض</value></data>
@@ -810,4 +810,38 @@
   <data name="Account" xml:space="preserve"><value>الحساب</value></data>
   <data name="Purchases" xml:space="preserve"><value>المشتريات</value></data>
   <data name="Expenses" xml:space="preserve"><value>المنصرفات</value></data>
+  <data name="AccountingEntryInvoiceCancellation" xml:space="preserve"><value>رصيد إلغاء فاتورة</value></data>
+  <data name="CancelInvoice" xml:space="preserve"><value>إلغاء الفاتورة</value></data>
+  <data name="CustomerRefunds" xml:space="preserve"><value>المردودات المستحقة للعملاء</value></data>
+  <data name="EditInvoice" xml:space="preserve"><value>تعديل الفاتورة</value></data>
+  <data name="FinancialAccountCustomerRefunds" xml:space="preserve"><value>المردودات المستحقة للعملاء</value></data>
+  <data name="InvoiceCancellationConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو طلب الإلغاء. حدّث الصفحة وحاول مجددًا.</value></data>
+  <data name="InvoiceCancellationCreditNotice" xml:space="preserve"><value>يبقى المبلغ مستحقًا للعميل، ويُرد لاحقًا من نافذة مستقلة:</value></data>
+  <data name="InvoiceCancellationNotice" xml:space="preserve"><value>الإلغاء يفك حجز المخزون ويوقف سداد الفاتورة وشحنها.</value></data>
+  <data name="InvoiceCancellationReason" xml:space="preserve"><value>سبب الإلغاء</value></data>
+  <data name="InvoiceCancellationUnavailable" xml:space="preserve"><value>يمكن إلغاء فواتير المبيعات المعلّقة أو المؤكدة فقط.</value></data>
+  <data name="InvoiceChooseRefundMethod" xml:space="preserve"><value>اختر طريقة رد المبلغ</value></data>
+  <data name="InvoiceConfirmRefund" xml:space="preserve"><value>تأكيد رد المبلغ</value></data>
+  <data name="InvoiceEditConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو بيانات الطلب. أعد فتح نموذج التعديل.</value></data>
+  <data name="InvoiceEdited" xml:space="preserve"><value>تم تعديل الفاتورة</value></data>
+  <data name="InvoiceEditUnavailable" xml:space="preserve"><value>يمكن تعديل فواتير المبيعات المعلّقة فقط.</value></data>
+  <data name="InvoiceLinesRequired" xml:space="preserve"><value>أضف بندًا واحدًا على الأقل.</value></data>
+  <data name="InvoicePaidCustomerImmutable" xml:space="preserve"><value>لا يمكن تغيير العميل بعد تسجيل دفعة.</value></data>
+  <data name="InvoicePriceChanged" xml:space="preserve"><value>تغيّر سعر أحد المنتجات. أعد اختياره لتحديث السعر.</value></data>
+  <data name="InvoiceRefundableAmount" xml:space="preserve"><value>المستحق للعميل</value></data>
+  <data name="InvoiceRefundAmount" xml:space="preserve"><value>المبلغ المراد رده</value></data>
+  <data name="InvoiceRefundConflict" xml:space="preserve"><value>تغيّرت الفاتورة أو عملية الرد. أعد فتح نافذة رد المبلغ.</value></data>
+  <data name="InvoiceRefundedAmount" xml:space="preserve"><value>المبلغ المردود</value></data>
+  <data name="InvoiceRefundHistory" xml:space="preserve"><value>سجل رد المبالغ</value></data>
+  <data name="InvoiceRefundInvalid" xml:space="preserve"><value>أدخل مبلغًا موجبًا لا يتجاوز المستحق للرد وبمنزلتين عشريتين بحد أقصى.</value></data>
+  <data name="InvoiceRefundNotice" xml:space="preserve"><value>أكّد بعد دفع المبلغ للعميل. ستُسجّل حركة خروج من الخزينة وينخفض رصيد المردودات المستحق له.</value></data>
+  <data name="InvoiceRefundUnavailable" xml:space="preserve"><value>لا يوجد رصيد مستحق للرد عن هذه الفاتورة الملغاة.</value></data>
+  <data name="InvoiceTotalBelowPaid" xml:space="preserve"><value>لا يمكن أن تقل قيمة الفاتورة عن المبلغ المدفوع.</value></data>
+  <data name="InvoiceTransactionHistory" xml:space="preserve"><value>الدفعات ورد المبالغ</value></data>
+  <data name="RefundInvoice" xml:space="preserve"><value>رد مبلغ للعميل</value></data>
+  <data name="AccountingDescriptionInvoiceSale" xml:space="preserve"><value>قيمة فاتورة مبيعات رقم {0}</value></data>
+  <data name="Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="AccountingDescriptionInvoiceReceipt" xml:space="preserve"><value>سداد من قيمة فاتورة رقم {0}</value></data>
+  <data name="AccountingDescriptionInvoiceCancellation" xml:space="preserve"><value>رصيد مستحق للرد عن إلغاء الفاتورة {0}</value></data>
+  <data name="AccountingDescriptionInvoiceRefund" xml:space="preserve"><value>رد مبلغ عن الفاتورة الملغاة {0}</value></data>
 </root>

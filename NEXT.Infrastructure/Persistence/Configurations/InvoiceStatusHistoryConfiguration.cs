@@ -14,6 +14,7 @@ public sealed class InvoiceStatusHistoryConfiguration : IEntityTypeConfiguration
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(item => item.ActorId).OnDelete(DeleteBehavior.Restrict);
         builder.Property(item => item.ActorFullName).HasMaxLength(200).IsRequired();
         builder.Property(item => item.Reason).HasMaxLength(500);
+        builder.Property(item => item.RequestHash).HasMaxLength(64);
         builder.Property(item => item.PaymentAmount).HasPrecision(15, 2);
         builder.HasIndex(item => new { item.InvoiceId, item.OperationId }).IsUnique();
         builder.HasIndex(item => new { item.InvoiceId, item.ActionAt });

@@ -5,6 +5,11 @@ public sealed record InvoiceDetails(InvoiceSummary Summary, string? CreatedByFul
 {
     public byte[] RowVersion { get; init; } = [];
     public bool CanConfirm { get; init; }
+    public bool CanEdit { get; init; }
+    public bool CanCancel { get; init; }
+    public decimal RefundedAmount { get; init; }
+    public decimal RefundableAmount { get; init; }
+    public IReadOnlyList<InvoicePaymentEntry> Refunds { get; init; } = [];
     public bool CanRecordPayment { get; init; }
     public IReadOnlyList<NEXT.Domain.Enums.InvoiceStatus> FulfillmentTargets { get; init; } = [];
     public IReadOnlyList<InvoicePaymentEntry> Payments { get; init; } = [];

@@ -9,7 +9,8 @@ using NEXT.web.Services;
 namespace NEXT.web.Controllers;
 
 public sealed class InvoicesController(InvoiceReads reads, InvoiceLookups lookups, InvoiceCreation creation, TablePresenter tables,
-    InvoiceConfirmation confirmation, InvoicePaymentRecording payments, InvoiceFulfillment fulfillment)
+    InvoiceConfirmation confirmation, InvoicePaymentRecording payments, InvoiceFulfillment fulfillment,
+    InvoiceEditing editing, InvoiceCancellation cancellation, InvoiceRefunds refunds)
     : WorkspaceController
 {
     [HttpGet]
@@ -28,7 +29,54 @@ public sealed class InvoicesController(InvoiceReads reads, InvoiceLookups lookup
     }
 
     [HttpGet]
-    public IActionResult Create() => PartialView("_CreateInvoice");
+    public IActionResult Create() => PartialView("_CreateInvoice", new InvoiceDraftForm(new CreateInvoiceInput { OperationId = Guid.NewGuid() }));
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
+    {
+        var edit = await editing.GetAsync(id, ct);
+        return PartialView("_CreateInvoice", new InvoiceDraftForm(edit.Input, "Edit", id, edit.Input.RowVersion, edit.Products));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Edit(Guid id, EditInvoiceInput input, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        await editing.EditAsync(id, input, ct);
+        return Ok(new { redirectUrl = Route(nameof(Details), new { id }) });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+    {
+        var invoice = await reads.DetailsAsync(id, ct);
+        if (!invoice.CanCancel) throw new NEXT.Application.Exceptions.ConflictException("InvoiceCancellationUnavailable");
+        return PartialView("_CancelInvoice", invoice);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Cancel(Guid id, CancelInvoiceInput input, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        await cancellation.CancelAsync(id, input, ct);
+        return Ok(new { redirectUrl = Route(nameof(Details), new { id }) });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Refund(Guid id, CancellationToken ct)
+    {
+        var invoice = await reads.DetailsAsync(id, ct);
+        if (invoice.RefundableAmount <= 0) throw new NEXT.Application.Exceptions.ConflictException("InvoiceRefundUnavailable");
+        return PartialView("_RefundInvoice", invoice);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Refund(Guid id, RecordInvoicePaymentInput input, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        await refunds.RefundAsync(id, input, ct);
+        return Ok(new { redirectUrl = Route(nameof(Details), new { id }) });
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateInvoiceInput input, CancellationToken ct)

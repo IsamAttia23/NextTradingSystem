@@ -33,6 +33,7 @@ public static class PresentationRegistration
         services.AddScoped<Services.FormFieldPresenter>();
         services.AddScoped<Services.TablePresenter>();
         services.AddScoped<Services.FinancialAccountsPresenter>();
+        services.AddScoped<Services.AccountingText>();
         services.AddSingleton<Services.InvoiceDocumentAssets>();
         services.AddSingleton<Services.InvoicePdfBrowser>();
         services.AddSingleton<Services.InvoicePdfRenderer>();

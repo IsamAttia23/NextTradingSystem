@@ -32,7 +32,8 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
         }).ToArray();
     }
 
-    public Task<TPaginationQueryModel<AccountTransactionDto>> GetTransactionsAsync(AccountingQuery query, CancellationToken ct)
+    public Task<TPaginationQueryModel<AccountTransactionDto>> GetTransactionsAsync(AccountingQuery query, CancellationToken ct,
+        AccountingSearchMatches? translatedSearch = null)
     {
         ArgumentNullException.ThrowIfNull(query);
         validator.Validate(query);
@@ -42,7 +43,10 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
         foreach (var id in new[] { query.CustomerId, query.InvoiceId, query.PaymentId })
             if (id.HasValue) RequestValidation.Identifier(id.Value);
         var accountId = query.Account.HasValue ? Account.IdFor(query.Account.Value) : (Guid?)null;
-        var term = query.SearchTerm?.Trim() ?? "";
+        var term = query.SearchTerm?.Trim().ToLowerInvariant() ?? "";
+        var kinds = translatedSearch?.Kinds ?? [];
+        var purposes = translatedSearch?.Purposes ?? [];
+        var methods = translatedSearch?.Methods ?? [];
         var lines = movements.Query(line => line.LedgerEntry.PostedAt != null &&
             (!accountId.HasValue || line.AccountId == accountId) &&
             (!query.From.HasValue || line.LedgerEntry.EntryDate >= query.From.Value) &&
@@ -58,13 +62,15 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
             join customer in customers.Query(_ => true) on line.CustomerId equals (Guid?)customer.Id into customerGroup
             from customer in customerGroup.DefaultIfEmpty()
             select new { Line = line, Payment = payment, Customer = customer };
-        var ordered = joined.Where(row => term == "" || row.Line.LedgerEntry.Description.Contains(term) ||
-                (row.Line.Description != null && row.Line.Description.Contains(term)) ||
-                (row.Customer != null && row.Customer.Name.Contains(term)) ||
-                (row.Payment != null && row.Payment.PaymentNumber.Contains(term)) ||
+        var ordered = joined.Where(row => term == "" || row.Line.LedgerEntry.Description.ToLower().Contains(term) ||
+                kinds.Contains(row.Line.LedgerEntry.Kind) ||
+                (row.Line.Description != null && row.Line.Description.ToLower().Contains(term)) ||
+                (row.Customer != null && row.Customer.Name.ToLower().Contains(term)) ||
+                (row.Payment != null && (row.Payment.PaymentNumber.ToLower().Contains(term) ||
+                    purposes.Contains(row.Payment.Purpose) || methods.Contains(row.Payment.PaymentMethod))) ||
                 (row.Line.LedgerEntry.Invoice != null &&
-                    (row.Line.LedgerEntry.Invoice.InvoiceNumber.Contains(term) ||
-                     (row.Line.LedgerEntry.Invoice.CustomerName != null && row.Line.LedgerEntry.Invoice.CustomerName.Contains(term)))))
+                    (row.Line.LedgerEntry.Invoice.InvoiceNumber.ToLower().Contains(term) ||
+                     (row.Line.LedgerEntry.Invoice.CustomerName != null && row.Line.LedgerEntry.Invoice.CustomerName.ToLower().Contains(term)))))
             .OrderByDescending(row => row.Line.LedgerEntry.EntryDate)
             .ThenByDescending(row => row.Line.LedgerEntry.CreatedAt).ThenBy(row => row.Line.LedgerEntryId).ThenBy(row => row.Line.Sequence);
         return pagination.GetPagedList(ordered, source => source.Select(row => new AccountTransactionDto(row.Line.Id,

@@ -1,0 +1,32 @@
+@model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@using NEXT.Domain.Enums
+<form asp-action="Refund" asp-route-id="@Model.Summary.Id" method="post" data-modal-form data-title="@L["RefundInvoice"]">
+    <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+    <p><bdi>@Model.Summary.Number</bdi> · <bdi>@Model.Summary.CustomerName</bdi></p>
+    <p>@L["InvoiceRefundNotice"]</p>
+    <dl class="invoice-totals mb-3">
+        <dt>@L["InvoiceRefundedAmount"]</dt><dd><bdi>@Model.RefundedAmount.ToString("N2") SDG</bdi></dd>
+        <dt>@L["InvoiceRefundableAmount"]</dt><dd><bdi>@Model.RefundableAmount.ToString("N2") SDG</bdi></dd>
+    </dl>
+    <div class="modal-field-grid">
+        <label class="form-label">@L["InvoiceRefundAmount"]
+            <input name="Amount" class="form-control" type="number" required min="0.01" step="0.01" inputmode="decimal"
+                   max="@Model.RefundableAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                   value="@Model.RefundableAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+        </label>
+        <label class="form-label">@L["PaymentMethod"]
+            <select name="PaymentMethod" class="form-select" required>
+                <option value="">@L["InvoiceChooseRefundMethod"]</option>
+                @foreach (var method in Enum.GetValues<PaymentMethod>())
+                {
+                    <option value="@method">@L[method.ToString()]</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div class="modal-form-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Close"]</button>
+        <button type="submit" class="btn btn-primary">@L["InvoiceConfirmRefund"]</button>
+    </div>
+</form>

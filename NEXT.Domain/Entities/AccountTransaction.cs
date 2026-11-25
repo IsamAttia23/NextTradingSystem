@@ -26,6 +26,7 @@ public sealed class AccountTransaction
         if (!Services.MoneyRules.IsValid(debit) || !Services.MoneyRules.IsValid(credit) || (debit > 0) == (credit > 0))
             throw new ArgumentException("AccountingInvalidAmount");
         if ((account == AccountType.Receivables && (customerId is null || debtItemId is null)) ||
+            (account == AccountType.CustomerRefunds && customerId is null) ||
             (account != AccountType.Receivables && debtItemId is not null))
             throw new ArgumentException("AccountingDebtReferenceRequired");
         if (description?.Length > 500) throw new ArgumentException("AccountingDescriptionInvalid");

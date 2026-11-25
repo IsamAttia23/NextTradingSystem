@@ -11,6 +11,11 @@
         <div><dt>@L["InvoiceCreatedBy"]</dt><dd><bdi>@(Model.CreatedByFullName ?? "—")</bdi></dd></div>
         <div><dt>@L["Status"]</dt><dd>@L[Model.Summary.Status.ToString()]</dd></div>
         <div><dt>@L["PaymentStatus"]</dt><dd>@L[Model.Summary.PaymentStatus.ToString()]</dd></div>
+        @if (Model.Summary.Status == NEXT.Domain.Enums.InvoiceStatus.Cancelled)
+        {
+            <div><dt>@L["InvoiceRefundedAmount"]</dt><dd><bdi>@Model.RefundedAmount.ToString("N2") SDG</bdi></dd></div>
+            <div><dt>@L["InvoiceRefundableAmount"]</dt><dd><bdi>@Model.RefundableAmount.ToString("N2") SDG</bdi></dd></div>
+        }
     </dl>
     <div class="invoice-document-table-wrap">
         <table class="invoice-document-lines">
@@ -38,6 +43,11 @@
         <div class="invoice-document-total"><dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd></div>
         <div><dt>@L["PaidAmount"]</dt><dd><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></dd></div>
         <div><dt>@L["RemainingAmount"]</dt><dd><bdi>@Model.RemainingAmount.ToString("N2") SDG</bdi></dd></div>
+        @if (Model.Summary.Status == NEXT.Domain.Enums.InvoiceStatus.Cancelled)
+        {
+            <div><dt>@L["InvoiceRefundedAmount"]</dt><dd><bdi>@Model.RefundedAmount.ToString("N2") SDG</bdi></dd></div>
+            <div><dt>@L["InvoiceRefundableAmount"]</dt><dd><bdi>@Model.RefundableAmount.ToString("N2") SDG</bdi></dd></div>
+        }
     </dl>
     @if (!string.IsNullOrWhiteSpace(Model.Notes))
     {

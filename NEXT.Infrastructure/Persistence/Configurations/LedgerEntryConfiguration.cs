@@ -12,7 +12,7 @@ public sealed class LedgerEntryConfiguration : IEntityTypeConfiguration<LedgerEn
         builder.ToTable("LedgerEntries", table =>
         {
             table.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
-            table.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 6 AND \"ReferenceType\" BETWEEN 1 AND 4");
+            table.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 7 AND \"ReferenceType\" BETWEEN 1 AND 4");
             table.HasCheckConstraint("CK_LedgerEntries_Source", "(\"ReferenceType\" <> 1 OR \"InvoiceId\" IS NOT DISTINCT FROM \"ReferenceId\") AND (\"ReferenceType\" <> 2 OR \"PaymentId\" IS NOT DISTINCT FROM \"ReferenceId\")");
             table.HasCheckConstraint("CK_LedgerEntries_Reversal", "(\"Kind\" = 6) = (\"ReversesEntryId\" IS NOT NULL) AND (\"ReversesEntryId\" IS NULL OR (\"ReferenceType\" = 4 AND \"ReferenceId\" = \"ReversesEntryId\"))");
             table.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");

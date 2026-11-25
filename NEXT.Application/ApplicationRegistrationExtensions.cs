@@ -47,6 +47,10 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<NEXT.Application.Services.Currencies.ExchangeRateReader>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceLookups>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceCreation>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceDraftBuilder>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceEditing>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceCancellation>();
+        services.AddScoped<NEXT.Application.Features.Invoices.InvoiceRefunds>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceReads>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoiceConfirmation>();
         services.AddScoped<NEXT.Application.Features.Invoices.InvoicePaymentRecording>();
@@ -54,6 +58,7 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<IAccountingPostingService, NEXT.Application.Features.Accounting.AccountingPostingService>();
         services.AddScoped<NEXT.Application.Features.Accounting.AccountingPostingValidator>();
         services.AddScoped<NEXT.Application.Features.Accounting.InvoiceDebtResolver>();
+        services.AddScoped<NEXT.Application.Features.Accounting.InvoiceCustomerResolver>();
         services.AddScoped<IAccountingReversalService, NEXT.Application.Features.Accounting.AccountingReversalService>();
         services.AddScoped<IAccountingReadService, NEXT.Application.Features.Accounting.AccountingReadService>();
         services.AddSingleton<NEXT.Domain.Services.IInvoiceStateMachine, NEXT.Domain.Services.InvoiceStateMachine>();

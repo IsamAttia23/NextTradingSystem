@@ -30,9 +30,9 @@ public sealed class InvoiceConfirmationRulesTests
             if (status != InvoiceStatus.Pending)
                 Assert.Throws<InvalidOperationException>(() => rules.Transition(status, InvoiceStatus.Confirmed));
         }
-        Assert.Equal(new[] { InvoiceStatus.Confirmed }, rules.GetAllowedTransitions(InvoiceStatus.Pending));
+        Assert.Equal(new[] { InvoiceStatus.Confirmed, InvoiceStatus.Cancelled }, rules.GetAllowedTransitions(InvoiceStatus.Pending));
         Assert.Equal(InvoiceStatus.Confirmed, rules.Transition(InvoiceStatus.Pending, InvoiceStatus.Confirmed));
-        Assert.Equal(new[] { InvoiceStatus.Shipped, InvoiceStatus.Delivered }, rules.GetAllowedTransitions(InvoiceStatus.Confirmed));
+        Assert.Equal(new[] { InvoiceStatus.Shipped, InvoiceStatus.Delivered, InvoiceStatus.Cancelled }, rules.GetAllowedTransitions(InvoiceStatus.Confirmed));
         Assert.False(rules.CanTransition(InvoiceStatus.Pending, InvoiceStatus.Pending));
     }
 
@@ -40,7 +40,7 @@ public sealed class InvoiceConfirmationRulesTests
     public void FulfillmentTransitionsMatchTheLifecycle()
     {
         var rules = new InvoiceStateMachine();
-        var allowed = new[] { (InvoiceStatus.Pending, InvoiceStatus.Confirmed),
+        var allowed = new[] { (InvoiceStatus.Pending, InvoiceStatus.Confirmed), (InvoiceStatus.Pending, InvoiceStatus.Cancelled), (InvoiceStatus.Confirmed, InvoiceStatus.Cancelled),
             (InvoiceStatus.Confirmed, InvoiceStatus.Shipped), (InvoiceStatus.Confirmed, InvoiceStatus.Delivered),
             (InvoiceStatus.Shipped, InvoiceStatus.Delivered) };
         foreach (var from in Enum.GetValues<InvoiceStatus>())

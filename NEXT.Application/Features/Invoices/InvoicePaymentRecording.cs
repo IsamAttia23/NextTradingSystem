@@ -49,7 +49,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             }
 
             invoices.SetRowVersion(invoice, input.RowVersion);
-            if (invoice.Type != InvoiceType.Sales || !InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount) ||
+            if (invoice.Type != InvoiceType.Sales || invoice.Status == InvoiceStatus.Cancelled || !InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount) ||
                 invoice.LegacyInvoiceTypeCode is not null || invoice.ParentInvoiceId is not null ||
                 invoice.PaidAmount < 0)
                 throw new ConflictException("InvoicePaymentUnavailable");

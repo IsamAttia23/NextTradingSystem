@@ -763,13 +763,45 @@ footer {
     overflow-wrap: anywhere;
 }
 
-.table.financial-movements { min-width: 1550px; table-layout: auto; }
-.table.financial-account-balances { min-width: 1000px; table-layout: auto; }
+.table.financial-movements { min-width: 1080px; width: 100%; table-layout: auto; }
+.table.financial-account-balances { min-width: 720px; width: 100%; table-layout: auto; }
 .financial-movements th, .financial-movements td,
-.financial-account-balances th, .financial-account-balances td { white-space: nowrap; }
-.financial-movements th:nth-child(3), .financial-movements td:nth-child(3) { min-width: 320px; }
-.financial-movements th:nth-child(4), .financial-movements td:nth-child(4) { min-width: 180px; }
-
+.financial-account-balances th, .financial-account-balances td { text-align: start; vertical-align: middle; }
+.table .numeric-cell { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.financial-movements th:nth-child(2), .financial-movements td:nth-child(2) { white-space: nowrap; }
+.financial-movements th:nth-child(3), .financial-movements td:nth-child(3) { min-width: 240px; white-space: normal; overflow-wrap: anywhere; }
+.financial-movements th:nth-child(4), .financial-movements td:nth-child(4) { min-width: 130px; }
+.financial-account-balances td:first-child { min-width: 170px; }
+.financial-account-balances td:first-child small { display: block; margin-block-start: 4px; }
+.content-card:has(.financial-movements) .table-scroll-hint { display: flex; }
+.financial-date-filter { display: grid; grid-template-columns: repeat(2, minmax(140px, 220px)) auto; gap: 16px; align-items: end; }
+.financial-date-filter .form-label { margin: 0; }
+@media (max-width: 575.98px) {
+    .financial-date-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .financial-date-filter > div { grid-column: 1 / -1; }
+    .financial-date-filter .btn { width: 100%; }
+    .financial-movements th, .financial-movements td,
+    .financial-account-balances th, .financial-account-balances td { padding: 12px; }
+    .table.financial-movements, .table.financial-account-balances { display: block; min-width: 0; width: 100%; }
+    .financial-movements thead, .financial-account-balances thead {
+        position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+    }
+    .financial-movements tbody, .financial-account-balances tbody { display: block; }
+    .financial-movements tr, .financial-account-balances tr { display: block; padding-block: 12px; border-bottom: 2px solid var(--line); }
+    .table.financial-movements td, .table.financial-account-balances td {
+        display: block; position: relative; min-width: 0 !important; max-width: none;
+        padding-block: 10px; padding-inline: 40% 12px; white-space: normal; min-height: 42px;
+    }
+    .financial-movements td::before, .financial-account-balances td[data-label]::before {
+        content: attr(data-label); position: absolute; inset-inline-start: 12px; max-width: calc(40% - 24px);
+        color: var(--muted); text-align: start; font-size: 12px;
+    }
+    .table.financial-movements td.row-number { display: none; }
+    .financial-account-balances td:first-child { padding-inline: 12px; font-weight: 700; }
+    .financial-account-balances td:last-child { padding-inline: 12px; }
+    .financial-account-balances td:last-child .btn { width: 100%; }
+    .content-card:has(.financial-movements) .table-scroll-hint { display: none; }
+}
 .reference-empty {
     padding: 10px;
     margin: 0;

@@ -193,7 +193,16 @@
     document.addEventListener("next:formloaded", ({ detail }) => {
         const form = detail.form;
         if (!form.matches("[data-invoice-form]")) return;
-        appendRow(form);
+        const initial = JSON.parse(form.querySelector("[data-invoice-initial-lines]")?.textContent || "[]");
+        if (initial.length) {
+            for (const line of initial) {
+                appendRow(form);
+                const row = rows(form).at(-1);
+                row.querySelector("[data-invoice-quantity]").value = String(line.quantity);
+                if (line.product) choose(row.querySelector(pickers), line.product);
+            }
+            calculate(form);
+        } else appendRow(form);
 
         form.addEventListener("input", event => {
             if (event.target.matches("[data-invoice-search]")) {

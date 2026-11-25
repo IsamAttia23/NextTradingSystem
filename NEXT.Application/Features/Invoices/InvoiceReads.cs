@@ -14,7 +14,7 @@ namespace NEXT.Application.Features.Invoices;
 
 public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationServices pagination, IEntityValidator<PaginationQuery> validator,
     IReadRepository<InvoiceStatusHistory> history, IQueryExecutor executor, IReadRepository<Payment> payments,
-    IInvoiceStateMachine stateMachine, IReadRepository<Customer> customers)
+    IInvoiceStateMachine stateMachine, IReadRepository<Customer> customers, IReadRepository<AccountTransaction> movements)
 {
     public Task<TPaginationQueryModel<InvoiceSummary>> ListAsync(InvoiceQueryModel query, CancellationToken ct)
     {
@@ -41,9 +41,17 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
             .Select(item => new InvoicePaymentEntry(item.PaymentNumber, item.Amount, item.PaymentMethod,
                 item.PaymentDate, item.CreatedAt, item.RecordedByFullName)), ct);
         var salesInvoice = invoice.Type == InvoiceType.Sales && invoice.LegacyInvoiceTypeCode is null && invoice.ParentInvoiceId is null;
+        IReadOnlyList<InvoicePaymentEntry> refunds = invoice.Status == InvoiceStatus.Cancelled
+            ? await executor.ToListAsync(payments.Query(item => item.InvoiceId == id && item.Purpose == PaymentPurpose.CustomerRefund && item.PaymentType == PaymentType.Payment)
+            .OrderByDescending(item => item.CreatedAt).ThenByDescending(item => item.Id)
+            .Select(item => new InvoicePaymentEntry(item.PaymentNumber, item.Amount, item.PaymentMethod, item.PaymentDate, item.CreatedAt, item.RecordedByFullName)), ct) : [];
+        var refundAccount = Account.IdFor(AccountType.CustomerRefunds);
+        var refundBalance = invoice.Status == InvoiceStatus.Cancelled
+            ? (await executor.ToListAsync(movements.Query(line => line.AccountId == refundAccount && line.LedgerEntry.InvoiceId == id &&
+                line.LedgerEntry.PostedAt != null).Select(line => new { Amount = line.Credit - line.Debit }), ct)).Sum(item => item.Amount) : 0;
         var transitions = salesInvoice ? stateMachine.GetAllowedTransitions(invoice.Status) : Array.Empty<InvoiceStatus>();
         var normalizedName = invoice.CustomerName?.Trim().ToUpperInvariant();
-        var candidates = invoice.CustomerId is null && invoice.RemainingAmount > 0 && normalizedName is not null
+        var candidates = invoice.CustomerId is null && (invoice.RemainingAmount > 0 || invoice.PaidAmount > 0) && normalizedName is not null
             ? await executor.ToListAsync(customers.Query(customer => customer.IsActive && customer.Name.ToUpper() == normalizedName)
                 .OrderBy(customer => customer.Id).Select(customer => new InvoiceCustomerOption(customer.Id, customer.Name, customer.Phone)), ct)
             : Array.Empty<InvoiceCustomerOption>();
@@ -54,8 +62,11 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
         {
             RowVersion = invoice.RowVersion.ToArray(),
             CanConfirm = transitions.Contains(InvoiceStatus.Confirmed),
+            CanEdit = salesInvoice && invoice.Status == InvoiceStatus.Pending && invoice.TaxAmount == 0,
+            CanCancel = transitions.Contains(InvoiceStatus.Cancelled),
+            RefundedAmount = refunds.Sum(item => item.Amount), RefundableAmount = refundBalance, Refunds = refunds,
             FulfillmentTargets = transitions.Where(status => status is InvoiceStatus.Shipped or InvoiceStatus.Delivered).ToArray(),
-            CanRecordPayment = salesInvoice && InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount),
+            CanRecordPayment = salesInvoice && invoice.Status != InvoiceStatus.Cancelled && InvoicePaymentRules.CanReceivePayment(invoice.RemainingAmount),
             CustomerId = invoice.CustomerId, Notes = invoice.Notes,
             CustomerPhone = invoice.Customer?.Phone, DebtCustomerCandidates = candidates,
             LastActionAt = invoice.LastActionAt, History = entries, Payments = receipts

@@ -12,7 +12,7 @@ namespace NEXT.Tests;
 
 public sealed class InvoiceRevisionTests
 {
-    public static IEnumerable<object[]> Statuses => Enum.GetValues<InvoiceStatus>().Select(status => new object[] { status });
+    public static IEnumerable<object[]> Statuses => Enum.GetValues<InvoiceStatus>().Where(status => status != InvoiceStatus.Cancelled).Select(status => new object[] { status });
 
     [Theory]
     [MemberData(nameof(Statuses))]
@@ -131,7 +131,7 @@ public sealed class InvoiceRevisionTests
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<NEXTDbContext>();
         Assert.DoesNotContain(db.Model.GetEntityTypes(), entity => entity.ClrType.Name is "JournalEntry" or "JournalLine");
-        Assert.Equal(7, await db.Accounts.CountAsync());
+        Assert.Equal(8, await db.Accounts.CountAsync());
         Assert.False(await db.SystemSettings.AnyAsync(item => item.Key == "Accounting.InvoiceAccounts"));
     }
 

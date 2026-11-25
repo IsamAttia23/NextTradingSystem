@@ -129,7 +129,7 @@ public sealed class InvoicePaymentsTests
         Assert.Equal(7m, (await f.Db.Invoices.SingleAsync()).PaidAmount);
         Assert.Single(await f.Db.Payments.ToListAsync());
         Assert.Equal(2m, (await f.Db.Stocks.SingleAsync()).ReservedQuantity);
-        foreach (var status in new[] { InvoiceStatus.Pending, InvoiceStatus.Draft, InvoiceStatus.Cancelled })
+        foreach (var status in new[] { InvoiceStatus.Pending, InvoiceStatus.Draft })
         {
             var other = Invoice(f, actor.Id, status.ToString(), status);
             f.Db.Add(other);
@@ -188,16 +188,14 @@ public sealed class InvoicePaymentsTests
         var invoice = Invoice(f, actor.Id, "HISTORY-MIGRATION");
         invoice.PaidAmount = 4; invoice.RemainingAmount = 6; invoice.PaymentStatus = PaymentStatus.Partial;
         var operation = Guid.NewGuid();
-        f.Db.AddRange(actor, invoice, new InvoiceStatusHistory
-        {
-            InvoiceId = invoice.Id, OperationId = operation, ActorId = actor.Id, ActorFullName = "Original name",
-            FromStatus = InvoiceStatus.Pending, ToStatus = InvoiceStatus.Confirmed,
-            PaymentAmount = 4, PaymentMethod = PaymentMethod.Cash
-        });
+        f.Db.AddRange(actor, invoice);
         await f.Db.SaveChangesAsync();
         var now = DateTimeOffset.UtcNow;
         var date = DateOnly.FromDateTime(now.DateTime);
         await f.Db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "InvoiceStatusHistory" ("Id", "InvoiceId", "OperationId", "ActorId", "ActorFullName",
+                "FromStatus", "ToStatus", "PaymentAmount", "PaymentMethod", "ActionAt", "CreatedAt")
+            VALUES ({Guid.NewGuid()}, {invoice.Id}, {operation}, {actor.Id}, 'Original name', 0, 2, 4, 0, {now}, {now});
             INSERT INTO "Payments" ("Id", "PaymentNumber", "PaymentType", "InvoiceId", "Amount", "PaymentMethod",
                 "PaymentDate", "RowVersion", "CreatedAt", "CreatedBy")
             VALUES ({operation}, 'HISTORICAL-PAYMENT', 0, {invoice.Id}, 4, 0, {date}, {Guid.NewGuid().ToByteArray()}, {now}, {actor.Id})

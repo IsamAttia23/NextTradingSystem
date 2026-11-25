@@ -52,7 +52,7 @@ public sealed class LedgerEntry : AuditableEntity<Guid>
     {
         var validSource = Kind switch
         {
-            LedgerEntryKind.SalesRecognition or LedgerEntryKind.SalesReturn => ReferenceType == AccountingReferenceType.Invoice,
+            LedgerEntryKind.SalesRecognition or LedgerEntryKind.SalesReturn or LedgerEntryKind.InvoiceCancellation => ReferenceType == AccountingReferenceType.Invoice,
             LedgerEntryKind.Receipt or LedgerEntryKind.Refund => ReferenceType == AccountingReferenceType.Payment,
             LedgerEntryKind.OpeningBalance => ReferenceType is AccountingReferenceType.DebtOpening or AccountingReferenceType.Adjustment,
             LedgerEntryKind.Reversal => ReferenceType == AccountingReferenceType.Adjustment,

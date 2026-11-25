@@ -19,9 +19,9 @@ public sealed class AccountingFoundationTests
     public void FixedCatalogHasSevenStableAccountsAndTwoTechnicalAccounts()
     {
         var first = Account.SeedData();
-        Assert.Equal(7, first.Count);
-        Assert.Equal(7, first.Select(account => account.Id).Distinct().Count());
-        Assert.Equal(7, first.Select(account => account.Code).Distinct().Count());
+        Assert.Equal(8, first.Count);
+        Assert.Equal(8, first.Select(account => account.Id).Distinct().Count());
+        Assert.Equal(8, first.Select(account => account.Code).Distinct().Count());
         Assert.Equal(2, first.Count(account => account.IsTechnical));
         Assert.Equal(first.Select(account => account.Id), Account.SeedData().Select(account => account.Id));
         Assert.Equal(DebitCreditSide.Credit, Account.Create(AccountType.Sales).NormalSide);
@@ -109,7 +109,7 @@ public sealed class AccountingFoundationTests
         Assert.Equal(reversed, await reversals.ReverseAsync(request, default));
         await Assert.ThrowsAsync<ConflictException>(() => reversals.ReverseAsync(request with { OperationId = Guid.NewGuid() }, default));
         var accounts = await reads.GetAccountsAsync(new(2026, 11, 21), new(2026, 11, 21), default);
-        Assert.Equal(7, accounts.Count);
+        Assert.Equal(8, accounts.Count);
         var cash = accounts.Single(item => item.Type == AccountType.Treasury);
         Assert.Equal(100m, cash.OpeningBalance);
         Assert.Equal(0m, cash.Debit);

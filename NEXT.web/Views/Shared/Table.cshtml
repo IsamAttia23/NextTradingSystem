@@ -5,7 +5,7 @@
 }
 <section class="page-heading">
     <div>
-        <span class="eyebrow">@L["Administration"]</span>
+        <span class="eyebrow">@L[Model.SectionLabel]</span>
         <h1><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Title)" /> @L[Model.Title]</h1>
         <p>@L[Model.Description]</p>
     </div>
@@ -54,9 +54,9 @@
                     <th scope="col" class="row-number">#</th>
                     @foreach (var column in Model.Columns)
                     {
-                        <th scope="col">@L[column]</th>
+                        <th scope="col" class="@(Model.NumericColumns?.Contains(column) == true ? "numeric-cell" : null)">@L[column]</th>
                     }
-                    <th scope="col" class="actions-column">@L["Actions"]</th>
+                    @if (Model.ShowActions) { <th scope="col" class="actions-column">@L["Actions"]</th> }
                 </tr>
             </thead>
             <tbody>
@@ -66,7 +66,7 @@
                         <td class="row-number"><bdi>@((++rowNumber).ToString(CultureInfo.InvariantCulture))</bdi></td>
                         @for (var i = 0; i < row.Cells.Count; i++)
                         {
-                            <td class="@(Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">
+                            <td data-label="@L[Model.Columns[i]]" class="@(Model.NumericColumns?.Contains(Model.Columns[i]) == true ? "numeric-cell" : Model.Columns[i] is "Email" or "Phone" or "FullName" ? "nowrap-cell" : null)">
                                 @if (Model.Columns[i] == row.BadgeColumn && row.Badge is {} badge)
                                 {
                                     <partial name="_ColorBadge" model="badge" />
@@ -119,19 +119,22 @@
                                 }
                             </td>
                         }
-                        <td class="actions-column">
-                            @foreach (var item in row.Actions)
-                            {
-                                if (item.Modal)
+                        @if (Model.ShowActions)
+                        {
+                            <td class="actions-column">
+                                @foreach (var item in row.Actions)
                                 {
-                                    <button class="btn btn-sm @(item.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button>
+                                    if (item.Modal)
+                                    {
+                                        <button class="btn btn-sm @(item.Dangerous ? "text-danger" : "text-primary")" data-modal-url="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></button>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-sm text-primary" href="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></a>
+                                    }
                                 }
-                                else
-                                {
-                                    <a class="btn btn-sm text-primary" href="@item.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(item.Label)" /> @L[item.Label]<span class="visually-hidden"> — @row.Cells[0]</span></a>
-                                }
-                            }
-                        </td>
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>

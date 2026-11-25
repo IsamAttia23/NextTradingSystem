@@ -8,5 +8,6 @@ public enum AccountType
     Receivables = 4,
     Treasury = 5,
     CustomerAdvances = 6,
-    OpeningBalances = 7
+    OpeningBalances = 7,
+    CustomerRefunds = 8
 }

@@ -23,6 +23,7 @@ public sealed class Account
             AccountType.Treasury => ("TREASURY", "الخزينة", DebitCreditSide.Debit),
             AccountType.CustomerAdvances => ("CUSTOMER-ADVANCES", "مقدمات العملاء والمستحق للرد", DebitCreditSide.Credit),
             AccountType.OpeningBalances => ("OPENING-BALANCES", "مقابل الأرصدة الافتتاحية", DebitCreditSide.Credit),
+            AccountType.CustomerRefunds => ("CUSTOMER-REFUNDS", "المردودات المستحقة للعملاء", DebitCreditSide.Credit),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
         return new() { Id = IdFor(type), Type = type, Code = code, Name = name, NormalSide = side,

@@ -40,7 +40,8 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
             var previous = await history.FirstOrDefaultAsync(item => item.InvoiceId == id && item.OperationId == input.OperationId, token);
             if (previous is not null)
             {
-                if (previous.ActorId != actor.Id || previous.PaymentAmount != input.Amount || previous.PaymentMethod != selectedMethod)
+                if (previous.FromStatus != InvoiceStatus.Pending || previous.ToStatus != InvoiceStatus.Confirmed ||
+                    previous.ActorId != actor.Id || previous.PaymentAmount != input.Amount || previous.PaymentMethod != selectedMethod)
                     throw new ConflictException("InvoiceConfirmationConflict");
                 return invoice.Id;
             }

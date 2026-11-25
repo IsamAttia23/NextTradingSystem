@@ -35,7 +35,7 @@ public sealed class InvoicePaymentAccountingHandler(IAccountingStore ledger, IAc
             account.RecordActivity(clock.GetUtcNow());
         }
         await posting.PostAsync(new(payment.Id, LedgerEntryKind.Receipt, AccountingReferenceType.Payment, payment.Id,
-            payment.PaymentDate, "سداد من قيمة فاتورة رقم " + invoice.InvoiceNumber,
+            payment.PaymentDate, AccountingDescriptions.InvoiceReceipt,
             [new(AccountType.Treasury, payment.Amount, 0, payment.CustomerId),
              new(credit, 0, payment.Amount, payment.CustomerId, debt?.Id)], invoice.Id, payment.Id), ct);
     }

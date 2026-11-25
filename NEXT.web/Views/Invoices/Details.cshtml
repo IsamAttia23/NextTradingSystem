@@ -11,6 +11,18 @@
     <div class="details-actions">
         <button type="button" class="btn btn-light" data-modal-url="@Url.Action("Preview", "InvoiceDocuments", new { id = Model.Summary.Id })">@L["InvoiceDocumentPreview"]</button>
         <a class="btn btn-light" asp-action="Index">@L["BackToList"]</a>
+        @if (Model.CanEdit)
+        {
+            <button type="button" class="btn btn-light" data-modal-url="@Url.Action("Edit", new { id = Model.Summary.Id })">@L["EditInvoice"]</button>
+        }
+        @if (Model.CanCancel)
+        {
+            <button type="button" class="btn btn-outline-danger" data-modal-url="@Url.Action("Cancel", new { id = Model.Summary.Id })">@L["CancelInvoice"]</button>
+        }
+        @if (Model.RefundableAmount > 0)
+        {
+            <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("Refund", new { id = Model.Summary.Id })">@L["RefundInvoice"]</button>
+        }
         @if (Model.CanConfirm)
         {
             <button type="button" class="btn btn-primary" data-modal-url="@Url.Action("Confirm", new { id = Model.Summary.Id })">@L["ConfirmInvoice"]</button>
@@ -53,7 +65,15 @@
         <div><dt>@L["TotalAmount"]</dt><dd><bdi>@Model.Summary.Total.ToString("N2") SDG</bdi></dd></div>
         <div><dt>@L["PaidAmount"]</dt><dd><bdi>@Model.PaidAmount.ToString("N2") SDG</bdi></dd></div>
         <div><dt>@L["RemainingAmount"]</dt><dd><bdi>@Model.RemainingAmount.ToString("N2") SDG</bdi></dd></div>
-        <div><dt>@L["PaymentStatus"]</dt><dd>@L[Model.Summary.PaymentStatus.ToString()]</dd></div>
+        @if (Model.Summary.Status != NEXT.Domain.Enums.InvoiceStatus.Cancelled)
+        {
+            <div><dt>@L["PaymentStatus"]</dt><dd>@L[Model.Summary.PaymentStatus.ToString()]</dd></div>
+        }
+        else
+        {
+            <div><dt>@L["InvoiceRefundedAmount"]</dt><dd><bdi>@Model.RefundedAmount.ToString("N2") SDG</bdi></dd></div>
+            <div><dt>@L["InvoiceRefundableAmount"]</dt><dd><bdi>@Model.RefundableAmount.ToString("N2") SDG</bdi></dd></div>
+        }
         @if (Model.LastActionAt is { } actionAt)
         {
             <div><dt>@L["InvoiceLastAction"]</dt><dd><bdi>@actionAt.ToLocalTime().ToString("g")</bdi></dd></div>
@@ -72,26 +92,16 @@
     }
     else
     {
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <caption class="visually-hidden">@L["InvoicePaymentHistory"]</caption>
-                <thead><tr><th scope="col">@L["PaymentNumber"]</th><th scope="col">@L["InvoicePaymentAmount"]</th><th scope="col">@L["PaymentMethod"]</th><th scope="col">@L["InvoicePaymentRecordedAt"]</th><th scope="col">@L["InvoicePaymentRecordedBy"]</th></tr></thead>
-                <tbody>
-                    @foreach (var payment in Model.Payments)
-                    {
-                        <tr>
-                            <td><bdi>@payment.Number</bdi></td>
-                            <td><bdi>@payment.Amount.ToString("N2") SDG</bdi></td>
-                            <td>@L[payment.Method.ToString()]</td>
-                            <td><bdi>@payment.RecordedAt.ToLocalTime().ToString("g")</bdi></td>
-                            <td><bdi>@(payment.RecordedByFullName ?? "—")</bdi></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <partial name="_InvoicePaymentTable" model="Model.Payments" />
     }
 </section>
+@if (Model.Refunds.Count > 0)
+{
+    <section class="content-card mt-3">
+        <div class="card-heading"><h2>@L["InvoiceRefundHistory"]</h2></div>
+        <partial name="_InvoicePaymentTable" model="Model.Refunds" />
+    </section>
+}
 @if (Model.History.Count > 0)
 {
     <section class="content-card mt-3">
@@ -100,9 +110,9 @@
             @foreach (var entry in Model.History)
             {
                 <article class="activity-record">
-                    <strong>@L[entry.FromStatus.ToString()] ← @L[entry.ToStatus.ToString()]</strong>
+                    <strong>@(entry.FromStatus == entry.ToStatus ? L["InvoiceEdited"] : L[entry.FromStatus.ToString()] + " ← " + L[entry.ToStatus.ToString()])</strong>
                     <p><bdi>@entry.ActorFullName</bdi> · <bdi>@entry.ActionAt.ToLocalTime().ToString("g")</bdi></p>
-                    @if (!string.IsNullOrWhiteSpace(entry.Reason))
+                    @if (!string.IsNullOrWhiteSpace(entry.Reason) && entry.FromStatus != entry.ToStatus)
                     {
                         <p>@entry.Reason</p>
                     }

@@ -147,7 +147,7 @@ namespace NEXT.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_Accounts_NormalSide", "\"NormalSide\" IN (0, 1)");
 
-                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 7");
+                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 8");
                         });
 
                     b.HasData(
@@ -213,6 +213,15 @@ namespace NEXT.Infrastructure.Migrations
                             Name = "مقابل الأرصدة الافتتاحية",
                             NormalSide = 1,
                             Type = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000008"),
+                            Code = "CUSTOMER-REFUNDS",
+                            IsTechnical = false,
+                            Name = "المردودات المستحقة للعملاء",
+                            NormalSide = 1,
+                            Type = 8
                         });
                 });
 
@@ -911,6 +920,10 @@ namespace NEXT.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("RequestHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("ToStatus")
                         .HasColumnType("integer");
 
@@ -1024,7 +1037,7 @@ namespace NEXT.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 6 AND \"ReferenceType\" BETWEEN 1 AND 4");
+                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 7 AND \"ReferenceType\" BETWEEN 1 AND 4");
 
                             t.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");
 

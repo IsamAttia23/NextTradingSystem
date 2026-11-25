@@ -56,19 +56,32 @@ public sealed class InvoiceAccountingBrowserTests
         await page.Locator("#modalBody [type=submit]").ClickAsync();
         await page.Locator("#workspaceModal").WaitForAsync(new() { State = WaitForSelectorState.Hidden });
         await page.GotoAsync(origin + "/FinancialAccounts/Movements?Account=Treasury&culture=" + culture);
+        Assert.Equal(1, await page.Locator(".sidebar .nav-item[aria-current=page]").CountAsync());
+        Assert.EndsWith("/FinancialAccounts/Treasury", await page.Locator(".sidebar .nav-item[aria-current=page]").GetAttributeAsync("href"));
         var link = page.Locator($"td a[href='/Invoices/Details/{id}']");
         Assert.Equal(1, await link.CountAsync());
         Assert.Equal(number, await link.InnerTextAsync());
         Assert.Contains(3m.ToString("N2", CultureInfo.GetCultureInfo(culture)), await page.Locator("tbody").InnerTextAsync());
+        Assert.Contains(culture == "ar" ? "سداد من قيمة فاتورة رقم" : "Payment against invoice", await page.Locator("tbody").InnerTextAsync());
+        Assert.Equal(0, await page.Locator(".financial-movements .actions-column").CountAsync());
+        Assert.Equal(2, await page.Locator("thead .numeric-cell").CountAsync());
+        Assert.Equal(2, await page.Locator("tbody .numeric-cell").CountAsync());
+        Assert.True(await page.Locator(".financial-movements").EvaluateAsync<bool>("table => [...table.querySelectorAll('.numeric-cell')].every(cell => getComputedStyle(cell).textAlign === 'end')"));
         await Screenshot(page, culture + "-treasury-desktop.png");
         await page.SetViewportSizeAsync(390, 844);
         Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
+        Assert.True(await page.Locator(".financial-movements").EvaluateAsync<bool>("table => table.scrollWidth <= table.parentElement.clientWidth"));
+        Assert.True(await page.Locator(".financial-movements").EvaluateAsync<bool>("table => [...table.querySelectorAll('td[data-label]')].every(cell => parseFloat(getComputedStyle(cell).paddingInlineStart) >= cell.clientWidth * 0.35)"));
         await Screenshot(page, culture + "-treasury-mobile.png");
         await link.ClickAsync();
         await page.WaitForURLAsync(origin + $"/Invoices/Details/{id}");
         Assert.Equal(number, await page.Locator("#main h1").InnerTextAsync());
         await page.GotoAsync(origin + "/FinancialAccounts?culture=" + culture);
-        Assert.Equal(7, await page.Locator("tbody tr").CountAsync());
+        Assert.Equal(8, await page.Locator("tbody tr").CountAsync());
+        Assert.Equal(culture == "ar" ? "بحث" : "Search", await page.Locator(".financial-date-filter [type=submit]").InnerTextAsync());
+        Assert.Equal(4, await page.Locator("thead .numeric-cell").CountAsync());
+        Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
+        Assert.True(await page.Locator(".financial-account-balances").EvaluateAsync<bool>("table => table.scrollWidth <= table.parentElement.clientWidth"));
         await Screenshot(page, culture + "-account-balances-mobile.png");
     }
 

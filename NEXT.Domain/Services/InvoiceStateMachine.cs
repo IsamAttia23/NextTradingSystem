@@ -7,8 +7,8 @@ public sealed class InvoiceStateMachine : IInvoiceStateMachine
     private static readonly IReadOnlyDictionary<InvoiceStatus, IReadOnlyList<InvoiceStatus>> Rules =
         new Dictionary<InvoiceStatus, IReadOnlyList<InvoiceStatus>>
         {
-            [InvoiceStatus.Pending] = Array.AsReadOnly(new[] { InvoiceStatus.Confirmed }),
-            [InvoiceStatus.Confirmed] = Array.AsReadOnly(new[] { InvoiceStatus.Shipped, InvoiceStatus.Delivered }),
+            [InvoiceStatus.Pending] = Array.AsReadOnly(new[] { InvoiceStatus.Confirmed, InvoiceStatus.Cancelled }),
+            [InvoiceStatus.Confirmed] = Array.AsReadOnly(new[] { InvoiceStatus.Shipped, InvoiceStatus.Delivered, InvoiceStatus.Cancelled }),
             [InvoiceStatus.Shipped] = Array.AsReadOnly(new[] { InvoiceStatus.Delivered })
         };
 
