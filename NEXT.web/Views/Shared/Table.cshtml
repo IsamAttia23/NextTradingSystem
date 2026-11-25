@@ -1,8 +1,10 @@
 @model TableModel
 @{
-    ViewData["Title"] = L[Model.Title];
+    if (!Model.Embedded) ViewData["Title"] = L[Model.Title];
     var rowNumber = ((long)Math.Max(1, Model.Page) - 1) * Math.Max(1, Model.PageSize);
 }
+@if (!Model.Embedded)
+{
 <section class="page-heading">
     <div>
         <span class="eyebrow">@L[Model.SectionLabel]</span>
@@ -18,7 +20,8 @@
         <button class="btn btn-primary" data-modal-url="@Model.Create.Url"><partial name="_Icon" model="NEXT.web.Services.UiIcons.For(Model.Create.Label)" /> @L[Model.Create.Label]</button>
     }
 </section>
-@if (Model.SectionLabel == "FinanceGroup")
+}
+@if (!Model.Embedded && Model.SectionLabel == "FinanceGroup")
 {
     <partial name="_FinanceNavigation" />
 }

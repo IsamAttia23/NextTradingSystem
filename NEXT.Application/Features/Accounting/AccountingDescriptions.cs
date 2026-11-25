@@ -6,6 +6,7 @@ namespace NEXT.Application.Features.Accounting;
 // Generated descriptions store stable keys; historical text is translated only when it matches a known template.
 public static class AccountingDescriptions
 {
+    public const string OpeningAdoption = "AccountingDescriptionOpeningAdoption";
     public const string GoodsReceipt = "AccountingDescriptionGoodsReceipt";
     public const string InventoryOpening = "AccountingDescriptionInventoryOpening";
     public const string InvoiceReceipt = "AccountingDescriptionInvoiceReceipt";

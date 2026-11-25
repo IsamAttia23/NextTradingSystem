@@ -8,7 +8,9 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
 {
     public void Configure(EntityTypeBuilder<InvoiceItem> builder)
     {
-        builder.ToTable("InvoiceItems");
+        builder.ToTable("InvoiceItems", table => table.HasCheckConstraint("CK_InvoiceItems_LineSource",
+            "(\"ProductId\" IS NOT NULL AND \"ManualName\" IS NULL) OR (\"ProductId\" IS NULL AND nullif(btrim(\"ManualName\"), '') IS NOT NULL AND \"UnitCost\" = 0 AND \"ProductBatchId\" IS NULL)"));
+        builder.Property(x => x.ManualName).HasMaxLength(200);
         builder.HasOne(x => x.Invoice).WithMany(x => x.Items)
                     .HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(x => x.Product).WithMany(x => x.InvoiceItems)

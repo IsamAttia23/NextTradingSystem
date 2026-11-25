@@ -36,7 +36,14 @@ public sealed class InvoiceLookups(IReadRepository<Customer> customers, IReadRep
         return await ReadProductsAsync(query, warehouse, ct);
     }
 
+    internal Task<bool> HasCatalogNameAsync(string name, CancellationToken ct)
+    {
+        var normalized = name.ToUpperInvariant();
+        return products.AnyAsync(product => product.Name.Trim().ToUpper() == normalized, ct);
+    }
+
     internal Task<IReadOnlyList<InvoiceProductOption>> FindProductsAsync(Guid[] ids, Guid warehouse, CancellationToken ct) =>
+        ids.Length == 0 ? Task.FromResult<IReadOnlyList<InvoiceProductOption>>([]) :
         ReadProductsAsync(products.Query(item => item.IsActive && ids.Contains(item.Id)), warehouse, ct);
 
     private static string SearchTerm(string? search)

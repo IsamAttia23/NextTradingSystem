@@ -870,4 +870,30 @@
   <data name="InventoryMovementValue" xml:space="preserve"><value>قيمة الحركة (ج.س)</value></data>
   <data name="AccountingBalanceAtEnd" xml:space="preserve"><value>الرصيد حتى نهاية الفترة المحددة</value></data>
   <data name="AccountingInventoryTransitionNotice" xml:space="preserve"><value>تعرض الأرصدة القيود المرحّلة. يلزم اعتماد أرصدة المخزون السابقة ضمن مرحلة الأرصدة الافتتاحية قبل المطابقة النهائية.</value></data>
+  <data name="FinancialAccountsCompactDescription" xml:space="preserve"><value>قائمة مختصرة للأرصدة؛ افتح الحساب لعرض الحركات والتفاصيل.</value></data>
+  <data name="AccountingDetails" xml:space="preserve"><value>تفاصيل الحساب</value></data>
+  <data name="InvoiceAddManualLine" xml:space="preserve"><value>إضافة بند يدوي</value></data>
+  <data name="InvoiceManualName" xml:space="preserve"><value>اسم البند اليدوي</value></data>
+  <data name="InvoiceManualHint" xml:space="preserve"><value>بند خارج المخزون؛ لن يُنشأ منتج أو تُخصم كمية.</value></data>
+  <data name="InvoiceManualProductExists" xml:space="preserve"><value>هذا الاسم موجود في المنتجات؛ اختر المنتج للحفاظ على سعره المعتمد.</value></data>
+  <data name="AccountingApproveOpening" xml:space="preserve"><value>اعتماد الرصيد الافتتاحي</value></data>
+  <data name="AccountingReviewOpening" xml:space="preserve"><value>مراجعة الرصيد</value></data>
+  <data name="AccountingOpeningApproved" xml:space="preserve"><value>الرصيد الافتتاحي المعتمد</value></data>
+  <data name="AccountingVerifiedBalance" xml:space="preserve"><value>الرصيد الفعلي الذي تمت مراجعته</value></data>
+  <data name="AccountingCurrentBookBalance" xml:space="preserve"><value>رصيد الدفاتر</value></data>
+  <data name="AccountingSourceBalance" xml:space="preserve"><value>الرصيد من المصدر</value></data>
+  <data name="AccountingDifference" xml:space="preserve"><value>الفرق</value></data>
+  <data name="AccountingOpeningReason" xml:space="preserve"><value>مرجع المراجعة وسبب الاعتماد</value></data>
+  <data name="AccountingOpeningReviewHint" xml:space="preserve"><value>راجع المستند أو الجرد قبل الاعتماد. يسجّل الفرق مقابل الأرصدة الافتتاحية مرة واحدة، مع حفظ سبب الاعتماد ومن اعتمده.</value></data>
+  <data name="AccountingOpeningInvalid" xml:space="preserve"><value>تحقق من الحساب والتاريخ والمبلغ وبيانات الاعتماد.</value></data>
+  <data name="AccountingOpeningAlreadyApproved" xml:space="preserve"><value>سبق اعتماد رصيد هذا الحساب. يلزم تصحيح موثّق بدل تكرار الافتتاح.</value></data>
+  <data name="AccountingOpeningStale" xml:space="preserve"><value>تغيّر الرصيد أو المخزون بعد المراجعة؛ أعد فتح النموذج وراجعه مجددًا.</value></data>
+  <data name="AccountingOpeningDateBeforeActivity" xml:space="preserve"><value>لا يمكن اعتماد الرصيد الحالي بتاريخ يسبق آخر حركة للحساب أو المخزون.</value></data>
+  <data name="AccountingOpeningNoDifference" xml:space="preserve"><value>الرصيد الفعلي يساوي رصيد الدفاتر؛ لا يوجد فرق لترحيله.</value></data>
+  <data name="AccountingDescriptionOpeningAdoption" xml:space="preserve"><value>اعتماد الرصيد الافتتاحي</value></data>
+  <data name="AccountingReconciliation" xml:space="preserve"><value>مطابقة الأرصدة</value></data>
+  <data name="AccountingReconciliationHint" xml:space="preserve"><value>مقارنة القيود بالمخزون وأرصدة الفواتير. تعرض الفروق للمراجعة ولا تُصحّحها تلقائيًا.</value></data>
+  <data name="AccountingMatched" xml:space="preserve"><value>متطابق</value></data>
+  <data name="AccountingNeedsReview" xml:space="preserve"><value>يحتاج مراجعة</value></data>
+  <data name="AccountingPriorBalance" xml:space="preserve"><value>الرصيد السابق</value></data>
 </root>

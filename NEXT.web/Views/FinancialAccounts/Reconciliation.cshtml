@@ -1,0 +1,10 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Accounting.ReconciliationRow>
+@{ ViewData["Title"] = L["AccountingReconciliation"]; }
+<section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["AccountingReconciliation"]</h1><p>@L["AccountingReconciliationHint"]</p></div></section>
+<partial name="_FinanceNavigation" />
+<section class="content-card finance-overview"><div class="finance-list-body"><div class="table-responsive">
+    <table class="table align-middle financial-account-balances financial-reconciliation"><thead><tr><th>@L["Account"]</th><th class="numeric-cell">@L["AccountingCurrentBookBalance"]</th><th class="numeric-cell">@L["AccountingSourceBalance"]</th><th class="numeric-cell">@L["AccountingDifference"]</th><th>@L["Status"]</th></tr></thead><tbody>
+    @foreach (var row in Model)
+    { <tr><td><a asp-action="Details" asp-route-account="@row.Account">@L["FinancialAccount" + row.Account]</a></td><td class="numeric-cell" data-label="@L["AccountingCurrentBookBalance"]"><bdi>@row.Book.ToString("N2") SDG</bdi></td><td class="numeric-cell" data-label="@L["AccountingSourceBalance"]"><bdi>@row.Source.ToString("N2") SDG</bdi></td><td class="numeric-cell" data-label="@L["AccountingDifference"]"><bdi>@row.Difference.ToString("N2") SDG</bdi></td><td data-label="@L["Status"]"><span class="status-tag @(row.Difference == 0 ? "" : "stock-low-tag")">@L[row.Difference == 0 ? "AccountingMatched" : "AccountingNeedsReview"]</span></td></tr> }
+    </tbody></table>
+</div></div></section>

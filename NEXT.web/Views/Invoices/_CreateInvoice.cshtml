@@ -2,9 +2,9 @@
 @{
     var input = Model.Input;
     var title = Model.Action == "Edit" ? "EditInvoice" : "CreateInvoice";
-    var initial = input.Lines.Select((line, index) => new { product = Model.Products is { } products && index < products.Count
-        ? new { id = products[index].Id, name = products[index].Name, unitPrice = line.QuotedUnitPrice,
-            availableQuantity = products[index].AvailableQuantity } : null, quantity = line.Quantity });
+    var initial = input.Lines.Select(line => new { product = Model.Products?.Where(p => p.Id == line.ProductId)
+        .Select(p => new { id = p.Id, name = p.Name, unitPrice = line.QuotedUnitPrice, availableQuantity = p.AvailableQuantity }).FirstOrDefault(),
+        quantity = line.Quantity, manualName = line.ManualName, unitPrice = line.QuotedUnitPrice });
 }
 <form asp-action="@Model.Action" asp-route-id="@Model.Id" method="post" data-modal-form="true" data-title="@L[title]" data-invoice-form
       data-customers-url="@Url.Action("Customers")" data-products-url="@Url.Action("Products")"
@@ -35,6 +35,7 @@
             <partial name="_Icon" model='@("plus")' /> @L["AddInvoiceLine"]
         </button>
     </fieldset>
+    <button type="button" class="btn btn-light mb-3" data-add-manual-line><partial name="_Icon" model='@("plus")' /> @L["InvoiceAddManualLine"]</button>
     <template data-invoice-line-template>
         <div class="invoice-line">
             <div class="invoice-picker" data-invoice-picker="product">
@@ -46,10 +47,17 @@
                 <div class="reference-options invoice-options" data-invoice-options role="listbox" hidden></div>
                 <small data-invoice-search-status role="status"></small>
             </div>
+            <label class="form-label invoice-manual-name" hidden>@L["InvoiceManualName"]
+                <input class="form-control" type="text" maxlength="200" data-manual-name disabled />
+                <small>@L["InvoiceManualHint"]</small>
+            </label>
             <label class="form-label">@L["Quantity"]
                 <input class="form-control" type="number" min="0.001" max="999999999999.999" step="0.001" data-invoice-quantity />
             </label>
-            <div class="form-label">@L["UnitPrice"] <output class="invoice-value" data-invoice-price>—</output></div>
+            <label class="form-label invoice-manual-price" hidden>@L["UnitPrice"]
+                <input class="form-control" type="number" min="0" max="9999999999999.99" step="0.01" data-manual-price disabled />
+            </label>
+            <div class="form-label invoice-catalog-price">@L["UnitPrice"] <output class="invoice-value" data-invoice-price>—</output></div>
             <div class="form-label">@L["InvoiceLineTotal"] <output class="invoice-value" data-invoice-line-total>—</output></div>
             <button type="button" class="btn btn-light text-danger" data-remove-invoice-line>@L["Delete"]</button>
         </div>

@@ -7,8 +7,9 @@ public class InvoiceItem : AuditableEntity<Guid>
 {
     public Guid InvoiceId { get; set; }
     public Invoice Invoice { get; set; } = null!;
-    public Guid ProductId { get; set; }
-    public Product Product { get; set; } = null!;
+    public Guid? ProductId { get; set; }
+    public string? ManualName { get; set; }
+    public Product? Product { get; set; }
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal UnitCost { get; set; }

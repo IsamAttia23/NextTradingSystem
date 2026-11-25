@@ -188,11 +188,14 @@ public sealed class InvoicePaymentsTests
         var invoice = Invoice(f, actor.Id, "HISTORY-MIGRATION");
         invoice.PaidAmount = 4; invoice.RemainingAmount = 6; invoice.PaymentStatus = PaymentStatus.Partial;
         var operation = Guid.NewGuid();
+        invoice.Items = []; // Historical columns are seeded explicitly below, before the new line-source schema exists.
         f.Db.AddRange(actor, invoice);
         await f.Db.SaveChangesAsync();
         var now = DateTimeOffset.UtcNow;
         var date = DateOnly.FromDateTime(now.DateTime);
         await f.Db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "InvoiceItems" ("Id", "InvoiceId", "ProductId", "Quantity", "UnitPrice", "UnitCost", "DiscountAmount", "TaxRate", "TaxAmount", "TotalAmount", "CreatedAt")
+            VALUES ({Guid.NewGuid()}, {invoice.Id}, {f.Product}, 2, 5, 0, 0, 0, 0, 10, {now});
             INSERT INTO "InvoiceStatusHistory" ("Id", "InvoiceId", "OperationId", "ActorId", "ActorFullName",
                 "FromStatus", "ToStatus", "PaymentAmount", "PaymentMethod", "ActionAt", "CreatedAt")
             VALUES ({Guid.NewGuid()}, {invoice.Id}, {operation}, {actor.Id}, 'Original name', 0, 2, 4, 0, {now}, {now});

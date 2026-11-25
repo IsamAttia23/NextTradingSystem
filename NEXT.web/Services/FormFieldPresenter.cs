@@ -72,7 +72,7 @@ public sealed class FormFieldPresenter(IReferenceDataService references)
         else if (type.IsEnum)
         {
             kind = "select";
-            options = Enum.GetValues(type).Cast<object>().Select(x => new FieldOption(x.ToString()!, x.ToString()!)).ToArray();
+            options = Enum.GetValues(type).Cast<object>().Select(x => new FieldOption(x.ToString()!, type == typeof(NEXT.Domain.Enums.AccountType) ? "FinancialAccount" + x : x.ToString()!)).ToArray();
         }
         else if (type == typeof(bool))
         {

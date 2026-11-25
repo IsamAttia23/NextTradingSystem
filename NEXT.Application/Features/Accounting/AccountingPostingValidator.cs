@@ -12,13 +12,31 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
     public async Task ValidateAsync(LedgerEntry entry, CancellationToken ct)
     {
         var inventoryAccounts = new[] { Account.IdFor(AccountType.Inventory), Account.IdFor(AccountType.CostOfSales), Account.IdFor(AccountType.GoodsReceivedNotInvoiced) };
-        if (entry.Kind is not (LedgerEntryKind.SalesRecognition or LedgerEntryKind.GoodsReceipt) && entry.Lines.Any(l => inventoryAccounts.Contains(l.AccountId)))
+        if (entry.ReferenceType != AccountingReferenceType.OpeningAdoption && entry.Kind is not (LedgerEntryKind.SalesRecognition or LedgerEntryKind.GoodsReceipt) && entry.Lines.Any(l => inventoryAccounts.Contains(l.AccountId)))
             throw new ConflictException("AccountingUseSourceCorrection");
+        await OpeningAsync(entry, ct);
         await InventoryReceiptAsync(entry, ct);
         await ReversalAsync(entry, ct);
         await InvoiceAsync(entry, ct);
         await PaymentAsync(entry, ct);
         await DebtsAsync(entry, ct);
+    }
+
+    private async Task OpeningAsync(LedgerEntry entry, CancellationToken ct)
+    {
+        if (entry.ReferenceType != AccountingReferenceType.OpeningAdoption) return;
+        var document = await store.FindOpeningAsync(entry.ReferenceId, ct);
+        if (document is null || entry.Kind != LedgerEntryKind.OpeningBalance || entry.InvoiceId.HasValue || entry.PaymentId.HasValue ||
+            document.OperationId != entry.OperationId || document.Date != entry.EntryDate || document.ActorId != entry.ActorId || entry.Lines.Count != 2 ||
+            entry.Lines.Any(l => l.CustomerId.HasValue || l.DebtItemId.HasValue)) throw new ConflictException("AccountingOpeningInvalid");
+        var position = await store.ReadOpeningPositionAsync(document.Account, true, ct);
+        decimal Net(AccountType type) => entry.Lines.Where(l => l.AccountId == Account.IdFor(type)).Sum(l => l.Debit - l.Credit);
+        if (position.LatestDate > entry.EntryDate ||
+            (position.LatestStockAt is { } at && DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(at, clock.LocalTimeZone).DateTime) > entry.EntryDate) ||
+            position.Hash != document.PositionHash || position.BookBalance != document.BeforeBalance ||
+            (document.Account == AccountType.Inventory && document.VerifiedBalance != position.InventoryValue) ||
+            Net(document.Account) != document.Difference || Net(AccountType.OpeningBalances) != -document.Difference)
+            throw new ConflictException("AccountingOpeningStale");
     }
 
     private async Task InventoryReceiptAsync(LedgerEntry entry, CancellationToken ct)
@@ -38,7 +56,7 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
     {
         if (entry.ReversesEntryId is not { } id) return;
         var original = await store.FindEntryAsync(id, ct) ?? throw new NotFoundException("AccountingEntryNotFound");
-        if (original.Kind == LedgerEntryKind.GoodsReceipt || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
+        if (original.ReferenceType == AccountingReferenceType.OpeningAdoption || original.Kind == LedgerEntryKind.GoodsReceipt || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
             throw new ConflictException("AccountingUseSourceCorrection");
         if (original.PostedAt is null || original.Kind == LedgerEntryKind.Reversal || entry.EntryDate < original.EntryDate ||
             entry.InvoiceId != original.InvoiceId || entry.PaymentId != original.PaymentId || await store.HasReversalAsync(id, ct))

@@ -2604,3 +2604,21 @@ a.page-number:hover {
     .finance-filter-actions { display: grid; grid-template-columns: 1fr 1fr; }
     .finance-summary { gap: 12px; }
 }
+
+.finance-overview .finance-list-body { padding: 0 24px 24px; }
+.finance-overview .financial-date-filter { margin-inline: 0; }
+.finance-account-list { border: 1px solid var(--line); border-radius: 12px; }
+.finance-account-list .table { margin-bottom: 0; min-width: 560px; }
+.finance-action-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-block-end: 24px; }
+.finance-action-card h2 { font-size: 17px; }
+.finance-action-card p { color: var(--muted); margin-block: 8px 0; overflow-wrap: anywhere; }
+.finance-tabs { margin-block: 12px 24px; padding-inline: 4px; }
+.invoice-line[data-manual="true"] .invoice-manual-name { grid-column: auto; }
+@media (max-width: 575.98px) {
+    .finance-overview .finance-list-body { padding: 0 16px 16px; }
+    .finance-account-list .table { min-width: 0; }
+    .finance-action-card { align-items: stretch; flex-direction: column; padding: 20px; }
+    .invoice-line[data-manual="true"] .invoice-manual-name { grid-column: 1 / -1; }
+}
+
+@media (max-width: 575.98px) { .table.financial-reconciliation td:last-child { padding-inline: 40% 12px; } }

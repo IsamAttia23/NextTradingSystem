@@ -278,6 +278,75 @@ namespace NEXT.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NEXT.Domain.Entities.AccountOpening", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Account")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("BeforeBalance")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PositionHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("VerifiedBalance")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Account")
+                        .IsUnique();
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.ToTable("AccountOpenings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountOpenings_Valid", "\"Account\" IN (5, 9) AND \"Date\" <> DATE '0001-01-01' AND \"VerifiedBalance\" >= 0 AND \"VerifiedBalance\" <> \"BeforeBalance\" AND length(\"PositionHash\") = 64");
+                        });
+                });
+
             modelBuilder.Entity("NEXT.Domain.Entities.AccountSecurityGrant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -883,10 +952,14 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ManualName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<Guid?>("ProductBatchId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProductId")
+                    b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Quantity")
@@ -927,7 +1000,10 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("InvoiceItems", (string)null);
+                    b.ToTable("InvoiceItems", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_InvoiceItems_LineSource", "(\"ProductId\" IS NOT NULL AND \"ManualName\" IS NULL) OR (\"ProductId\" IS NULL AND nullif(btrim(\"ManualName\"), '') IS NOT NULL AND \"UnitCost\" = 0 AND \"ProductBatchId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.InvoiceStatusHistory", b =>
@@ -1090,7 +1166,7 @@ namespace NEXT.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 8 AND \"ReferenceType\" BETWEEN 1 AND 5");
+                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 8 AND \"ReferenceType\" BETWEEN 1 AND 6");
 
                             t.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");
 
@@ -2267,6 +2343,15 @@ namespace NEXT.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("NEXT.Domain.Entities.AccountOpening", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("NEXT.Domain.Entities.AccountSecurityGrant", b =>
                 {
                     b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
@@ -2420,8 +2505,7 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasOne("NEXT.Domain.Entities.Product", "Product")
                         .WithMany("InvoiceItems")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Invoice");
 

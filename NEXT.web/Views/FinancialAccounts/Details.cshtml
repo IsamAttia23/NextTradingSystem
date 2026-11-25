@@ -1,0 +1,15 @@
+@model FinancialAccountDetailsView
+@{ ViewData["Title"] = L["FinancialAccount" + Model.Account.Type]; }
+<section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialAccount" + Model.Account.Type]</h1><p>@L["AccountingCategory" + Model.Account.Category]</p></div><a class="btn btn-light" asp-action="Index">@L["FinancialAccounts"]</a></section>
+<partial name="_FinanceNavigation" />
+<div class="stats-grid finance-summary">
+    @foreach (var metric in new[] { ("AccountingPriorBalance", Model.Account.OpeningBalance), ("AccountingDebit", Model.Account.Debit), ("AccountingCredit", Model.Account.Credit), ("AccountingClosingBalance", Model.Account.Balance) })
+    { <article class="stat-card"><div><span>@L[metric.Item1]</span></div><strong><bdi>@metric.Item2.ToString("N2") <small>SDG</small></bdi></strong></article> }
+</div>
+@if (Model.CanApproveOpening)
+{ <section class="content-card finance-action-card"><div><h2>@L["AccountingApproveOpening"]</h2><p>@L["AccountingOpeningReviewHint"]</p></div><button class="btn btn-primary" data-modal-url="@Url.Action("ApproveOpening", new { account = Model.Account.Type })">@L["AccountingReviewOpening"]</button></section> }
+@if (Model.Opening is { } opening)
+{
+    <section class="content-card finance-action-card"><div><h2>@L["AccountingOpeningApproved"]</h2><p>@opening.Date.ToString("yyyy-MM-dd") · @opening.Actor</p><p>@opening.Reason</p><dl class="invoice-totals"><dt>@L["AccountingCurrentBookBalance"]</dt><dd><bdi>@opening.Before.ToString("N2") SDG</bdi></dd><dt>@L["AccountingVerifiedBalance"]</dt><dd><bdi>@opening.Verified.ToString("N2") SDG</bdi></dd><dt>@L["AccountingDifference"]</dt><dd><bdi>@opening.Difference.ToString("N2") SDG</bdi></dd></dl></div></section>
+}
+<partial name="~/Views/Shared/Table.cshtml" model='@(Model.Movements with { Embedded = true })' />

@@ -9,6 +9,9 @@ internal static class AccountingWriteGuard
     public static void Validate(NEXTDbContext db)
     {
         ValidateTrackedEntries(db);
+        var invoiceIds = ChangedInvoiceItems(db);
+        if (invoiceIds.Length > 0 && db.LedgerEntries.Any(e => e.PostedAt != null && e.Kind == NEXT.Domain.Enums.LedgerEntryKind.SalesRecognition && e.InvoiceId.HasValue && invoiceIds.Contains(e.InvoiceId.Value)))
+            throw new ConflictException("AccountingRecognizedInvoiceImmutable");
         var payments = ChangedPayments(db);
         if (payments.Length > 0 && (HasPendingReferences(db, payments) || db.LedgerEntries.Any(item => item.PostedAt != null && item.PaymentId.HasValue && payments.Contains(item.PaymentId.Value))))
             throw new ConflictException("AccountingPostedPaymentImmutable");
@@ -17,10 +20,18 @@ internal static class AccountingWriteGuard
     public static async Task ValidateAsync(NEXTDbContext db, CancellationToken ct)
     {
         ValidateTrackedEntries(db);
+        var invoiceIds = ChangedInvoiceItems(db);
+        if (invoiceIds.Length > 0 && await db.LedgerEntries.AnyAsync(e => e.PostedAt != null && e.Kind == NEXT.Domain.Enums.LedgerEntryKind.SalesRecognition && e.InvoiceId.HasValue && invoiceIds.Contains(e.InvoiceId.Value), ct))
+            throw new ConflictException("AccountingRecognizedInvoiceImmutable");
         var payments = ChangedPayments(db);
         if (payments.Length > 0 && (HasPendingReferences(db, payments) || await db.LedgerEntries.AnyAsync(item => item.PostedAt != null && item.PaymentId.HasValue && payments.Contains(item.PaymentId.Value), ct)))
             throw new ConflictException("AccountingPostedPaymentImmutable");
     }
+
+    private static Guid[] ChangedInvoiceItems(NEXTDbContext db) => db.ChangeTracker.Entries<InvoiceItem>()
+        .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+        .SelectMany(e => new[] { e.Entity.InvoiceId, e.OriginalValues.GetValue<Guid>(nameof(InvoiceItem.InvoiceId)) })
+        .Where(id => id != Guid.Empty).Distinct().ToArray();
 
     private static Guid[] ChangedPayments(NEXTDbContext db) => db.ChangeTracker.Entries<Payment>()
         .Where(item => item.State is EntityState.Modified or EntityState.Deleted).Select(item => item.Entity.Id).ToArray();
@@ -58,6 +69,8 @@ internal static class AccountingWriteGuard
                     ledger.PostedAt is null || entry.Properties.Any(property => property.IsModified && property.Metadata.Name != nameof(LedgerEntry.PostedAt)))
                     throw new ConflictException("AccountingEntryImmutable");
             }
+            if (entry.Entity is AccountOpening && entry.State != EntityState.Added)
+                throw new ConflictException("AccountingEntryImmutable");
             if (entry.Entity is StockMovement && entry.State != EntityState.Added)
                 throw new ConflictException("AccountingPostedInventoryImmutable");
             if (entry.Entity is DebtItem && entry.State != EntityState.Added)

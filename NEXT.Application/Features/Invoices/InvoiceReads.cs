@@ -66,7 +66,7 @@ public sealed class InvoiceReads(IInvoiceRepository invoices, IPaginationService
         return new(summary, invoice.CreatedByFullName ?? invoice.User?.FullName, invoice.SubTotal,
             invoice.DiscountAmount, invoice.PaidAmount, invoice.RemainingAmount, invoice.Items
             .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id)
-            .Select(item => new InvoiceLineDetails(item.Product?.Name, item.Quantity, item.UnitPrice, item.TotalAmount)).ToArray())
+            .Select(item => new InvoiceLineDetails(item.ManualName ?? item.Product?.Name, item.Quantity, item.UnitPrice, item.TotalAmount)).ToArray())
         {
             RowVersion = invoice.RowVersion.ToArray(),
             CanConfirm = transitions.Contains(InvoiceStatus.Confirmed),

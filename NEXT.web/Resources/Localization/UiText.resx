@@ -870,4 +870,30 @@
   <data name="InventoryMovementValue" xml:space="preserve"><value>Movement value (SDG)</value></data>
   <data name="AccountingBalanceAtEnd" xml:space="preserve"><value>Balance through the selected period end</value></data>
   <data name="AccountingInventoryTransitionNotice" xml:space="preserve"><value>Balances reflect posted entries. Existing inventory requires an approved opening balance before final reconciliation.</value></data>
+  <data name="FinancialAccountsCompactDescription" xml:space="preserve"><value>A concise balance list. Open an account for movements and details.</value></data>
+  <data name="AccountingDetails" xml:space="preserve"><value>Account details</value></data>
+  <data name="InvoiceAddManualLine" xml:space="preserve"><value>Add manual item</value></data>
+  <data name="InvoiceManualName" xml:space="preserve"><value>Manual item name</value></data>
+  <data name="InvoiceManualHint" xml:space="preserve"><value>Non-stock item. No product or stock movement is created.</value></data>
+  <data name="InvoiceManualProductExists" xml:space="preserve"><value>This name exists in the catalog. Select the product to use its approved price.</value></data>
+  <data name="AccountingApproveOpening" xml:space="preserve"><value>Approve opening balance</value></data>
+  <data name="AccountingReviewOpening" xml:space="preserve"><value>Review balance</value></data>
+  <data name="AccountingOpeningApproved" xml:space="preserve"><value>Approved opening balance</value></data>
+  <data name="AccountingVerifiedBalance" xml:space="preserve"><value>Verified actual balance</value></data>
+  <data name="AccountingCurrentBookBalance" xml:space="preserve"><value>Book balance</value></data>
+  <data name="AccountingSourceBalance" xml:space="preserve"><value>Source balance</value></data>
+  <data name="AccountingDifference" xml:space="preserve"><value>Difference</value></data>
+  <data name="AccountingOpeningReason" xml:space="preserve"><value>Review reference and approval reason</value></data>
+  <data name="AccountingOpeningReviewHint" xml:space="preserve"><value>Review the supporting document or stock count. The difference is posted once against opening equity with an approval reason and actor.</value></data>
+  <data name="AccountingOpeningInvalid" xml:space="preserve"><value>Check the account, date, amount and approval information.</value></data>
+  <data name="AccountingOpeningAlreadyApproved" xml:space="preserve"><value>This account already has an approved opening balance. Use a documented correction.</value></data>
+  <data name="AccountingOpeningStale" xml:space="preserve"><value>The balance or stock changed after review. Reopen and review the form.</value></data>
+  <data name="AccountingOpeningDateBeforeActivity" xml:space="preserve"><value>The current balance cannot be approved before its latest account or inventory activity.</value></data>
+  <data name="AccountingOpeningNoDifference" xml:space="preserve"><value>The verified balance equals the book balance. No adjustment is required.</value></data>
+  <data name="AccountingDescriptionOpeningAdoption" xml:space="preserve"><value>Opening balance approval</value></data>
+  <data name="AccountingReconciliation" xml:space="preserve"><value>Balance reconciliation</value></data>
+  <data name="AccountingReconciliationHint" xml:space="preserve"><value>Compare posted balances with inventory and invoice balances. Differences require review and are not corrected automatically.</value></data>
+  <data name="AccountingMatched" xml:space="preserve"><value>Matched</value></data>
+  <data name="AccountingNeedsReview" xml:space="preserve"><value>Needs review</value></data>
+  <data name="AccountingPriorBalance" xml:space="preserve"><value>Prior balance</value></data>
 </root>

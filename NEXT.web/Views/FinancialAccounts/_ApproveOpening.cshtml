@@ -1,0 +1,15 @@
+@using NEXT.Domain.Enums
+@model ApproveOpeningView
+<form asp-action="ApproveOpening" method="post" data-modal-form="true" data-title="@L["AccountingApproveOpening"]">
+    <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+    <input type="hidden" name="Account" value="@Model.Position.Account" />
+    <input type="hidden" name="PositionHash" value="@Model.Position.Hash" />
+    <p>@L["AccountingOpeningReviewHint"]</p>
+    <dl class="invoice-totals"><dt>@L["AccountingCurrentBookBalance"]</dt><dd><bdi>@Model.Position.BookBalance.ToString("N2") SDG</bdi></dd></dl>
+    <div class="modal-field-grid">
+        <label class="form-label">@L["Date"]<input class="form-control" type="date" name="Date" required value="@Model.Today.ToString("yyyy-MM-dd")" min="@Model.Position.LatestDate?.ToString("yyyy-MM-dd")" max="@Model.Today.ToString("yyyy-MM-dd")" /></label>
+        <label class="form-label">@L["AccountingVerifiedBalance"]<input class="form-control" type="number" name="VerifiedBalance" required min="0" max="9999999999999.99" step="0.01" value="@((Model.Position.InventoryValue ?? Model.Position.BookBalance).ToString(System.Globalization.CultureInfo.InvariantCulture))" readonly="@(Model.Position.Account == AccountType.Inventory)" /></label>
+    </div>
+    <label class="form-label w-100">@L["AccountingOpeningReason"]<textarea class="form-control" name="Reason" required maxlength="500" rows="3"></textarea></label>
+    <div class="modal-form-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button><button type="submit" class="btn btn-primary" disabled="@Model.Position.Approved">@L["AccountingApproveOpening"]</button></div>
+</form>

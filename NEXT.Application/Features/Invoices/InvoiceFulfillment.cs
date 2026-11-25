@@ -54,12 +54,12 @@ public sealed class InvoiceFulfillment(IInvoiceConfirmationStore store, IInvoice
             var now = clock.GetUtcNow();
             if (invoice.Status == InvoiceStatus.Confirmed)
             {
-                if (invoice.Items.Count == 0 || invoice.Items.Any(item => item.ProductId == Guid.Empty || item.Quantity <= 0 ||
+                if (invoice.Items.Count == 0 || invoice.Items.Any(item => !InvoiceStockLines.IsValid(item) || item.Quantity <= 0 ||
                     item.Quantity > InvoiceAmounts.MaximumQuantity || decimal.Round(item.Quantity, 3) != item.Quantity))
                     RequestValidation.Fail("Lines", "InvoiceLinesInvalid");
-                var quantities = invoice.Items.GroupBy(item => item.ProductId)
+                var quantities = invoice.Items.Where(item => item.ProductId.HasValue).GroupBy(item => item.ProductId!.Value)
                     .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
-                await inventory.IssueReservedInvoiceAsync(new InvoiceDispatchInput(id, invoice.WarehouseId, quantities, now), token);
+                if (quantities.Count > 0) await inventory.IssueReservedInvoiceAsync(new InvoiceDispatchInput(id, invoice.WarehouseId, quantities, now), token);
             }
             await history.AddAsync(new InvoiceStatusHistory
             {

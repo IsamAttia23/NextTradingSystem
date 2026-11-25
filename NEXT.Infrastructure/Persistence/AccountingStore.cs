@@ -82,18 +82,51 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
                 m.Type is NEXT.Domain.Enums.StockMovementType.Purchase or NEXT.Domain.Enums.StockMovementType.OpeningBalance));
         if (invoice)
         {
-            var items = await db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == id)
-                .Select(i => new { i.ProductId, i.Quantity }).ToListAsync(ct);
+            var items = await db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == id && i.ProductId.HasValue)
+                .Select(i => new { ProductId = i.ProductId!.Value, i.Quantity }).ToListAsync(ct);
             var expected = items.GroupBy(i => i.ProductId).ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
             var actual = movements.GroupBy(m => m.ProductId).ToDictionary(g => g.Key, g => g.Sum(m => m.Quantity));
             var warehouse = await db.Invoices.Where(i => i.Id == id).Select(i => i.WarehouseId).SingleAsync(ct);
-            valid &= movements.All(m => m.WarehouseId == warehouse) && expected.Count > 0 && actual.Count == expected.Count && expected.All(p => actual.GetValueOrDefault(p.Key) == p.Value);
+            valid = await db.InvoiceItems.AnyAsync(i => i.InvoiceId == id, ct) && (movements.Length == 0 || valid) && movements.All(m => m.WarehouseId == warehouse) && actual.Count == expected.Count && expected.All(p => actual.GetValueOrDefault(p.Key) == p.Value);
         }
         else valid &= movements.Length == 1;
         return new(movements.Sum(m => m.TotalCost), movements.Length, valid,
             movements.Length == 1 && movements[0].Type == NEXT.Domain.Enums.StockMovementType.OpeningBalance,
             movements.Length == 1 ? movements[0].SupplierId : null);
     }
+
+    public async Task<OpeningPosition> ReadOpeningPositionAsync(NEXT.Domain.Enums.AccountType account, bool lockStocks, CancellationToken ct)
+    {
+        if (lockStocks) RequireTransaction();
+        var accountId = Account.IdFor(account);
+        var lines = await db.AccountTransactions.AsNoTracking().Where(t => t.AccountId == accountId && t.LedgerEntry.PostedAt != null)
+            .OrderBy(t => t.Id).Select(t => new { t.Id, t.Debit, t.Credit, t.LedgerEntry.EntryDate }).ToListAsync(ct);
+        var book = lines.Sum(t => t.Debit - t.Credit);
+        decimal? inventory = null;
+        DateTimeOffset? stockAt = null;
+        var stockHash = "";
+        DateOnly? latest = lines.Count == 0 ? null : lines.Max(t => t.EntryDate);
+        if (account == NEXT.Domain.Enums.AccountType.Inventory)
+        {
+            var query = lockStocks && db.Database.IsNpgsql()
+                ? db.Stocks.FromSqlRaw("SELECT * FROM \"Stocks\" ORDER BY \"WarehouseId\", \"ProductId\" FOR UPDATE")
+                : db.Stocks.OrderBy(s => s.WarehouseId).ThenBy(s => s.ProductId).AsQueryable();
+            var stocks = await query.AsNoTracking().ToListAsync(ct);
+            inventory = stocks.Sum(s => s.TotalCost);
+            stockHash = System.Text.Json.JsonSerializer.Serialize(stocks.Select(s => new { s.Id, s.Quantity, s.ReservedQuantity, s.TotalCost, s.RowVersion }));
+            if (stocks.Count > 0)
+            {
+                stockAt = stocks.Max(s => s.LastUpdated);
+            }
+        }
+        var payload = System.Text.Json.JsonSerializer.Serialize(new { account, lines, stockHash });
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload)));
+        return new(account, book, inventory, hash, latest, await db.AccountOpenings.AnyAsync(o => o.Account == account, ct), stockAt);
+    }
+
+    public Task<AccountOpening?> FindOpeningAsync(Guid id, CancellationToken ct) =>
+        db.AccountOpenings.Local.FirstOrDefault(o => o.Id == id) is { } local ? Task.FromResult<AccountOpening?>(local) :
+            db.AccountOpenings.AsNoTracking().SingleOrDefaultAsync(o => o.Id == id, ct);
 
     public async Task AppendAsync(LedgerEntry entry, DateTimeOffset postedAt, CancellationToken ct)
     {

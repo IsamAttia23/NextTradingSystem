@@ -2,6 +2,7 @@ using NEXT.Application.DTOs.Invoices;
 using NEXT.Application.Exceptions;
 using NEXT.Application.Validation;
 using NEXT.Domain.Entities;
+using NEXT.Domain.Services;
 
 namespace NEXT.Application.Features.Invoices;
 
@@ -13,13 +14,15 @@ public sealed class InvoiceDraftBuilder(InvoiceLookups lookups)
     {
         var name = RequestValidation.Text(input.CustomerName, nameof(input.CustomerName), 200);
         var notes = string.IsNullOrWhiteSpace(input.Notes) ? null : RequestValidation.Text(input.Notes, nameof(input.Notes), 2000);
-        var lines = input.Lines?.Where(line => line.ProductId.HasValue || line.Quantity.HasValue || line.QuotedUnitPrice.HasValue).ToArray();
-        if (lines is not { Length: > 0 }) RequestValidation.Fail("Lines", "InvoiceLinesRequired");
+        var lines = input.Lines?.Where(line => line.ProductId.HasValue || line.Quantity.HasValue || line.QuotedUnitPrice.HasValue || !string.IsNullOrWhiteSpace(line.ManualName)).ToArray();
+        if (lines is not { Length: > 0 and <= 1000 }) RequestValidation.Fail("Lines", "InvoiceLinesRequired");
         foreach (var line in lines)
-            if (line.ProductId is null || line.ProductId == Guid.Empty || line.QuotedUnitPrice is null ||
+            if (line.ProductId == Guid.Empty || (line.ProductId.HasValue && !string.IsNullOrWhiteSpace(line.ManualName)) ||
+                (!line.ProductId.HasValue && string.IsNullOrWhiteSpace(line.ManualName)) ||
+                line.QuotedUnitPrice is not { } price || !MoneyRules.IsValid(price) ||
                 line.Quantity is not { } quantity || quantity is <= 0 or > InvoiceAmounts.MaximumQuantity || decimal.Round(quantity, 3) != quantity)
                 RequestValidation.Fail("Lines", "InvoiceLinesInvalid");
-        var groups = lines.GroupBy(line => line.ProductId!.Value).ToArray();
+        var groups = lines.Where(line => line.ProductId.HasValue).GroupBy(line => line.ProductId!.Value).ToArray();
         var products = (await lookups.FindProductsAsync(groups.Select(group => group.Key).ToArray(), warehouse, ct))
             .ToDictionary(product => product.Id);
         var items = new List<InvoiceItem>(groups.Length);
@@ -37,6 +40,14 @@ public sealed class InvoiceDraftBuilder(InvoiceLookups lookups)
                 throw new ConflictException("InvoicePriceChanged");
             items.Add(new InvoiceItem { ProductId = group.Key, Quantity = quantity, UnitPrice = quote,
                 UnitCost = preserved ? old[0].UnitCost : product.UnitCost, TotalAmount = InvoiceAmounts.Money(quantity * quote) });
+        }
+        foreach (var line in lines.Where(line => !line.ProductId.HasValue))
+        {
+            var manualName = RequestValidation.Text(line.ManualName, "ManualName", 200);
+            if (await lookups.HasCatalogNameAsync(manualName, ct)) RequestValidation.Fail("Lines", "InvoiceManualProductExists");
+            items.Add(new InvoiceItem { ManualName = manualName, Quantity = line.Quantity!.Value,
+                UnitPrice = line.QuotedUnitPrice!.Value, UnitCost = 0,
+                TotalAmount = InvoiceAmounts.Money(line.Quantity.Value * line.QuotedUnitPrice.Value) });
         }
         var customer = await lookups.ResolveCustomerAsync(input.CustomerId, name, ct);
         var subtotal = InvoiceAmounts.Money(items.Sum(item => item.TotalAmount));

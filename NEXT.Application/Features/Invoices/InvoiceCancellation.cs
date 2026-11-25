@@ -61,7 +61,7 @@ public sealed class InvoiceCancellation(IInvoiceConfirmationStore store, IInvoic
             if (invoice.Status == InvoiceStatus.Confirmed)
             {
                 if (invoice.Items.Count == 0 || invoice.Items.Any(item => item.Quantity <= 0)) throw new ConflictException("InvoiceLinesInvalid");
-                var quantities = invoice.Items.GroupBy(item => item.ProductId).ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
+                var quantities = invoice.Items.Where(item => item.ProductId.HasValue).GroupBy(item => item.ProductId!.Value).ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
                 var stocks = await store.LockStocksAsync(invoice.WarehouseId, quantities.Keys.Order().ToArray(), token);
                 if (stocks.Count != quantities.Count || stocks.Any(stock => stock.ReservedQuantity < quantities[stock.ProductId]))
                     throw new ConflictException("InvoiceReservedStockInsufficient");

@@ -20,15 +20,15 @@ public sealed class InvoiceEditing(IInvoiceRepository invoices, IInvoiceConfirma
         RequestValidation.Identifier(id);
         var invoice = await invoices.GetDetailsAsync(id, ct) ?? throw new NotFoundException("InvoiceNotFound");
         EnsureEditable(invoice);
-        var products = (await lookups.FindProductsAsync(invoice.Items.Select(item => item.ProductId).Distinct().ToArray(), invoice.WarehouseId, ct))
+        var products = (await lookups.FindProductsAsync(invoice.Items.Where(item => item.ProductId.HasValue).Select(item => item.ProductId!.Value).Distinct().ToArray(), invoice.WarehouseId, ct))
             .ToDictionary(item => item.Id);
         var input = new EditInvoiceInput { OperationId = Guid.NewGuid(), RowVersion = invoice.RowVersion,
             CustomerId = invoice.CustomerId, CustomerName = invoice.CustomerName ?? "", Notes = invoice.Notes,
             DiscountType = invoice.DiscountType, DiscountValue = invoice.DiscountValue,
-            Lines = invoice.Items.Select(item => new InvoiceLineInput { ProductId = item.ProductId,
+            Lines = invoice.Items.Select(item => new InvoiceLineInput { ProductId = item.ProductId, ManualName = item.ManualName,
                 Quantity = item.Quantity, QuotedUnitPrice = item.UnitPrice }).ToList() };
-        return new(input, invoice.Items.Select(item => new InvoiceProductOption(item.ProductId, item.Product?.Name ?? "—",
-            item.Product?.Barcode, item.UnitPrice, item.UnitCost, products.GetValueOrDefault(item.ProductId)?.AvailableQuantity ?? 0)).ToArray());
+        return new(input, invoice.Items.Where(item => item.ProductId.HasValue).Select(item => new InvoiceProductOption(item.ProductId!.Value, item.Product?.Name ?? "—",
+            item.Product?.Barcode, item.UnitPrice, item.UnitCost, products.GetValueOrDefault(item.ProductId!.Value)?.AvailableQuantity ?? 0)).ToArray());
     }
 
     public Task<Guid> EditAsync(Guid id, EditInvoiceInput input, CancellationToken ct)

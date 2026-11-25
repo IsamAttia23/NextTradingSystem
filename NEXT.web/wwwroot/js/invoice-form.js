@@ -135,12 +135,24 @@
             options(picker).setAttribute("aria-labelledby", label.id);
             row.querySelector("[data-invoice-id]").name = "Lines[" + index + "].ProductId";
             row.querySelector("[data-quoted-price]").name = "Lines[" + index + "].QuotedUnitPrice";
+            row.querySelector("[data-manual-name]").name = "Lines[" + index + "].ManualName";
+            row.querySelector("[data-manual-price]").name = "Lines[" + index + "].QuotedUnitPrice";
             row.querySelector("[data-invoice-quantity]").name = "Lines[" + index + "].Quantity";
         });
     }
 
-    function appendRow(form) {
+    function appendRow(form, manual = false) {
         form.querySelector("[data-invoice-lines]").append(form.querySelector("[data-invoice-line-template]").content.cloneNode(true));
+        const row = rows(form).at(-1);
+        row.dataset.manual = String(manual);
+        row.querySelector("[data-invoice-picker]").hidden = manual;
+        row.querySelector("[data-invoice-search]").disabled = manual;
+        row.querySelector("[data-quoted-price]").disabled = manual;
+        row.querySelector(".invoice-manual-name").hidden = !manual;
+        row.querySelector(".invoice-manual-price").hidden = !manual;
+        row.querySelector(".invoice-catalog-price").hidden = manual;
+        row.querySelector("[data-manual-name]").disabled = !manual;
+        row.querySelector("[data-manual-price]").disabled = !manual;
         indexRows(form);
         calculate(form);
     }
@@ -155,10 +167,13 @@
         for (const row of lines) {
             const picker = row.querySelector(pickers);
             const id = picker.querySelector("[data-invoice-id]").value;
-            const quote = picker.querySelector("[data-quoted-price]").value;
+            const manual = row.dataset.manual === "true";
+            const manualPrice = row.querySelector("[data-manual-price]");
+            const name = row.querySelector("[data-manual-name]").value.trim();
+            const quote = manual ? manualPrice.value : picker.querySelector("[data-quoted-price]").value;
             const quantity = row.querySelector("[data-invoice-quantity]");
-            const touched = Boolean(id || pickerInput(picker).value.trim() || quantity.value || quantity.validity.badInput);
-            const complete = Boolean(id && quote !== "" && quantity.validity.valid && quantity.valueAsNumber > 0);
+            const touched = Boolean(id || name || quote || pickerInput(picker).value.trim() || quantity.value || quantity.validity.badInput);
+            const complete = Boolean((manual ? name && manualPrice.validity.valid : id) && quote !== "" && quantity.validity.valid && quantity.valueAsNumber > 0);
             const lineTotal = complete ? cents(quantity.valueAsNumber * Number(quote)) : 0;
             row.querySelector("[data-invoice-price]").textContent = quote === "" ? "—" : money(Number(quote));
             row.querySelector("[data-invoice-line-total]").textContent = complete ? money(lineTotal / 100) : "—";
@@ -169,7 +184,7 @@
                 subtotal += lineTotal;
                 count++;
                 const current = quantities.get(id)?.quantity ?? 0;
-                quantities.set(id, { quantity: current + quantity.valueAsNumber, available: Number(picker.dataset.available) });
+                if (!manual) quantities.set(id, { quantity: current + quantity.valueAsNumber, available: Number(picker.dataset.available) });
             }
         }
         const discountKind = form.querySelector("[data-invoice-discount]").value;
@@ -196,9 +211,13 @@
         const initial = JSON.parse(form.querySelector("[data-invoice-initial-lines]")?.textContent || "[]");
         if (initial.length) {
             for (const line of initial) {
-                appendRow(form);
+                appendRow(form, Boolean(line.manualName));
                 const row = rows(form).at(-1);
                 row.querySelector("[data-invoice-quantity]").value = String(line.quantity);
+                if (line.manualName) {
+                    row.querySelector("[data-manual-name]").value = line.manualName;
+                    row.querySelector("[data-manual-price]").value = String(line.unitPrice);
+                }
                 if (line.product) choose(row.querySelector(pickers), line.product);
             }
             calculate(form);
@@ -233,7 +252,12 @@
         form.addEventListener("click", event => {
             const choice = event.target.closest("[data-invoice-option]");
             if (choice) choose(choice.closest(pickers), matches.get(choice));
-            else if (event.target.closest("[data-add-invoice-line]")) {
+            else if (event.target.closest("[data-add-manual-line]")) {
+                const last = rows(form).at(-1);
+                if (rows(form).length === 1 && !last.querySelector("[data-invoice-id]").value && !pickerInput(last.querySelector(pickers)).value && !last.querySelector("[data-invoice-quantity]").value) last.remove();
+                appendRow(form, true);
+                rows(form).at(-1).querySelector("[data-manual-name]").focus();
+            } else if (event.target.closest("[data-add-invoice-line]")) {
                 appendRow(form);
                 pickerInput(rows(form).at(-1)).focus();
             } else if (event.target.closest("[data-remove-invoice-line]")) {

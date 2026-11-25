@@ -16,5 +16,7 @@ public interface IAccountingStore
     Task<decimal> GetInvoiceCreditBalanceAsync(Guid id, NEXT.Domain.Enums.AccountType account, CancellationToken ct);
     Task<IReadOnlyList<DebtPostingState>> LockDebtsAsync(Guid[] ids, CancellationToken ct);
     Task<InventoryPostingState> GetInventorySourceAsync(Guid id, bool invoice, CancellationToken ct);
+    Task<OpeningPosition> ReadOpeningPositionAsync(NEXT.Domain.Enums.AccountType account, bool lockStocks, CancellationToken ct);
+    Task<AccountOpening?> FindOpeningAsync(Guid id, CancellationToken ct);
     Task AppendAsync(LedgerEntry entry, DateTimeOffset postedAt, CancellationToken ct);
 }

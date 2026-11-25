@@ -130,10 +130,10 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
 
     private static Dictionary<Guid, decimal> RequiredQuantities(Invoice invoice)
     {
-        if (invoice.Items.Count == 0 || invoice.Items.Any(item => item.ProductId == Guid.Empty ||
+        if (invoice.Items.Count == 0 || invoice.Items.Any(item => !InvoiceStockLines.IsValid(item) ||
             item.Quantity <= 0 || item.Quantity > InvoiceAmounts.MaximumQuantity || decimal.Round(item.Quantity, 3) != item.Quantity))
             RequestValidation.Fail("Lines", "InvoiceLinesInvalid");
-        return invoice.Items.GroupBy(item => item.ProductId)
+        return invoice.Items.Where(item => item.ProductId.HasValue).GroupBy(item => item.ProductId!.Value)
             .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
     }
 }

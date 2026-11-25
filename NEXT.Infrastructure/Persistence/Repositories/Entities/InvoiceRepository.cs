@@ -39,7 +39,7 @@ public sealed class InvoiceRepository(NEXTDbContext context) : KeyRepository<Inv
 
             var invoice = result.Invoice;
             invoice.User = result.User;
-            var productIds = invoice.Items.Select(x => x.ProductId).Distinct().ToArray();
+            var productIds = invoice.Items.Where(x => x.ProductId.HasValue).Select(x => x.ProductId!.Value).Distinct().ToArray();
             var products = await ReadProductsAsync(productIds, cancellationToken);
             AttachProducts(invoice, products);
             return invoice;
@@ -63,7 +63,7 @@ public sealed class InvoiceRepository(NEXTDbContext context) : KeyRepository<Inv
     {
         foreach (var item in invoice.Items)
         {
-            if (products.TryGetValue(item.ProductId, out var product))
+            if (item.ProductId is { } id && products.TryGetValue(id, out var product))
             {
                 item.Product = product;
             }

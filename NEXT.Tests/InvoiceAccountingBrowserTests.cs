@@ -43,7 +43,7 @@ public sealed class InvoiceAccountingBrowserTests
         await page.Locator("[name=UserName]").FillAsync("ui-admin");
         await page.Locator("[name=Password]").FillAsync("Test-only!2026");
         await page.Locator("form:has([name=UserName]) button[type=submit]").ClickAsync();
-        await page.WaitForURLAsync(origin + "/");
+        await page.WaitForURLAsync(origin + "/", new() { WaitUntil = WaitUntilState.DOMContentLoaded });
         await page.GotoAsync(origin + $"/Invoices/Details/{id}?culture={culture}");
         await page.Locator("[data-modal-url*='/Fulfill']").ClickAsync();
         await page.Locator("#workspaceModal.show [name=CustomerPhone]").WaitForAsync();
@@ -78,11 +78,12 @@ public sealed class InvoiceAccountingBrowserTests
         Assert.Equal(number, await page.Locator("#main h1").InnerTextAsync());
         await page.GotoAsync(origin + "/FinancialAccounts?culture=" + culture);
         Assert.Equal(12, await page.Locator("tbody tr").CountAsync());
-        Assert.Equal(4, await page.Locator(".finance-summary .stat-card").CountAsync());
-        Assert.Equal(4, await page.Locator(".finance-tabs a").CountAsync());
+        Assert.Equal(0, await page.Locator(".finance-summary .stat-card").CountAsync());
+        Assert.Equal(5, await page.Locator(".finance-tabs a").CountAsync());
         Assert.Contains(culture == "ar" ? "تكلفة المبيعات" : "Cost of sales", await page.Locator("tbody").InnerTextAsync());
         Assert.Equal(culture == "ar" ? "بحث" : "Search", await page.Locator(".financial-date-filter [type=submit]").InnerTextAsync());
-        Assert.Equal(4, await page.Locator("thead .numeric-cell").CountAsync());
+        Assert.Equal(1, await page.Locator("thead .numeric-cell").CountAsync());
+        Assert.Equal(4, await page.Locator("thead th").CountAsync());
         Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
         Assert.True(await page.Locator(".financial-account-balances").EvaluateAsync<bool>("table => table.scrollWidth <= table.parentElement.clientWidth"));
         await Screenshot(page, culture + "-account-balances-mobile.png");
@@ -90,6 +91,17 @@ public sealed class InvoiceAccountingBrowserTests
         Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
         Assert.True(await page.Locator(".financial-account-balances").EvaluateAsync<bool>("table => [...table.querySelectorAll('.numeric-cell')].every(cell => getComputedStyle(cell).textAlign === 'end')"));
         await Screenshot(page, culture + "-account-balances-desktop.png");
+        await page.GotoAsync(origin + "/FinancialAccounts/Details?account=Inventory&culture=" + culture);
+        Assert.Equal(4, await page.Locator(".finance-summary .stat-card").CountAsync());
+        Assert.Equal(0, await page.Locator("[data-modal-url*='ApproveOpening']").CountAsync());
+        await Screenshot(page, culture + "-account-details-desktop.png");
+        await page.SetViewportSizeAsync(390, 844);
+        Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
+        await Screenshot(page, culture + "-account-details-mobile.png");
+        await page.GotoAsync(origin + "/FinancialAccounts/Reconciliation?culture=" + culture);
+        Assert.Equal(4, await page.Locator("tbody tr").CountAsync());
+        Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));
+        await Screenshot(page, culture + "-account-reconciliation-mobile.png");
     }
 
     private static async Task Screenshot(IPage page, string name)
