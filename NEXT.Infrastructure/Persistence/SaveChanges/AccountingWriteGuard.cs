@@ -44,6 +44,11 @@ internal static class AccountingWriteGuard
         db.ChangeTracker.DetectChanges();
         foreach (var entry in db.ChangeTracker.Entries().Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
         {
+            if (entry.Entity is FinancialPeriodEvent or CashTransfer or CashReconciliation && entry.State != EntityState.Added)
+                throw new ConflictException("AccountingEntryImmutable");
+            if (entry.Entity is FinancialPeriod && (entry.State == EntityState.Deleted || (entry.State == EntityState.Modified &&
+                entry.Properties.Any(p => p.IsModified && p.Metadata.Name is not (nameof(FinancialPeriod.IsClosed) or nameof(FinancialPeriod.Version) or nameof(FinancialPeriod.UpdatedAt) or nameof(FinancialPeriod.UpdatedBy))))))
+                throw new ConflictException("AccountingEntryImmutable");
             if (entry.Entity is Account account)
             {
                 if (entry.State != EntityState.Added) throw new ConflictException("AccountingFixedAccountsImmutable");

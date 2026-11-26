@@ -68,6 +68,6 @@ public sealed class AccountingOpenings(IAccountingStore store, IRepository<Accou
     }
     private static void ValidateAccount(AccountType account)
     {
-        if (account is not (AccountType.Inventory or AccountType.Treasury)) RequestValidation.Fail("Account", "AccountingOpeningInvalid");
+        if (account is not (AccountType.Inventory or AccountType.Treasury or AccountType.Bank or AccountType.Wallet or AccountType.Clearing)) RequestValidation.Fail("Account", "AccountingOpeningInvalid");
     }
 }

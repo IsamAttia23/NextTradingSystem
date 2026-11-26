@@ -900,4 +900,48 @@
   <data name="ProductPriceReport" xml:space="preserve"><value>Product price report</value></data>
   <data name="UncategorizedProducts" xml:space="preserve"><value>Uncategorized products</value></data>
   <data name="ProductReportTooLarge" xml:space="preserve"><value>More than 10,000 products match. Please narrow the filters.</value></data>
+
+  <data name="FinancialAccountBank" xml:space="preserve"><value>Bank</value></data>
+  <data name="FinancialAccountWallet" xml:space="preserve"><value>Wallet</value></data>
+  <data name="FinancialAccountClearing" xml:space="preserve"><value>Collections clearing</value></data>
+  <data name="CashAccount" xml:space="preserve"><value>Cash account</value></data>
+  <data name="CashAccountDefault" xml:space="preserve"><value>Automatic: cash → cashbox, transfer → bank, wallet → wallet, other → clearing</value></data>
+  <data name="FinancialPeriods" xml:space="preserve"><value>Financial periods</value></data>
+  <data name="CreatePeriod" xml:space="preserve"><value>Open financial period</value></data>
+  <data name="FinancialPeriodsHint" xml:space="preserve"><value>Open, close and reopen periods with a reason and approval history.</value></data>
+  <data name="FinancialPeriodsNotConfigured" xml:space="preserve"><value>Periods have not been configured. After creating the first period, posting requires a matching open period.</value></data>
+  <data name="ClosePeriod" xml:space="preserve"><value>Close period</value></data>
+  <data name="ReopenPeriod" xml:space="preserve"><value>Reopen period</value></data>
+  <data name="OpenPeriod" xml:space="preserve"><value>Open</value></data>
+  <data name="ClosedPeriod" xml:space="preserve"><value>Closed</value></data>
+  <data name="ClosePeriodHint" xml:space="preserve"><value>Closing blocks new postings dated within this period. Enter the reason.</value></data>
+  <data name="ReopenPeriodHint" xml:space="preserve"><value>Reopening requires an authorized role. The reason and approver are recorded.</value></data>
+  <data name="AuditHistory" xml:space="preserve"><value>Audit history</value></data>
+  <data name="Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="CashTransfers" xml:space="preserve"><value>Internal transfers</value></data>
+  <data name="CashTransfer" xml:space="preserve"><value>Internal transfer</value></data>
+  <data name="CashTransfersHint" xml:space="preserve"><value>Move funds between cash accounts without income or expense.</value></data>
+  <data name="FromAccount" xml:space="preserve"><value>From account</value></data>
+  <data name="ToAccount" xml:space="preserve"><value>To account</value></data>
+  <data name="CashReconciliations" xml:space="preserve"><value>Cash and bank reconciliation</value></data>
+  <data name="CashReconciliationHint" xml:space="preserve"><value>Enter the external count or statement balance and reference. Adjusted external balance = external + deposits in transit − outstanding payments. Differences require review; no automatic adjustment is posted.</value></data>
+  <data name="ExternalBalance" xml:space="preserve"><value>Count / external statement balance</value></data>
+  <data name="DepositsInTransit" xml:space="preserve"><value>Deposits in transit</value></data>
+  <data name="OutstandingPayments" xml:space="preserve"><value>Outstanding payments</value></data>
+  <data name="ExternalEvidence" xml:space="preserve"><value>Count / statement reference</value></data>
+  <data name="SaveReconciliation" xml:space="preserve"><value>Save reconciliation</value></data>
+  <data name="NewReconciliation" xml:space="preserve"><value>New reconciliation</value></data>
+  <data name="Recent200Records" xml:space="preserve"><value>Most recent 200 documents</value></data>
+  <data name="ReconciliationStale" xml:space="preserve"><value>Transactions changed; reconcile again</value></data>
+  <data name="FinancialPeriodNotOpen" xml:space="preserve"><value>The date is outside an open period or falls within a closed period.</value></data>
+  <data name="FinancialPeriodInvalid" xml:space="preserve"><value>Invalid financial period.</value></data>
+  <data name="FinancialPeriodOverlap" xml:space="preserve"><value>This period overlaps an existing period.</value></data>
+  <data name="FinancialPeriodStale" xml:space="preserve"><value>The period changed. Reload the page.</value></data>
+  <data name="FinancialPeriodFutureClose" xml:space="preserve"><value>A period cannot be closed before its end date.</value></data>
+  <data name="FinancialPermissionRequired" xml:space="preserve"><value>You are not authorized for this financial operation.</value></data>
+  <data name="CashAccountInvalid" xml:space="preserve"><value>Select a valid cash account.</value></data>
+  <data name="CashTransferInvalid" xml:space="preserve"><value>Invalid internal transfer.</value></data>
+  <data name="CashInsufficientBalance" xml:space="preserve"><value>The source account has insufficient funds.</value></data>
+  <data name="CashReconciliationInvalid" xml:space="preserve"><value>Invalid reconciliation.</value></data>
+  <data name="AccountingEntryCashTransfer" xml:space="preserve"><value>Internal transfer</value></data>
 </root>

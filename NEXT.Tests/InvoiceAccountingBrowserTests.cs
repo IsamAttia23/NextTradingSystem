@@ -77,9 +77,9 @@ public sealed class InvoiceAccountingBrowserTests
         await page.WaitForURLAsync(origin + $"/Invoices/Details/{id}");
         Assert.Equal(number, await page.Locator("#main h1").InnerTextAsync());
         await page.GotoAsync(origin + "/FinancialAccounts?culture=" + culture);
-        Assert.Equal(12, await page.Locator("tbody tr").CountAsync());
+        Assert.Equal(15, await page.Locator("tbody tr").CountAsync());
         Assert.Equal(0, await page.Locator(".finance-summary .stat-card").CountAsync());
-        Assert.Equal(5, await page.Locator(".finance-tabs a").CountAsync());
+        Assert.Equal(8, await page.Locator(".finance-tabs a").CountAsync());
         Assert.Contains(culture == "ar" ? "تكلفة المبيعات" : "Cost of sales", await page.Locator("tbody").InnerTextAsync());
         Assert.Equal(culture == "ar" ? "بحث" : "Search", await page.Locator(".financial-date-filter [type=submit]").InnerTextAsync());
         Assert.Equal(1, await page.Locator("thead .numeric-cell").CountAsync());

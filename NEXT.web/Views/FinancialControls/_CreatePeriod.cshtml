@@ -1,0 +1,8 @@
+@model NEXT.Application.DTOs.Accounting.CreatePeriodInput
+<form asp-action="CreatePeriod" method="post" data-modal-form>
+<label class="form-label">@L["Name"]<input name="Name" class="form-control" required maxlength="100" /></label>
+<div class="modal-field-grid"><label class="form-label">@L["From"]<input name="Start" type="date" class="form-control" value="@Model.Start.ToString("yyyy-MM-dd")" required /></label>
+<label class="form-label">@L["To"]<input name="End" type="date" class="form-control" value="@Model.End.ToString("yyyy-MM-dd")" required /></label></div>
+<label class="form-label">@L["Reason"]<textarea name="Reason" class="form-control" required maxlength="500"></textarea></label>
+<div class="modal-form-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L["CreatePeriod"]</button></div>
+</form>

@@ -38,7 +38,7 @@ public sealed class InvoicePaymentAccountingHandler(IAccountingStore ledger, IAc
         }
         await posting.PostAsync(new(payment.Id, LedgerEntryKind.Receipt, AccountingReferenceType.Payment, payment.Id,
             payment.PaymentDate, AccountingDescriptions.InvoiceReceipt,
-            [new(AccountType.Treasury, payment.Amount, 0, payment.CustomerId),
+            [new(payment.CashAccount, payment.Amount, 0, payment.CustomerId),
              new(credit, 0, payment.Amount, payment.CustomerId, debt?.Id)], invoice.Id, payment.Id), ct);
     }
 }

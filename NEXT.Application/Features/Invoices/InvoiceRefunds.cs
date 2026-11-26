@@ -19,6 +19,8 @@ public sealed class InvoiceRefunds(IInvoiceConfirmationStore store, IInvoiceRepo
     public Task<Guid> RefundAsync(Guid id, RecordInvoicePaymentInput input, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(input);
+        if (input.CashAccount is { } cashAccount && !NEXT.Domain.Services.CashAccounts.IsCash(cashAccount))
+            RequestValidation.Fail("CashAccount", "CashAccountInvalid");
         RequestValidation.Identifier(id);
         RequestValidation.Identifier(input.OperationId, nameof(input.OperationId));
         if (input.RowVersion is not { Length: > 0 }) RequestValidation.Fail(nameof(input.RowVersion), "InvoiceRefundConflict");
@@ -34,7 +36,7 @@ public sealed class InvoiceRefunds(IInvoiceConfirmationStore store, IInvoiceRepo
             if (previous is not null)
             {
                 if (previous.InvoiceId != id || previous.CreatedBy != actor.Id || previous.Purpose != PaymentPurpose.CustomerRefund ||
-                    previous.PaymentType != PaymentType.Payment || previous.Amount != input.Amount || previous.PaymentMethod != method)
+                    previous.PaymentType != PaymentType.Payment || previous.Amount != input.Amount || previous.CashAccount != NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, method) || previous.PaymentMethod != method)
                     throw new ConflictException("InvoiceRefundConflict");
                 return id;
             }
@@ -54,6 +56,7 @@ public sealed class InvoiceRefunds(IInvoiceConfirmationStore store, IInvoiceRepo
             var payment = new Payment { Id = input.OperationId, InvoiceId = id, CustomerId = invoice.CustomerId,
                 PaymentNumber = "REF-" + input.OperationId.ToString("N"), PaymentType = PaymentType.Payment,
                 Purpose = PaymentPurpose.CustomerRefund, Amount = input.Amount, PaymentMethod = method,
+                CashAccount = NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, method),
                 PaymentDate = DateOnly.FromDateTime(clock.GetLocalNow().DateTime), CreatedBy = actor.Id,
                 RecordedByFullName = RequestValidation.Text(actor.FullName, "RecordedByFullName", 200) };
             await payments.AddAsync(payment, token);
@@ -61,7 +64,7 @@ public sealed class InvoiceRefunds(IInvoiceConfirmationStore store, IInvoiceRepo
             await posting.PostAsync(new(input.OperationId, LedgerEntryKind.Refund, AccountingReferenceType.Payment, payment.Id,
                 payment.PaymentDate, NEXT.Application.Features.Accounting.AccountingDescriptions.InvoiceRefund,
                 [new(AccountType.CustomerRefunds, input.Amount, 0, invoice.CustomerId),
-                 new(AccountType.Treasury, 0, input.Amount, invoice.CustomerId)], id, payment.Id), token);
+                 new(payment.CashAccount, 0, input.Amount, invoice.CustomerId)], id, payment.Id), token);
             return id;
         }, ct);
     }

@@ -24,6 +24,7 @@
                 {
                     "Inventory" => action == item.Action,
                     "FinancialAccounts" => financeAction == item.Action,
+                    "FinancialControls" => action == item.Action,
                     _ => true
                 });
                 <a asp-controller="@item.Controller" asp-action="@item.Action" class="nav-item @(selected ? "selected" : "")" aria-current="@(selected ? "page" : null)">

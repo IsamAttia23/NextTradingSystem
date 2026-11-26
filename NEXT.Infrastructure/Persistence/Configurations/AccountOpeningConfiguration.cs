@@ -9,7 +9,7 @@ public sealed class AccountOpeningConfiguration : IEntityTypeConfiguration<Accou
     public void Configure(EntityTypeBuilder<AccountOpening> b)
     {
         b.ToTable("AccountOpenings", t => t.HasCheckConstraint("CK_AccountOpenings_Valid",
-            "\"Account\" IN (5, 9) AND \"Date\" <> DATE '0001-01-01' AND \"VerifiedBalance\" >= 0 AND \"VerifiedBalance\" <> \"BeforeBalance\" AND length(\"PositionHash\") = 64"));
+            "\"Account\" IN (5, 9, 13, 14, 15) AND \"Date\" <> DATE '0001-01-01' AND \"VerifiedBalance\" >= 0 AND \"VerifiedBalance\" <> \"BeforeBalance\" AND length(\"PositionHash\") = 64"));
         b.HasKey(x => x.Id);
         b.HasIndex(x => x.OperationId).IsUnique();
         b.HasIndex(x => x.Account).IsUnique();

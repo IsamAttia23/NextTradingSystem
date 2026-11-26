@@ -63,7 +63,7 @@ public sealed class AccountingLocalizationTests
         foreach (var culture in new[] { "ar", "en" })
         foreach (var term in new[] { "PAYMENT", "سداد", "bank transfer", "تحويل", "mixed case", "inv-localized-search" })
         {
-            var html = WebUtility.HtmlDecode(await client.GetStringAsync("/FinancialAccounts/Movements?Account=Treasury&culture=" + culture + "&SearchTerm=" + Uri.EscapeDataString(term)));
+            var html = WebUtility.HtmlDecode(await client.GetStringAsync("/FinancialAccounts/Movements?Account=Bank&culture=" + culture + "&SearchTerm=" + Uri.EscapeDataString(term)));
             Assert.Contains(invoice.InvoiceNumber, html);
             Assert.Contains($"href=\"/Invoices/Details/{invoice.Id}\"", html);
             Assert.Contains(culture == "ar" ? "سداد من قيمة فاتورة رقم" : "Payment against invoice", html);

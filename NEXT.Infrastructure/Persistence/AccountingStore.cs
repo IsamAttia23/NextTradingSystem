@@ -33,7 +33,7 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
             ? db.Payments.FromSqlInterpolated($"SELECT * FROM \"Payments\" WHERE \"Id\" = {id} FOR UPDATE")
             : db.Payments.Where(item => item.Id == id);
         var payment = pending ?? await query.AsNoTracking().SingleOrDefaultAsync(ct);
-        return payment is null ? null : new(payment.InvoiceId, payment.CustomerId, payment.Amount, payment.PaymentType, payment.PaymentDate, payment.Purpose);
+        return payment is null ? null : new(payment.InvoiceId, payment.CustomerId, payment.Amount, payment.PaymentType, payment.PaymentDate, payment.Purpose, payment.CashAccount);
     }
 
     public async Task<InvoicePostingState?> LockInvoiceAsync(Guid id, CancellationToken ct)

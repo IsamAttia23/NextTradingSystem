@@ -42,6 +42,7 @@ public static class ApplicationRegistrationExtensions
         services.AddScoped<IRecycleBinAccess, RecycleBinAccess>();
         services.AddScoped(typeof(IRecycleBinService<,>), typeof(RecycleBinService<,>));
         services.AddScoped<NEXT.Application.Abstractions.Context.IDeletionAuditContext, DeletionAuditContext>();
+        services.AddScoped<NEXT.Application.Features.Accounting.FinancialControls>();
         services.AddScoped<NEXT.Application.Features.Accounting.AccountingOpenings>();
         services.AddScoped<NEXT.Application.Features.Accounting.AccountingReconciliation>();
         services.AddScoped<IInventoryService, InventoryService>();

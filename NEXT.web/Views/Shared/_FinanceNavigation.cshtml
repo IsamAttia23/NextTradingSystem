@@ -10,4 +10,7 @@
     <a asp-controller="FinancialAccounts" asp-action="Movements" asp-route-Account="Treasury" asp-route-From="@from" asp-route-To="@to" class="@(account == "Treasury" ? "selected" : null)">@L["FinancialAccountTreasury"]</a>
     <a asp-controller="FinancialAccounts" asp-action="Movements" asp-route-Account="CustomerRefunds" asp-route-From="@from" asp-route-To="@to" class="@(account == "CustomerRefunds" ? "selected" : null)">@L["FinancialAccountCustomerRefunds"]</a>
     <a asp-controller="FinancialAccounts" asp-action="Reconciliation" class="@(action == "Reconciliation" ? "selected" : null)">@L["AccountingReconciliation"]</a>
+    <a asp-controller="FinancialControls" asp-action="Periods" class="@(action == "Periods" ? "selected" : null)">@L["FinancialPeriods"]</a>
+    <a asp-controller="FinancialControls" asp-action="Transfers" class="@(action == "Transfers" ? "selected" : null)">@L["CashTransfers"]</a>
+    <a asp-controller="FinancialControls" asp-action="Reconciliations" class="@(action == "Reconciliations" ? "selected" : null)">@L["CashReconciliations"]</a>
 </nav>

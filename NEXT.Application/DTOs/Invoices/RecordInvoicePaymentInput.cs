@@ -5,6 +5,8 @@ namespace NEXT.Application.DTOs.Invoices;
 
 public sealed class RecordInvoicePaymentInput
 {
+    [EnumDataType(typeof(AccountType))]
+    public AccountType? CashAccount { get; set; }
     public Guid OperationId { get; set; }
     public Guid? CustomerId { get; set; }
     [Required]

@@ -152,7 +152,7 @@ namespace NEXT.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_Accounts_NormalSide", "\"NormalSide\" IN (0, 1)");
 
-                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 12");
+                            t.HasCheckConstraint("CK_Accounts_Type", "\"Type\" BETWEEN 1 AND 15");
                         });
 
                     b.HasData(
@@ -275,6 +275,36 @@ namespace NEXT.Infrastructure.Migrations
                             Name = "الموردون",
                             NormalSide = 1,
                             Type = 12
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000013"),
+                            Category = 1,
+                            Code = "BANK",
+                            IsTechnical = false,
+                            Name = "البنك",
+                            NormalSide = 0,
+                            Type = 13
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000014"),
+                            Category = 1,
+                            Code = "WALLET",
+                            IsTechnical = false,
+                            Name = "المحفظة",
+                            NormalSide = 0,
+                            Type = 14
+                        },
+                        new
+                        {
+                            Id = new Guid("a1100000-0000-0000-0000-000000000015"),
+                            Category = 1,
+                            Code = "CLEARING",
+                            IsTechnical = false,
+                            Name = "تحصيلات قيد التسوية",
+                            NormalSide = 0,
+                            Type = 15
                         });
                 });
 
@@ -343,7 +373,7 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.ToTable("AccountOpenings", null, t =>
                         {
-                            t.HasCheckConstraint("CK_AccountOpenings_Valid", "\"Account\" IN (5, 9) AND \"Date\" <> DATE '0001-01-01' AND \"VerifiedBalance\" >= 0 AND \"VerifiedBalance\" <> \"BeforeBalance\" AND length(\"PositionHash\") = 64");
+                            t.HasCheckConstraint("CK_AccountOpenings_Valid", "\"Account\" IN (5, 9, 13, 14, 15) AND \"Date\" <> DATE '0001-01-01' AND \"VerifiedBalance\" >= 0 AND \"VerifiedBalance\" <> \"BeforeBalance\" AND length(\"PositionHash\") = 64");
                         });
                 });
 
@@ -532,6 +562,145 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Branches", (string)null);
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.CashReconciliation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Account")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("BookBalance")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("DepositsInTransit")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("ExternalBalance")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("OutstandingPayments")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<string>("PositionHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.ToTable("CashReconciliations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CashReconciliation_Values", "\"Account\" IN (5,13,14,15) AND \"DepositsInTransit\" >= 0 AND \"OutstandingPayments\" >= 0 AND (\"Account\" <> 5 OR (\"DepositsInTransit\" = 0 AND \"OutstandingPayments\" = 0))");
+                        });
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.CashTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("FromAccount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("ToAccount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.ToTable("CashTransfers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CashTransfer_Values", "\"FromAccount\" IN (5,13,14,15) AND \"ToAccount\" IN (5,13,14,15) AND \"FromAccount\" <> \"ToAccount\" AND \"Amount\" > 0 AND \"OperationId\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Category", b =>
@@ -808,6 +977,103 @@ namespace NEXT.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_DebtItems_Source", "(\"Kind\" = 1 AND \"InvoiceId\" IS NOT NULL) OR (\"Kind\" = 2 AND \"InvoiceId\" IS NULL)");
                         });
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.FinancialPeriod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Start")
+                        .IsUnique();
+
+                    b.ToTable("FinancialPeriods", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FinancialPeriod_Dates", "\"Start\" > DATE '0001-01-01' AND \"End\" >= \"Start\"");
+                        });
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.FinancialPeriodEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("PeriodId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("PeriodId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("FinancialPeriodEvents", (string)null);
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Invoice", b =>
@@ -1166,7 +1432,7 @@ namespace NEXT.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_LedgerEntries_Identifiers", "\"OperationId\" <> '00000000-0000-0000-0000-000000000000' AND \"ReferenceId\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 8 AND \"ReferenceType\" BETWEEN 1 AND 6");
+                            t.HasCheckConstraint("CK_LedgerEntries_Kind", "\"Kind\" BETWEEN 1 AND 9 AND \"ReferenceType\" BETWEEN 1 AND 7");
 
                             t.HasCheckConstraint("CK_LedgerEntries_PostingKey", "\"PostingKey\" = \"Kind\"::text || ':' || \"ReferenceType\"::text || ':' || replace(\"ReferenceId\"::text, '-', '')");
 
@@ -1236,6 +1502,9 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(15, 2)
                         .HasColumnType("numeric(15,2)");
+
+                    b.Property<int>("CashAccount")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1307,6 +1576,8 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.ToTable("Payments", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Payments_CashAccount", "\"CashAccount\" IN (5,13,14,15)");
+
                             t.HasCheckConstraint("CK_Payments_Purpose", "\"Purpose\" BETWEEN 0 AND 3");
                         });
                 });
@@ -2400,6 +2671,24 @@ namespace NEXT.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("NEXT.Domain.Entities.CashReconciliation", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.CashTransfer", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("NEXT.Domain.Entities.Category", b =>
                 {
                     b.HasOne("NEXT.Domain.Entities.Category", "Parent")
@@ -2456,6 +2745,21 @@ namespace NEXT.Infrastructure.Migrations
                     b.Navigation("DebtAccount");
 
                     b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.FinancialPeriodEvent", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.FinancialPeriod", null)
+                        .WithMany()
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.Invoice", b =>

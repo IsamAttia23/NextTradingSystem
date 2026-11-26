@@ -52,7 +52,8 @@ public sealed class InvoiceAccountingTests
         using (var retry = await Pay(client, invoice, WorkspaceUiTests.Token(paymentForm), paymentOperation, "2", "Wallet"))
             Assert.True(retry.IsSuccessStatusCode, await retry.Content.ReadAsStringAsync());
         Assert.Equal(5m, await Net(f.Db, AccountType.Receivables));
-        Assert.Equal(5m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(3m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(2m, await Net(f.Db, AccountType.Wallet));
         f.Db.ChangeTracker.Clear();
         invoice = await f.Db.Invoices.SingleAsync();
         var deliveryForm = await client.GetStringAsync($"/Invoices/Fulfill/{invoice.Id}");
@@ -64,26 +65,28 @@ public sealed class InvoiceAccountingTests
         using (var paid = await Pay(client, invoice, WorkspaceUiTests.Token(finalForm), Guid.NewGuid(), "5", "BankTransfer"))
             Assert.True(paid.IsSuccessStatusCode, await paid.Content.ReadAsStringAsync());
         Assert.Equal(0m, await Net(f.Db, AccountType.Receivables));
-        Assert.Equal(10m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(3m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(2m, await Net(f.Db, AccountType.Wallet));
+        Assert.Equal(5m, await Net(f.Db, AccountType.Bank));
         Assert.Equal(-10m, await Net(f.Db, AccountType.Sales));
         Assert.Equal(1, await f.Db.LedgerEntries.CountAsync(item => item.Kind == LedgerEntryKind.SalesRecognition));
         Assert.Equal(3, await f.Db.LedgerEntries.CountAsync(item => item.Kind == LedgerEntryKind.Receipt));
         Assert.Equal(3, await f.Db.Payments.CountAsync());
         Assert.All(await f.Db.Payments.ToListAsync(), item => Assert.Equal(PaymentPurpose.InvoiceReceipt, item.Purpose));
-        var cashPage = WebUtility.HtmlDecode(await client.GetStringAsync("/FinancialAccounts/Movements?Account=Treasury&culture=ar"));
+        var cashPage = WebUtility.HtmlDecode(await client.GetStringAsync("/FinancialAccounts/Movements?Account=Wallet&culture=ar"));
         Assert.Contains($"href=\"/Invoices/Details/{invoice.Id}\"", cashPage);
         Assert.Contains(invoice.InvoiceNumber, cashPage);
         Assert.Contains("سداد فاتورة", cashPage);
         Assert.Contains("محفظة", cashPage);
-        var customerSearch = await client.GetStringAsync("/FinancialAccounts/Movements?Account=Treasury&SearchTerm=" +
+        var customerSearch = await client.GetStringAsync("/FinancialAccounts/Movements?Account=Wallet&SearchTerm=" +
             Uri.EscapeDataString("Accounting integration customer"));
         Assert.Contains(invoice.InvoiceNumber, customerSearch);
         var receiptNumber = "PAY-" + paymentOperation.ToString("N");
-        var receiptSearch = await client.GetStringAsync("/FinancialAccounts/Movements?Account=Treasury&SearchTerm=" + receiptNumber);
+        var receiptSearch = await client.GetStringAsync("/FinancialAccounts/Movements?Account=Wallet&SearchTerm=" + receiptNumber);
         Assert.Contains($"href=\"/Invoices/Details/{invoice.Id}\"", receiptSearch);
         Assert.Contains(receiptNumber, receiptSearch);
-        var customerFilter = await client.GetStringAsync($"/FinancialAccounts/Movements?Account=Treasury&CustomerId={invoice.CustomerId}");
-        Assert.Contains("PAY-" + confirmationOperation.ToString("N"), customerFilter);
+        var customerFilter = await client.GetStringAsync($"/FinancialAccounts/Movements?Account=Wallet&CustomerId={invoice.CustomerId}");
+        Assert.Contains("PAY-" + paymentOperation.ToString("N"), customerFilter);
         var summary = WebUtility.HtmlDecode(await client.GetStringAsync("/FinancialAccounts?culture=ar"));
         Assert.Contains("الرصيد الختامي", summary);
         Assert.DoesNotContain("data-modal-url=\"/FinancialAccounts/Create", summary);

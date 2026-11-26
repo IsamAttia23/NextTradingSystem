@@ -17,6 +17,7 @@ public class Payment : AuditableEntity<Guid>
     public Guid? InvoiceId { get; set; }
     public Invoice? Invoice { get; set; }
     public decimal Amount { get; set; }
+    public AccountType CashAccount { get; set; } = AccountType.Treasury;
     public PaymentMethod PaymentMethod { get; set; }
     public DateOnly PaymentDate { get; set; }
     public string? Notes { get; set; }

@@ -18,7 +18,7 @@ public sealed class AccountingReversalService(IAccountingStore store, IAccountin
         RequestValidation.Identifier(input.EntryId, nameof(input.EntryId));
         var reason = RequestValidation.Text(input.Reason, nameof(input.Reason), 500);
         var original = await store.FindEntryAsync(input.EntryId, ct) ?? throw new NotFoundException("AccountingEntryNotFound");
-        if (original.ReferenceType == AccountingReferenceType.OpeningAdoption || original.Kind == LedgerEntryKind.GoodsReceipt || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
+        if (original.ReferenceType == AccountingReferenceType.OpeningAdoption || original.Kind is LedgerEntryKind.GoodsReceipt or LedgerEntryKind.CashTransfer || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
             throw new ConflictException("AccountingUseSourceCorrection");
         if (original.PostedAt is null || original.Kind == LedgerEntryKind.Reversal)
             throw new ConflictException("AccountingReversalUnavailable");

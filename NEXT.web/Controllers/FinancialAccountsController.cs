@@ -33,9 +33,9 @@ public sealed class FinancialAccountsController(IAccountingReadService reads, Fi
         if (!Enum.IsDefined(account)) throw new NotFoundException("AccountingEntryNotFound");
         query.Account = account;
         var summary = (await reads.GetAccountsAsync(query.From, query.To, ct)).Single(a => a.Type == account);
-        var position = account is AccountType.Inventory or AccountType.Treasury ? await openings.PreviewAsync(account, ct) : null;
+        var position = account is AccountType.Inventory or AccountType.Treasury or AccountType.Bank or AccountType.Wallet or AccountType.Clearing ? await openings.PreviewAsync(account, ct) : null;
         return View(new FinancialAccountDetailsView(summary, await presenter.MovementsAsync(query, Route, ct),
-            await openings.HistoryAsync(account, ct), position is { Approved: false } && (account == AccountType.Treasury || position.InventoryValue != position.BookBalance)));
+            await openings.HistoryAsync(account, ct), position is { Approved: false } && (NEXT.Domain.Services.CashAccounts.IsCash(account) || position.InventoryValue != position.BookBalance)));
     }
 
     [HttpGet]

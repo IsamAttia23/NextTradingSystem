@@ -23,6 +23,8 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
     public Task<Guid> ConfirmAsync(Guid id, ConfirmInvoiceInput input, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(input);
+        if (input.CashAccount is { } cashAccount && !NEXT.Domain.Services.CashAccounts.IsCash(cashAccount))
+            RequestValidation.Fail("CashAccount", "CashAccountInvalid");
         RequestValidation.Identifier(id);
         RequestValidation.Identifier(input.OperationId, nameof(input.OperationId));
         if (input.Amount < 0 || input.Amount != decimal.Round(input.Amount, 2))
@@ -45,6 +47,8 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
                 if (previous.FromStatus != InvoiceStatus.Pending || previous.ToStatus != InvoiceStatus.Confirmed ||
                     previous.ActorId != actor.Id || previous.PaymentAmount != input.Amount || previous.PaymentMethod != selectedMethod ||
                     (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
+                    throw new ConflictException("InvoiceConfirmationConflict");
+                if (input.Amount > 0 && (await payments.FirstOrDefaultAsync(p => p.Id == input.OperationId, token))?.CashAccount != NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, selectedMethod!.Value))
                     throw new ConflictException("InvoiceConfirmationConflict");
                 return invoice.Id;
             }
@@ -104,6 +108,7 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
                     CustomerId = invoice.CustomerId,
                     Amount = input.Amount,
                     PaymentMethod = selectedMethod!.Value,
+                    CashAccount = NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, selectedMethod.Value),
                     PaymentDate = DateOnly.FromDateTime(clock.GetLocalNow().DateTime)
                 };
                 await payments.AddAsync(payment, token);

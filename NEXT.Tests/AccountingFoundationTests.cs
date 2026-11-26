@@ -16,12 +16,12 @@ namespace NEXT.Tests;
 public sealed class AccountingFoundationTests
 {
     [Fact]
-    public void FixedCatalogHasTwelveClassifiedStableAccountsAndTwoTechnicalAccounts()
+    public void FixedCatalogHasFifteenClassifiedStableAccountsAndTwoTechnicalAccounts()
     {
         var first = Account.SeedData();
-        Assert.Equal(12, first.Count);
-        Assert.Equal(12, first.Select(account => account.Id).Distinct().Count());
-        Assert.Equal(12, first.Select(account => account.Code).Distinct().Count());
+        Assert.Equal(15, first.Count);
+        Assert.Equal(15, first.Select(account => account.Id).Distinct().Count());
+        Assert.Equal(15, first.Select(account => account.Code).Distinct().Count());
         Assert.Equal(2, first.Count(account => account.IsTechnical));
         Assert.Equal(first.Select(account => account.Id), Account.SeedData().Select(account => account.Id));
         Assert.Equal(DebitCreditSide.Credit, Account.Create(AccountType.Sales).NormalSide);
@@ -109,7 +109,7 @@ public sealed class AccountingFoundationTests
         Assert.Equal(reversed, await reversals.ReverseAsync(request, default));
         await Assert.ThrowsAsync<ConflictException>(() => reversals.ReverseAsync(request with { OperationId = Guid.NewGuid() }, default));
         var accounts = await reads.GetAccountsAsync(new(2026, 11, 21), new(2026, 11, 21), default);
-        Assert.Equal(12, accounts.Count);
+        Assert.Equal(15, accounts.Count);
         var cash = accounts.Single(item => item.Type == AccountType.Treasury);
         Assert.Equal(100m, cash.OpeningBalance);
         Assert.Equal(0m, cash.Debit);

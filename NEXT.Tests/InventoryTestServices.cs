@@ -28,7 +28,7 @@ internal static class InventoryTestServices
         ((Lookup)(object)users).User = new UserAccount { Id = user.Id, FullName = user.FullName, IsActive = true };
         var store = new AccountingStore(db);
         return new AccountingPostingService(store, new UnitOfWork(db), actor, users, TimeProvider.System,
-            new AccountingPostingValidator(store, TimeProvider.System));
+            new AccountingPostingValidator(store, TimeProvider.System, new FinancialControlStore(db)), new FinancialControlStore(db));
     }
     private sealed record Actor(Guid Id) : ICurrentUserService { public Guid? UserId => Id; }
     public class Lookup : DispatchProxy

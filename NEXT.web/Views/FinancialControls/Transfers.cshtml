@@ -1,0 +1,7 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Accounting.CashTransferView>
+@{ ViewData["Title"]=L["CashTransfers"]; }
+<section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["CashTransfers"]</h1><p>@L["CashTransfersHint"]</p></div><button class="btn btn-primary" data-modal-url="@Url.Action("Transfer")">@L["CashTransfer"]</button></section>
+<partial name="_FinanceNavigation" />
+<section class="content-card finance-compact-card"><div class="table-toolbar"><strong>@L["Recent200Records"]</strong></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>@L["Date"]</th><th>@L["FromAccount"]</th><th>@L["ToAccount"]</th><th>@L["Amount"]</th></tr></thead><tbody>
+@foreach(var t in Model) { <tr><td>@t.Date.ToString("yyyy-MM-dd")<details class="finance-row-details"><summary>@L["Details"]</summary><p>@t.Reason<br />@t.ActorName</p></details></td><td data-label="@L["FromAccount"]">@L["FinancialAccount"+t.FromAccount]</td><td data-label="@L["ToAccount"]">@L["FinancialAccount"+t.ToAccount]</td><td data-label="@L["Amount"]"><bdi>@t.Amount.ToString("N2") SDG</bdi></td></tr> }
+</tbody></table></div></section>

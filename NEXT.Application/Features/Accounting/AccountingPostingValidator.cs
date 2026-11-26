@@ -7,13 +7,22 @@ using NEXT.Domain.Services;
 namespace NEXT.Application.Features.Accounting;
 
 // Application rules use locked persistence facts; Infrastructure only loads and writes them.
-public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvider clock)
+public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvider clock, IFinancialControlStore controls)
 {
     public async Task ValidateAsync(LedgerEntry entry, CancellationToken ct)
     {
         var inventoryAccounts = new[] { Account.IdFor(AccountType.Inventory), Account.IdFor(AccountType.CostOfSales), Account.IdFor(AccountType.GoodsReceivedNotInvoiced) };
         if (entry.ReferenceType != AccountingReferenceType.OpeningAdoption && entry.Kind is not (LedgerEntryKind.SalesRecognition or LedgerEntryKind.GoodsReceipt) && entry.Lines.Any(l => inventoryAccounts.Contains(l.AccountId)))
             throw new ConflictException("AccountingUseSourceCorrection");
+        if (entry.Kind == LedgerEntryKind.CashTransfer)
+        {
+            var transfer = await controls.TransferAsync(entry.OperationId, ct);
+            if (transfer is null || transfer.Id != entry.ReferenceId || transfer.Date != entry.EntryDate || transfer.ActorId != entry.ActorId ||
+                entry.Lines.Count != 2 || entry.Lines.Any(l => l.CustomerId.HasValue || l.DebtItemId.HasValue) ||
+                !entry.Lines.Any(l => l.AccountId == Account.IdFor(transfer.ToAccount) && l.Debit == transfer.Amount) ||
+                !entry.Lines.Any(l => l.AccountId == Account.IdFor(transfer.FromAccount) && l.Credit == transfer.Amount))
+                throw new ConflictException("CashTransferInvalid");
+        }
         await OpeningAsync(entry, ct);
         await InventoryReceiptAsync(entry, ct);
         await ReversalAsync(entry, ct);
@@ -56,7 +65,7 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
     {
         if (entry.ReversesEntryId is not { } id) return;
         var original = await store.FindEntryAsync(id, ct) ?? throw new NotFoundException("AccountingEntryNotFound");
-        if (original.ReferenceType == AccountingReferenceType.OpeningAdoption || original.Kind == LedgerEntryKind.GoodsReceipt || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
+        if (original.ReferenceType == AccountingReferenceType.OpeningAdoption || original.Kind is LedgerEntryKind.GoodsReceipt or LedgerEntryKind.CashTransfer || original.InvoiceId.HasValue || original.PaymentId.HasValue || original.Lines.Any(line => line.DebtItemId.HasValue))
             throw new ConflictException("AccountingUseSourceCorrection");
         if (original.PostedAt is null || original.Kind == LedgerEntryKind.Reversal || entry.EntryDate < original.EntryDate ||
             entry.InvoiceId != original.InvoiceId || entry.PaymentId != original.PaymentId || await store.HasReversalAsync(id, ct))
@@ -73,7 +82,7 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
     {
         if (entry.Kind is not (LedgerEntryKind.Receipt or LedgerEntryKind.Refund)) return;
         var payment = await store.FindPaymentAsync(entry.PaymentId!.Value, ct);
-        var cash = entry.Lines.Where(line => line.AccountId == Account.IdFor(AccountType.Treasury)).Sum(line => line.Debit - line.Credit);
+        var cash = entry.Lines.Where(line => line.AccountId == Account.IdFor(payment == null ? AccountType.Treasury : payment.CashAccount)).Sum(line => line.Debit - line.Credit);
         if (payment is null || !MoneyRules.IsValid(payment.Amount) || payment.Amount <= 0 ||
             (payment.InvoiceId.HasValue && payment.Purpose != (entry.Kind == LedgerEntryKind.Receipt ? PaymentPurpose.InvoiceReceipt : PaymentPurpose.CustomerRefund)) ||
             payment.InvoiceId != entry.InvoiceId || payment.Date != entry.EntryDate ||
@@ -137,7 +146,7 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
                 Net(AccountType.CustomerAdvances) == invoice.Paid && Net(AccountType.CustomerRefunds) == -invoice.Paid && entry.Lines.Count == 2,
             LedgerEntryKind.Receipt => invoice.Status != InvoiceStatus.Cancelled && await ValidReceiptAsync(entry, invoice, ct),
             LedgerEntryKind.Refund => invoice.Status == InvoiceStatus.Cancelled && entry.Lines.Count == 2 &&
-                Net(AccountType.CustomerRefunds) == -Net(AccountType.Treasury) && Net(AccountType.CustomerRefunds) > 0 &&
+                Net(AccountType.CustomerRefunds) == -entry.Lines.Where(l => NEXT.Domain.Services.CashAccounts.All.Select(Account.IdFor).Contains(l.AccountId)).Sum(l => l.Debit - l.Credit) && Net(AccountType.CustomerRefunds) > 0 &&
                 await store.GetInvoiceCreditBalanceAsync(id, AccountType.CustomerRefunds, ct) >= Net(AccountType.CustomerRefunds),
             _ => false
         };
@@ -150,7 +159,7 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
         if (recognition is null && invoice.Status is (InvoiceStatus.Shipped or InvoiceStatus.Delivered)) return false;
         if (recognition is not null && (recognition.PostedAt is null || await store.HasReversalAsync(recognition.Id, ct))) return false;
         var counterpart = Account.IdFor(recognition is null ? AccountType.CustomerAdvances : AccountType.Receivables);
-        var cash = Account.IdFor(AccountType.Treasury);
+        var cash = entry.Lines.SingleOrDefault(l => NEXT.Domain.Services.CashAccounts.All.Select(Account.IdFor).Contains(l.AccountId))?.AccountId ?? Guid.Empty;
         var amount = entry.Lines.Where(line => line.AccountId == cash).Sum(line => line.Debit - line.Credit);
         if (recognition is null && await store.GetInvoiceCreditBalanceAsync(invoice.Id, AccountType.CustomerAdvances, ct) + amount != invoice.Paid)
             return false;

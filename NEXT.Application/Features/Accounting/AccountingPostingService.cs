@@ -11,7 +11,7 @@ namespace NEXT.Application.Features.Accounting;
 
 public sealed class AccountingPostingService(IAccountingStore store, IUnitOfWork unitOfWork,
     ICurrentUserService currentUser, IUserQueryService users, TimeProvider clock,
-    AccountingPostingValidator postingValidator) : IAccountingPostingService
+    AccountingPostingValidator postingValidator, IFinancialControlStore controls) : IAccountingPostingService
 {
     public Task<Guid> PostAsync(PostingRequestDto input, CancellationToken ct)
     {
@@ -34,6 +34,7 @@ public sealed class AccountingPostingService(IAccountingStore store, IUnitOfWork
             // Invoice workflows lock their source first; keep the same order for direct application callers.
             if (entry.InvoiceId is { } invoiceId && await store.LockInvoiceAsync(invoiceId, token) is null)
                 throw new NotFoundException("InvoiceNotFound");
+            await controls.LockAsync(token);
             await store.LockPostingAsync(entry.OperationId, entry.PostingKey, token);
             var previous = await store.FindOperationAsync(entry.OperationId, token);
             if (previous is not null)
@@ -44,6 +45,7 @@ public sealed class AccountingPostingService(IAccountingStore store, IUnitOfWork
             }
             if (await store.FindSourceAsync(entry.PostingKey, token) is not null)
                 throw new ConflictException("AccountingSourceAlreadyPosted");
+            await controls.EnsureOpenAsync(entry.EntryDate, token);
             await postingValidator.ValidateAsync(entry, token);
             await store.AppendAsync(entry, clock.GetUtcNow(), token);
             return entry.Id;

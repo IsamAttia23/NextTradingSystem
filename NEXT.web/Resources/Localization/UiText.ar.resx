@@ -900,4 +900,48 @@
   <data name="ProductPriceReport" xml:space="preserve"><value>تقرير أسعار المنتجات</value></data>
   <data name="UncategorizedProducts" xml:space="preserve"><value>منتجات دون تصنيف</value></data>
   <data name="ProductReportTooLarge" xml:space="preserve"><value>عدد المنتجات يتجاوز 10000. يرجى تحديد المنتجات باستخدام الفلاتر.</value></data>
+
+  <data name="FinancialAccountBank" xml:space="preserve"><value>البنك</value></data>
+  <data name="FinancialAccountWallet" xml:space="preserve"><value>المحفظة</value></data>
+  <data name="FinancialAccountClearing" xml:space="preserve"><value>تحصيلات قيد التسوية</value></data>
+  <data name="CashAccount" xml:space="preserve"><value>الحساب النقدي</value></data>
+  <data name="CashAccountDefault" xml:space="preserve"><value>تلقائي: نقدي ← الصندوق، تحويل ← البنك، محفظة ← المحفظة، الباقي ← قيد التسوية</value></data>
+  <data name="FinancialPeriods" xml:space="preserve"><value>الفترات المالية</value></data>
+  <data name="CreatePeriod" xml:space="preserve"><value>فتح فترة مالية</value></data>
+  <data name="FinancialPeriodsHint" xml:space="preserve"><value>إدارة الفتح والإقفال وإعادة الفتح مع تسجيل السبب والمعتمد.</value></data>
+  <data name="FinancialPeriodsNotConfigured" xml:space="preserve"><value>لم تُحدد الفترات بعد. بعد إنشاء أول فترة، يُسمح بالترحيل فقط داخل فترة مفتوحة.</value></data>
+  <data name="ClosePeriod" xml:space="preserve"><value>إقفال الفترة</value></data>
+  <data name="ReopenPeriod" xml:space="preserve"><value>إعادة فتح الفترة</value></data>
+  <data name="OpenPeriod" xml:space="preserve"><value>مفتوحة</value></data>
+  <data name="ClosedPeriod" xml:space="preserve"><value>مقفلة</value></data>
+  <data name="ClosePeriodHint" xml:space="preserve"><value>يمنع الإقفال ترحيل الحركات الجديدة داخل الفترة. أدخل سبب الإقفال.</value></data>
+  <data name="ReopenPeriodHint" xml:space="preserve"><value>تتطلب إعادة الفتح صلاحية مخولة، ويُحفظ السبب واسم المعتمد.</value></data>
+  <data name="AuditHistory" xml:space="preserve"><value>سجل المراجعة</value></data>
+  <data name="Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="CashTransfers" xml:space="preserve"><value>التحويلات الداخلية</value></data>
+  <data name="CashTransfer" xml:space="preserve"><value>تحويل داخلي</value></data>
+  <data name="CashTransfersHint" xml:space="preserve"><value>نقل الرصيد بين الحسابات النقدية دون إثبات إيراد أو مصروف.</value></data>
+  <data name="FromAccount" xml:space="preserve"><value>من حساب</value></data>
+  <data name="ToAccount" xml:space="preserve"><value>إلى حساب</value></data>
+  <data name="CashReconciliations" xml:space="preserve"><value>مطابقة النقدية والبنك</value></data>
+  <data name="CashReconciliationHint" xml:space="preserve"><value>أدخل رصيد الجرد أو الكشف الخارجي ومرجعه. الرصيد المعدّل = الخارجي + إيداعات بالطريق − مدفوعات معلقة. يُعرض الفرق دون تصحيح تلقائي.</value></data>
+  <data name="ExternalBalance" xml:space="preserve"><value>رصيد الجرد / الكشف الخارجي</value></data>
+  <data name="DepositsInTransit" xml:space="preserve"><value>إيداعات بالطريق</value></data>
+  <data name="OutstandingPayments" xml:space="preserve"><value>مدفوعات معلقة</value></data>
+  <data name="ExternalEvidence" xml:space="preserve"><value>مرجع الجرد / الكشف</value></data>
+  <data name="SaveReconciliation" xml:space="preserve"><value>حفظ المطابقة</value></data>
+  <data name="NewReconciliation" xml:space="preserve"><value>مطابقة جديدة</value></data>
+  <data name="Recent200Records" xml:space="preserve"><value>آخر 200 مستند</value></data>
+  <data name="ReconciliationStale" xml:space="preserve"><value>تغيرت الحركات؛ يلزم إعادة المطابقة</value></data>
+  <data name="FinancialPeriodNotOpen" xml:space="preserve"><value>التاريخ خارج فترة مفتوحة أو داخل فترة مقفلة.</value></data>
+  <data name="FinancialPeriodInvalid" xml:space="preserve"><value>بيانات الفترة المالية غير صالحة.</value></data>
+  <data name="FinancialPeriodOverlap" xml:space="preserve"><value>تتداخل الفترة مع فترة مالية موجودة.</value></data>
+  <data name="FinancialPeriodStale" xml:space="preserve"><value>تغيرت حالة الفترة. أعد تحميل الصفحة.</value></data>
+  <data name="FinancialPeriodFutureClose" xml:space="preserve"><value>لا يمكن إقفال فترة لم تنته بعد.</value></data>
+  <data name="FinancialPermissionRequired" xml:space="preserve"><value>لا تملك صلاحية تنفيذ هذه العملية المالية.</value></data>
+  <data name="CashAccountInvalid" xml:space="preserve"><value>اختر حساباً نقدياً صالحاً.</value></data>
+  <data name="CashTransferInvalid" xml:space="preserve"><value>بيانات التحويل الداخلي غير صالحة.</value></data>
+  <data name="CashInsufficientBalance" xml:space="preserve"><value>رصيد الحساب المصدر غير كافٍ للتحويل.</value></data>
+  <data name="CashReconciliationInvalid" xml:space="preserve"><value>بيانات المطابقة غير صالحة.</value></data>
+  <data name="AccountingEntryCashTransfer" xml:space="preserve"><value>تحويل داخلي</value></data>
 </root>

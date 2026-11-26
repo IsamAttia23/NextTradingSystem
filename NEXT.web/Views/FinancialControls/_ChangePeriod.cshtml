@@ -1,0 +1,7 @@
+@model NEXT.Application.DTOs.Accounting.ChangePeriodInput
+<form asp-action="ChangePeriod" method="post" data-modal-form>
+<input type="hidden" name="Id" value="@Model.Id" /><input type="hidden" name="Version" value="@Model.Version" /><input type="hidden" name="Close" value="@Model.Close.ToString().ToLowerInvariant()" />
+<p>@L[Model.Close ? "ClosePeriodHint" : "ReopenPeriodHint"]</p>
+<label class="form-label">@L["Reason"]<textarea name="Reason" class="form-control" required maxlength="500"></textarea></label>
+<div class="modal-form-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L[Model.Close ? "ClosePeriod" : "ReopenPeriod"]</button></div>
+</form>

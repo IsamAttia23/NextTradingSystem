@@ -1,0 +1,14 @@
+@model NEXT.Application.DTOs.Accounting.CashPosition
+<form asp-action="Reconcile" method="post" data-modal-form>
+<input name="OperationId" type="hidden" value="@Guid.NewGuid()" /><input name="Account" type="hidden" value="@Model.Account" /><input name="Date" type="hidden" value="@Model.Date.ToString("yyyy-MM-dd")" /><input name="PositionHash" type="hidden" value="@Model.Hash" />
+<p>@L["FinancialAccount"+Model.Account] · @Model.Date.ToString("yyyy-MM-dd")</p><p>@L["AccountingCurrentBookBalance"]: <bdi>@Model.Balance.ToString("N2") SDG</bdi></p>
+<p>@L["CashReconciliationHint"]</p>
+<label class="form-label">@L["ExternalBalance"]<input name="ExternalBalance" type="number" class="form-control" step="0.01" required /></label>
+@if (Model.Account != NEXT.Domain.Enums.AccountType.Treasury) {
+<div class="modal-field-grid"><label class="form-label">@L["DepositsInTransit"]<input name="DepositsInTransit" type="number" class="form-control" step="0.01" min="0" value="0" required /></label>
+<label class="form-label">@L["OutstandingPayments"]<input name="OutstandingPayments" type="number" class="form-control" step="0.01" min="0" value="0" required /></label></div>
+}
+<label class="form-label">@L["ExternalEvidence"]<input name="Evidence" class="form-control" required maxlength="200" /></label>
+<label class="form-label">@L["Reason"]<textarea name="Reason" class="form-control" required maxlength="500"></textarea></label>
+<div class="modal-form-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L["SaveReconciliation"]</button></div>
+</form>

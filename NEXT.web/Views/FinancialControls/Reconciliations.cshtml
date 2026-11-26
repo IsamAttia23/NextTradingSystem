@@ -1,0 +1,14 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Accounting.CashReconciliationView>
+@inject TimeProvider Clock
+@{ ViewData["Title"]=L["CashReconciliations"]; }
+<section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["CashReconciliations"]</h1><p>@L["CashReconciliationHint"]</p></div></section>
+<partial name="_FinanceNavigation" />
+<section class="content-card p-3 mb-4"><form method="get" asp-action="Reconcile" class="modal-field-grid" data-reconciliation-preview>
+<label class="form-label">@L["Account"]<select name="account" class="form-select">@foreach(var a in NEXT.Domain.Services.CashAccounts.All) { <option value="@a">@L["FinancialAccount"+a]</option> }</select></label>
+<label class="form-label">@L["Date"]<input name="date" type="date" class="form-control" required value="@DateOnly.FromDateTime(Clock.GetLocalNow().DateTime).ToString("yyyy-MM-dd")" /></label>
+<button class="btn btn-primary" type="submit">@L["NewReconciliation"]</button></form></section>
+<section class="content-card finance-compact-card"><div class="table-toolbar"><strong>@L["Recent200Records"]</strong></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>@L["Account"]</th><th>@L["Date"]</th><th>@L["AccountingDifference"]</th><th>@L["Status"]</th></tr></thead><tbody>
+@foreach(var r in Model) { <tr><td>@L["FinancialAccount"+r.Account]<details class="finance-row-details"><summary>@L["Details"]</summary><dl>
+<dt>@L["AccountingCurrentBookBalance"]</dt><dd>@r.BookBalance.ToString("N2") SDG</dd><dt>@L["ExternalBalance"]</dt><dd>@r.ExternalBalance.ToString("N2") SDG</dd><dt>@L["DepositsInTransit"]</dt><dd>@r.DepositsInTransit.ToString("N2")</dd><dt>@L["OutstandingPayments"]</dt><dd>@r.OutstandingPayments.ToString("N2")</dd><dt>@L["ExternalEvidence"]</dt><dd>@r.Evidence</dd><dt>@L["Reason"]</dt><dd>@r.Reason</dd><dt>@L["InvoicePaymentRecordedBy"]</dt><dd>@r.ActorName</dd></dl></details></td><td data-label="@L["Date"]">@r.Date.ToString("yyyy-MM-dd")</td><td data-label="@L["AccountingDifference"]"><bdi>@r.Difference.ToString("N2") SDG</bdi></td><td data-label="@L["Status"]">@L[r.Stale ? "ReconciliationStale" : r.Difference==0 ? "AccountingMatched" : "AccountingNeedsReview"]</td></tr> }
+</tbody></table></div></section>
+<script src="~/js/financial-controls.js" asp-append-version="true" defer></script>

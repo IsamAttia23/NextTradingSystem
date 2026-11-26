@@ -1,0 +1,8 @@
+@model FinancialPeriodsView
+@{ ViewData["Title"]=L["FinancialPeriods"]; }
+<section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialPeriods"]</h1><p>@L["FinancialPeriodsHint"]</p></div><button class="btn btn-primary" data-modal-url="@Url.Action("CreatePeriod")">@L["CreatePeriod"]</button></section>
+<partial name="_FinanceNavigation" />
+@if (Model.Periods.Count==0) { <p class="content-card p-3">@L["FinancialPeriodsNotConfigured"]</p> }
+<section class="content-card finance-compact-card"><div class="table-toolbar"><strong>@L["FinancialPeriods"]</strong></div><div class="table-responsive"><table class="table align-middle financial-periods"><thead><tr><th>@L["Name"]</th><th>@L["Date"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
+@foreach (var p in Model.Periods) { <tr><td>@p.Name<details class="finance-row-details"><summary>@L["AuditHistory"]</summary>@foreach(var e in Model.Events.Where(e=>e.PeriodId==p.Id)) { <p>@e.At.ToString("g") · @e.ActorName · @L[e.IsClosed ? "ClosedPeriod" : "OpenPeriod"]<br />@e.Reason</p> }</details></td><td data-label="@L["Date"]"><bdi>@p.Start.ToString("yyyy-MM-dd") — @p.End.ToString("yyyy-MM-dd")</bdi></td><td data-label="@L["Status"]">@L[p.IsClosed ? "ClosedPeriod" : "OpenPeriod"]</td><td data-label="@L["Actions"]"><button class="btn btn-sm text-primary" data-modal-url="@Url.Action("ChangePeriod",new {id=p.Id})">@L[p.IsClosed ? "ReopenPeriod" : "ClosePeriod"]</button></td></tr> }
+</tbody></table></div></section>

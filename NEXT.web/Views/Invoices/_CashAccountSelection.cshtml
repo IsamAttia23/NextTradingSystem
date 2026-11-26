@@ -1,0 +1,4 @@
+<label class="form-label">@L["CashAccount"]
+<select name="CashAccount" class="form-select"><option value="">@L["CashAccountDefault"]</option>
+@foreach(var a in NEXT.Domain.Services.CashAccounts.All) { <option value="@a">@L["FinancialAccount"+a]</option> }
+</select></label>

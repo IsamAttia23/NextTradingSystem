@@ -29,11 +29,14 @@ public sealed class Account
             AccountType.CostOfSales => ("COST-OF-SALES", "تكلفة المبيعات", DebitCreditSide.Debit),
             AccountType.GoodsReceivedNotInvoiced => ("GOODS-RECEIVED", "بضاعة مستلمة غير مفوترة", DebitCreditSide.Credit),
             AccountType.Payables => ("PAYABLES", "الموردون", DebitCreditSide.Credit),
+            AccountType.Bank => ("BANK", "البنك", DebitCreditSide.Debit),
+            AccountType.Wallet => ("WALLET", "المحفظة", DebitCreditSide.Debit),
+            AccountType.Clearing => ("CLEARING", "تحصيلات قيد التسوية", DebitCreditSide.Debit),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
         return new() { Id = IdFor(type), Type = type, Code = code, Name = name, NormalSide = side,
             Category = type switch {
-                AccountType.Inventory or AccountType.Receivables or AccountType.Treasury => AccountCategory.Asset,
+                AccountType.Bank or AccountType.Wallet or AccountType.Clearing or AccountType.Inventory or AccountType.Receivables or AccountType.Treasury => AccountCategory.Asset,
                 AccountType.CustomerAdvances or AccountType.CustomerRefunds or AccountType.GoodsReceivedNotInvoiced or AccountType.Payables => AccountCategory.Liability,
                 AccountType.OpeningBalances => AccountCategory.Equity,
                 AccountType.Sales => AccountCategory.Revenue,

@@ -54,6 +54,10 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     public DbSet<PurchaseOrderItem> PurchaseOrderItems => Set<PurchaseOrderItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<FinancialPeriod> FinancialPeriods => Set<FinancialPeriod>();
+    public DbSet<FinancialPeriodEvent> FinancialPeriodEvents => Set<FinancialPeriodEvent>();
+    public DbSet<CashTransfer> CashTransfers => Set<CashTransfer>();
+    public DbSet<CashReconciliation> CashReconciliations => Set<CashReconciliation>();
     public DbSet<AccountOpening> AccountOpenings => Set<AccountOpening>();
     public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
     public DbSet<AccountTransaction> AccountTransactions => Set<AccountTransaction>();

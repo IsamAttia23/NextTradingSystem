@@ -149,7 +149,7 @@ public sealed class InventoryFinancialTests
         f.Db.ChangeTracker.Clear();
         Assert.Equal(3.03m, (await f.Db.Stocks.SingleAsync()).TotalCost); // old precise value cannot be recovered
         Assert.Empty(await f.Db.LedgerEntries.ToListAsync());
-        Assert.Equal(12, await f.Db.Accounts.CountAsync());
+        Assert.Equal(15, await f.Db.Accounts.CountAsync());
         await migrator.MigrateAsync("20261122181207_EnforcePostedSourceIntegrity");
         await migrator.MigrateAsync();
         Assert.Equal(3.03m, (await f.Db.Stocks.AsNoTracking().SingleAsync()).TotalCost);

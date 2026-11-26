@@ -107,12 +107,15 @@ public sealed class InvoiceCancellationTests
         using (var changed = await Money(client, invoice, refundToken, operation, "1", "Cash", "Refund")) Assert.Equal(HttpStatusCode.Conflict, changed.StatusCode);
         using (var stale = await Money(client, invoice, refundToken, Guid.NewGuid(), "1", action: "Refund")) Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
         invoice = await Reload(f);
-        Assert.Equal(2m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(3m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(-1m, await Net(f.Db, AccountType.Bank));
         Assert.Equal(-2m, await Net(f.Db, AccountType.CustomerRefunds));
         var finalOperation = Guid.NewGuid();
         using (var final = await Money(client, invoice, refundToken, finalOperation, "2", "Wallet", "Refund")) await Success(final);
         using (var retry = await Money(client, invoice, refundToken, finalOperation, "2", "Wallet", "Refund")) await Success(retry);
-        Assert.Equal(0m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(3m, await Net(f.Db, AccountType.Treasury));
+        Assert.Equal(-1m, await Net(f.Db, AccountType.Bank));
+        Assert.Equal(-2m, await Net(f.Db, AccountType.Wallet));
         Assert.Equal(0m, await Net(f.Db, AccountType.CustomerRefunds));
         Assert.Equal(2, await f.Db.Payments.CountAsync(item => item.Purpose == PaymentPurpose.CustomerRefund));
         using (var unavailable = await client.GetAsync($"/Invoices/Refund/{invoice.Id}")) Assert.Equal(HttpStatusCode.Conflict, unavailable.StatusCode);
@@ -242,11 +245,11 @@ public sealed class InvoiceCancellationTests
         var script = migrator.GenerateScript(previous, null, MigrationsSqlGenerationOptions.Idempotent);
         await f.Db.Database.ExecuteSqlRawAsync(script);
         await f.Db.Database.ExecuteSqlRawAsync(script);
-        Assert.Equal(12, await f.Db.Accounts.CountAsync());
+        Assert.Equal(15, await f.Db.Accounts.CountAsync());
         await migrator.MigrateAsync(previous);
         Assert.Equal(7, await f.Db.Accounts.CountAsync());
         await f.Db.Database.ExecuteSqlRawAsync(script);
-        Assert.Equal(12, await f.Db.Accounts.CountAsync());
+        Assert.Equal(15, await f.Db.Accounts.CountAsync());
         var error = await Assert.ThrowsAsync<PostgresException>(() => f.Db.Database.ExecuteSqlRawAsync("UPDATE \"Accounts\" SET \"Name\" = 'Changed' WHERE \"Type\" = 8"));
         Assert.Equal("23514", error.SqlState);
     }

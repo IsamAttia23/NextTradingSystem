@@ -1,0 +1,11 @@
+@model NEXT.Application.DTOs.Accounting.CashTransferInput
+<form asp-action="Transfer" method="post" data-modal-form>
+<input type="hidden" name="OperationId" value="@Model.OperationId" />
+<div class="modal-field-grid">
+<label class="form-label">@L["FromAccount"]<select name="FromAccount" class="form-select">@foreach(var a in NEXT.Domain.Services.CashAccounts.All) { <option value="@a" selected="@(a==Model.FromAccount)">@L["FinancialAccount"+a]</option> }</select></label>
+<label class="form-label">@L["ToAccount"]<select name="ToAccount" class="form-select">@foreach(var a in NEXT.Domain.Services.CashAccounts.All) { <option value="@a" selected="@(a==Model.ToAccount)">@L["FinancialAccount"+a]</option> }</select></label>
+<label class="form-label">@L["Amount"]<input name="Amount" type="number" class="form-control" step="0.01" min="0.01" required /></label>
+<label class="form-label">@L["Date"]<input name="Date" type="date" class="form-control" value="@Model.Date.ToString("yyyy-MM-dd")" required /></label>
+</div><label class="form-label">@L["Reason"]<textarea name="Reason" class="form-control" required maxlength="500"></textarea></label>
+<div class="modal-form-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L["CashTransfer"]</button></div>
+</form>

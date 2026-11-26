@@ -22,6 +22,8 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
     public Task<Guid> RecordAsync(Guid id, RecordInvoicePaymentInput input, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(input);
+        if (input.CashAccount is { } cashAccount && !NEXT.Domain.Services.CashAccounts.IsCash(cashAccount))
+            RequestValidation.Fail("CashAccount", "CashAccountInvalid");
         RequestValidation.Identifier(id);
         RequestValidation.Identifier(input.OperationId, nameof(input.OperationId));
         if (input.RowVersion is not { Length: > 0 })
@@ -44,7 +46,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             {
                 if (previous.InvoiceId != id || previous.CreatedBy != actor.Id ||
                     previous.PaymentType != PaymentType.Receipt || previous.Amount != input.Amount ||
-                    previous.PaymentMethod != input.PaymentMethod || (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
+                    previous.CashAccount != NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, input.PaymentMethod!.Value) || previous.PaymentMethod != input.PaymentMethod || (input.CustomerId.HasValue && input.CustomerId != invoice.CustomerId))
                     throw new ConflictException("InvoicePaymentConflict");
                 return id;
             }
@@ -71,6 +73,7 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
                 Id = input.OperationId, PaymentNumber = "PAY-" + input.OperationId.ToString("N"),
                 PaymentType = PaymentType.Receipt, Purpose = PaymentPurpose.InvoiceReceipt, InvoiceId = id, CustomerId = invoice.CustomerId,
                 Amount = input.Amount, PaymentMethod = input.PaymentMethod!.Value,
+                CashAccount = NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, input.PaymentMethod.Value),
                 PaymentDate = DateOnly.FromDateTime(clock.GetLocalNow().DateTime),
                 CreatedBy = actor.Id,
                 RecordedByFullName = RequestValidation.Text(actor.FullName, "RecordedByFullName", 200)

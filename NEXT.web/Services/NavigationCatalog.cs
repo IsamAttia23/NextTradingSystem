@@ -8,7 +8,7 @@ public static class NavigationCatalog
     public static IReadOnlyList<NavigationGroup> Groups { get; } = [
         new("OverviewGroup", [new("Home", "Dashboard")]),
         new("SalesGroup", [new("Invoices", "Invoices")]),
-        new("FinanceGroup", [new("FinancialAccounts", "FinancialAccounts"), new("FinancialAccounts", "FinancialAccountTreasury", "Treasury"), new("FinancialAccounts", "FinancialAccountCustomerRefunds", "Refunds")]),
+        new("FinanceGroup", [new("FinancialAccounts", "FinancialAccounts"), new("FinancialAccounts", "FinancialAccountTreasury", "Treasury"), new("FinancialAccounts", "FinancialAccountCustomerRefunds", "Refunds"), new("FinancialControls", "FinancialPeriods", "Periods"), new("FinancialControls", "CashTransfers", "Transfers"), new("FinancialControls", "CashReconciliations", "Reconciliations")]),
         new("PartnersGroup", [new("Customers", "Customers"), new("CustomersContact", "CustomersContact"), new("Suppliers", "Suppliers"), new("Tags", "Tags")]),
         new("InventoryGroup", [new("Products", "Products"), new("Categories", "Categories"), new("Units", "Units"), new("Warehouses", "Warehouses"),
             new("Inventory", "Stocks"), new("Inventory", "StockMovements", "Movements"), new("Inventory", "ProductBatches", "Batches")]),

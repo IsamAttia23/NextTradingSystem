@@ -19,7 +19,7 @@ public sealed class AccountOpening : AuditableEntity<Guid>
     public static AccountOpening Create(Guid operation, AccountType account, DateOnly date, decimal before, decimal verified,
         string hash, string reason, Guid actor, string actorName)
     {
-        if (operation == Guid.Empty || actor == Guid.Empty || account is not (AccountType.Inventory or AccountType.Treasury) || date == default ||
+        if (operation == Guid.Empty || actor == Guid.Empty || account is not (AccountType.Inventory or AccountType.Treasury or AccountType.Bank or AccountType.Wallet or AccountType.Clearing) || date == default ||
             !MoneyRules.IsValid(Math.Abs(before)) || !MoneyRules.IsValid(verified) || !MoneyRules.IsValid(Math.Abs(verified - before)) || verified == before ||
             hash.Length != 64 || string.IsNullOrWhiteSpace(reason) || reason.Length > 500 || string.IsNullOrWhiteSpace(actorName) || actorName.Length > 200)
             throw new ArgumentException("AccountingOpeningInvalid");

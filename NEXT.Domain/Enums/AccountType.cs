@@ -13,5 +13,6 @@ public enum AccountType
     Inventory = 9,
     CostOfSales = 10,
     GoodsReceivedNotInvoiced = 11,
-    Payables = 12
+    Payables = 12,
+    Bank = 13, Wallet = 14, Clearing = 15
 }
