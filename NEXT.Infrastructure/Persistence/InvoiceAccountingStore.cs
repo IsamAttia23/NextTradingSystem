@@ -26,9 +26,24 @@ public sealed class InvoiceAccountingStore(NEXTDbContext db) : IInvoiceAccountin
     {
         RequireTransaction();
         var query = db.Database.IsNpgsql()
-            ? db.CustomerDebtAccounts.FromSqlInterpolated($"SELECT * FROM \"CustomerDebtAccounts\" WHERE \"CustomerId\" = {customerId} FOR UPDATE")
-            : db.CustomerDebtAccounts.Where(item => item.CustomerId == customerId);
+            ? db.CustomerDebtAccounts.FromSqlInterpolated($"SELECT * FROM \"CustomerDebtAccounts\" WHERE \"CustomerId\" = {customerId} AND \"ClosedAt\" IS NULL FOR UPDATE")
+            : db.CustomerDebtAccounts.Where(item => item.CustomerId == customerId && item.ClosedAt == null);
         return await query.AsTracking().SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<CustomerDebtAccount?> LockDebtAccountByIdAsync(Guid accountId, CancellationToken ct)
+    {
+        RequireTransaction();
+        var query = db.Database.IsNpgsql()
+            ? db.CustomerDebtAccounts.FromSqlInterpolated($"SELECT * FROM \"CustomerDebtAccounts\" WHERE \"Id\" = {accountId} FOR UPDATE")
+            : db.CustomerDebtAccounts.Where(a => a.Id == accountId);
+        return await query.AsTracking().SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<int> NextDebtCycleAsync(Guid customerId, CancellationToken ct)
+    {
+        RequireTransaction();
+        return (await db.CustomerDebtAccounts.Where(a => a.CustomerId == customerId).MaxAsync(a => (int?)a.CycleNumber, ct) ?? 0) + 1;
     }
 
     private void RequireTransaction()

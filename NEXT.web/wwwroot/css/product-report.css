@@ -1,0 +1,23 @@
+
+.modal-dialog:has([data-product-report-preview]) { max-width: 1100px; }
+.product-report { font-family: Tajawal,sans-serif; color:#193455; background:#fff; max-width:1050px; margin:20px auto; padding:30px; border:1px solid #dfe7f1; border-radius:16px; box-sizing:border-box; }
+.product-report * { box-sizing:border-box; }
+.report-heading { display:flex; justify-content:space-between; align-items:start; gap:20px; border-bottom:3px solid #254f8a; padding-bottom:20px; }
+.report-brand { color:#254f8a; font-size:27px; font-weight:700; letter-spacing:2px; }
+.report-heading h1 { margin:8px 0; font-size:25px; line-height:1.4; }
+.report-heading p { color:#70819a; margin:6px 0; font-size:13px; }
+.report-summary { display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; }
+.report-summary > div { flex:1; min-width:135px; padding:14px 18px; background:#f1f5fb; border:1px solid #e1e9f4; border-radius:10px; }
+.report-summary span { display:block; color:#70819a; font-size:12px; }.report-summary strong { display:block; margin-top:4px; font-size:20px; }
+.product-report table { width:100%; table-layout:fixed; border-collapse:collapse; margin-bottom:22px; font-size:14px; }
+.product-report th, .product-report td { text-align:start; padding:11px 12px; border-bottom:1px solid #e2e9f3; overflow-wrap:anywhere; }
+.product-report .report-columns th { font-size:12px; color:#61758f; background:#f5f8fc; }
+.product-report .report-columns th:first-child { width:43%; }
+.product-report tbody tr:nth-child(even) { background:#f8fafd; }
+.product-report .report-category { background:#254f8a; color:white; border:0; }
+.product-report h2 { font-size:16px; margin:0; display:flex; justify-content:space-between; gap:12px; }
+.product-report .report-category small { font-size:12px; font-weight:400; white-space:nowrap; }
+.product-report bdi { font-variant-numeric:tabular-nums; }
+.report-footnote { color:#70819a; font-size:12px; border-top:1px solid #e2e9f3; padding-top:14px; }
+@media (max-width:575px) { .product-report { padding:14px; border-radius:10px; } .report-heading { flex-direction:column; gap:4px; } .report-heading h1 { font-size:21px; } .product-report td,.product-report th { padding:9px 5px; font-size:11px; } .product-report .report-columns th { font-size:10px; } .report-summary { gap:8px; } .report-summary > div { min-width:95px; padding:10px; } }
+@media print { .product-report { max-width:none; margin:0; padding:0; border:0; border-radius:0; } .report-heading,.report-summary { break-inside:avoid; } .product-report table { font-size:10pt; } .product-report thead { display:table-header-group; } .product-report tr { break-inside:avoid; } .product-report .report-category { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }

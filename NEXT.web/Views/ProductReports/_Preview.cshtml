@@ -1,0 +1,10 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Products.ProductDto>
+@inject NEXT.web.Services.InvoiceDocumentAssets Assets
+<section data-modal-view data-product-report-preview data-title="@L["ProductPriceReport"]">
+<style>@Html.Raw(Assets.Styles)</style>
+<div class="invoice-document-actions">
+<a class="btn btn-primary" data-native-navigation href="@Url.Action("Pdf")@Context.Request.QueryString">@L["InvoiceDocumentSavePdf"]</a>
+<a class="btn btn-light" target="_blank" rel="noopener" href="@Url.Action("Print")@Context.Request.QueryString">@L["InvoiceDocumentPrint"]</a>
+</div><partial name="_ProductReportDocument" model="Model" />
+<div class="modal-form-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal">@L["Close"]</button></div>
+</section>

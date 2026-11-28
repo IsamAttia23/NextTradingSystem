@@ -944,4 +944,80 @@
   <data name="CashInsufficientBalance" xml:space="preserve"><value>The source account has insufficient funds.</value></data>
   <data name="CashReconciliationInvalid" xml:space="preserve"><value>Invalid reconciliation.</value></data>
   <data name="AccountingEntryCashTransfer" xml:space="preserve"><value>Internal transfer</value></data>
+
+<data name="ProductReportSubtitle" xml:space="preserve"><value>Price list by category</value></data>
+<data name="ProductReportCurrency" xml:space="preserve"><value>Prices in Sudanese pounds</value></data>
+<data name="ProductReportPriceNote" xml:space="preserve"><value>Unit prices use current product pricing and exchange rates at the time of this report.</value></data>
+
+<data name="DebtBook" xml:space="preserve"><value>Debt book</value></data>
+<data name="DebtBookDescription" xml:space="preserve"><value>Customer balances and transactions after shipment or delivery.</value></data>
+<data name="DebtBookLastActivity" xml:space="preserve"><value>Last activity</value></data>
+<data name="DebtBookTransactions" xml:space="preserve"><value>Customer account transactions</value></data>
+<data name="DebtBookTotalGoods" xml:space="preserve"><value>Goods withdrawn and prior balances</value></data>
+<data name="DebtBookCustomerAccount" xml:space="preserve"><value>Customer account</value></data>
+<data name="DebtBookAccountHint" xml:space="preserve"><value>Receive an account payment or withdraw more goods, with a full statement of items, payments and balance.</value></data>
+<data name="DebtBookWithdraw" xml:space="preserve"><value>Withdraw goods</value></data>
+<data name="DebtBookReceive" xml:space="preserve"><value>Receive account payment</value></data>
+<data name="DebtBookStatement" xml:space="preserve"><value>Customer account statement</value></data>
+<data name="DebtBookGoodsDetails" xml:space="preserve"><value>Goods and invoice details</value></data>
+<data name="DebtBookPayments" xml:space="preserve"><value>Payments received</value></data>
+<data name="DebtBookAllocationHint" xml:space="preserve"><value>The payment settles the oldest unpaid invoices first, then opening balances. Overpayment is rejected.</value></data>
+<data name="DebtBookStatementNote" xml:space="preserve"><value>Includes shipped or delivered invoices and their recorded payments. All amounts are in Sudanese pounds.</value></data>
+<data name="DebtBookAccountNotFound" xml:space="preserve"><value>The customer debt account was not found.</value></data>
+<data name="DebtBookPaymentInvalid" xml:space="preserve"><value>Enter a positive payment within the outstanding balance and choose a payment method and cash account.</value></data>
+<data name="DebtBookAccountStale" xml:space="preserve"><value>This customer account changed. Reload it and try again.</value></data>
+<data name="AccountingDescriptionDebtReceipt" xml:space="preserve"><value>Customer account payment</value></data>
+
+<data name="HasBalance" xml:space="preserve"><value>Has outstanding balance</value></data>
+<data name="Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="DebtBookOpeningBalances" xml:space="preserve"><value>Prior balances</value></data>
+  <data name="DebtBookStatementTitle" xml:space="preserve"><value>Account statement — {0}</value></data>
+  <data name="StoreProfileSettings" xml:space="preserve"><value>Store and document details</value></data>
+  <data name="StoreProfileName" xml:space="preserve"><value>Store name</value></data>
+  <data name="StoreProfileSubtitle" xml:space="preserve"><value>Activity or subtitle</value></data>
+  <data name="StoreProfileSecondaryPhone" xml:space="preserve"><value>Additional phone number</value></data>
+  <data name="StoreProfileDocumentHeader" xml:space="preserve"><value>Document header</value></data>
+  <data name="StoreProfileHint" xml:space="preserve"><value>The current store details appear on invoices, account statements and product reports in previews, printouts and PDF files.</value></data>
+  <data name="StoreProfileNotConfigured" xml:space="preserve"><value>Use Edit to enter the store name and contact details for your documents.</value></data>
+  <data name="StoreProfileChanged" xml:space="preserve"><value>The store details changed after you opened them. Reopen the editor and try again.</value></data>
+<data name="DebtBookPaymentDescription" xml:space="preserve"><value>Payment description (required)</value></data>
+<data name="DebtBookPaymentDescriptionRequired" xml:space="preserve"><value>Enter a payment description before saving.</value></data>
+<data name="DebtBookPaymentDescriptionExample" xml:space="preserve"><value>Example: payment for goods previously withdrawn</value></data>
+<data name="DebtBookLegacyPaymentDescription" xml:space="preserve"><value>Previously recorded payment without a description</value></data>
+<data name="DebtBookCycle" xml:space="preserve"><value>Account cycle</value></data>
+<data name="DebtBookAccountStatus" xml:space="preserve"><value>Account status</value></data>
+<data name="DebtBookClosed" xml:space="preserve"><value>Closed and settled</value></data>
+<data name="DebtBookOpen" xml:space="preserve"><value>Open</value></data>
+<data name="DebtBookAccountClosed" xml:space="preserve"><value>This settled account is closed. New goods open a new account.</value></data>
+<data name="IsClosed" xml:space="preserve"><value>Closed account</value></data>
+<data name="TrialStores" xml:space="preserve"><value>Trial stores</value></data>
+<data name="PlatformGroup" xml:space="preserve"><value>Store management</value></data>
+<data name="CreateStore" xml:space="preserve"><value>Add store</value></data>
+<data name="TrialStoresHint" xml:space="preserve"><value>Create the store owner account and share its dedicated login link. Each store has independent data.</value></data>
+<data name="MainStore" xml:space="preserve"><value>Main store</value></data>
+<data name="MainStorePreserved" xml:space="preserve"><value>This is the existing store with its original data. New stores do not use its data.</value></data>
+<data name="OpenStore" xml:space="preserve"><value>Open store</value></data>
+<data name="StoreOwner" xml:space="preserve"><value>Store owner</value></data>
+<data name="StoreSlug" xml:space="preserve"><value>Link code in lowercase English (optional)</value></data>
+<data name="StoreOwnerPassword" xml:space="preserve"><value>Store owner password</value></data>
+<data name="StorePasswordHint" xml:space="preserve"><value>Use a strong password that meets system requirements. Give the owner their password and store link yourself.</value></data>
+<data name="CreateStoreHint" xml:space="preserve"><value>The store and owner account are prepared with independent new data. Setup may take a little time.</value></data>
+<data name="StoreRetryHint" xml:space="preserve"><value>To finish setup, use the previous details and the owner password you entered.</value></data>
+<data name="RetryStoreProvisioning" xml:space="preserve"><value>Finish store setup</value></data>
+<data name="EnableStore" xml:space="preserve"><value>Enable store</value></data>
+<data name="DisableStore" xml:space="preserve"><value>Disable store</value></data>
+<data name="StoreStateActive" xml:space="preserve"><value>Active</value></data>
+<data name="StoreStateDisabled" xml:space="preserve"><value>Disabled</value></data>
+<data name="StoreStateFailed" xml:space="preserve"><value>Setup incomplete</value></data>
+<data name="StoreStateProvisioning" xml:space="preserve"><value>Setting up</value></data>
+<data name="CurrentStore" xml:space="preserve"><value>Current store</value></data>
+<data name="StoreUnavailable" xml:space="preserve"><value>This store is unavailable. Check the link or contact the administrator.</value></data>
+<data name="StoreSlugAlreadyUsed" xml:space="preserve"><value>This link code is used by another store. Choose a different code.</value></data>
+<data name="StoreChanged" xml:space="preserve"><value>Store details changed. Reload the page and try again.</value></data>
+<data name="StoreCreationUnavailable" xml:space="preserve"><value>This store action is currently unavailable.</value></data>
+<data name="StoreProvisioningRoleMismatch" xml:space="preserve"><value>Store provisioning must use the same database user as the application.</value></data>
+<data name="StoreProvisioningBusy" xml:space="preserve"><value>This store is already being prepared. Wait, then reload the list.</value></data>
+<data name="StoreOperationConflict" xml:space="preserve"><value>This operation belongs to different store details. Reopen store setup.</value></data>
+<data name="StoreDatabaseAlreadyExists" xml:space="preserve"><value>A new database could not be assigned to this store. Contact the administrator.</value></data>
+<data name="StoreOwnerCredentialsConflict" xml:space="preserve"><value>Use the owner password entered when setup began.</value></data>
 </root>

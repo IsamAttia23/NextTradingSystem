@@ -1,0 +1,22 @@
+
+.debt-book-actions {display:flex;gap:10px;flex-wrap:wrap;}
+.modal-dialog:has([data-debt-statement]) {max-width:1100px;}
+.debt-statement {font-family:Tajawal,sans-serif;color:#193455;background:#fff;max-width:1050px;margin:18px auto;padding:28px;border:1px solid #dfe7f1;border-radius:14px;box-sizing:border-box;}
+.debt-statement * {box-sizing:border-box;}.debt-statement h1 {font-size:25px;margin:8px 0;}.debt-statement h2 {font-size:17px;margin:24px 0 12px;}.debt-statement p {font-size:13px;color:#647890;}
+.debt-statement-header {display:flex;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:3px solid #254f8a;}
+.debt-statement table {width:100%;table-layout:fixed;border-collapse:collapse;margin:12px 0 20px;font-size:13px;}
+.debt-statement td,.debt-statement th {padding:9px 10px;text-align:start;border-bottom:1px solid #e2e9f3;overflow-wrap:anywhere;}
+.debt-statement th {color:#536c8c;background:#f3f6fb;}.debt-statement .debt-invoice-band {color:#fff;background:#254f8a;font-weight:500;}
+.debt-statement tbody tr:nth-child(even) {background:#f8fafd;}.debt-statement bdi {font-variant-numeric:tabular-nums;}.debt-statement .debt-name-col {width:43%;}
+.debt-invoice-meta {display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;}
+.debt-statement .report-summary strong {font-size:21px;}.debt-balance {color:#254f8a;}
+@media(max-width:575px){.debt-statement {padding:14px;margin:10px 0;}.debt-statement-header {flex-direction:column;gap:4px;}.debt-statement h1 {font-size:21px;}.debt-statement td,.debt-statement th {font-size:10px;padding:8px 4px;}.debt-book-actions {width:100%;}.debt-book-actions .btn {flex:1 1 140px;}}
+@media print {.debt-statement {max-width:none;margin:0;padding:0;border:0;border-radius:0;}.debt-statement-header,.debt-statement .report-summary {break-inside:avoid;}.debt-statement thead {display:table-header-group;}.debt-statement tr {break-inside:avoid;}.debt-statement .debt-invoice-band {print-color-adjust:exact;-webkit-print-color-adjust:exact;}}
+
+@media print {.debt-statement h2 {break-after:avoid;}.debt-payments-section {break-inside:avoid;}.debt-statement td,.debt-statement th {padding:7px 9px;}}
+
+.debt-statement-header > div {min-width:0;}.debt-statement h1 {overflow-wrap:anywhere;}
+
+@media print {.debt-statement table {margin:8px 0 12px;}.debt-statement h2 {margin-top:20px;}}
+
+.debt-book-receipts article {padding:14px 20px;border-top:1px solid #e2e9f3;overflow-wrap:anywhere;}.debt-book-receipts h2 {font-size:18px;padding:18px 20px 8px;}.debt-book-receipts article > div {display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}.debt-book-receipts p {margin:8px 0;white-space:pre-line;}.debt-payment-description {white-space:pre-line;overflow-wrap:anywhere;}

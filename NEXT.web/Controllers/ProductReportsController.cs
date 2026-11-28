@@ -7,6 +7,12 @@ namespace NEXT.web.Controllers;
 public sealed class ProductReportsController(ISender sender, InvoiceDocumentHtml html, InvoicePdfRenderer pdf) : WorkspaceController
 {
     [HttpGet]
+    public async Task<IActionResult> Preview([FromQuery] ProductQueryModel query, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        return PartialView("_Preview", await sender.Send(new ProductReportQuery(query), ct));
+    }
+    [HttpGet]
     public async Task<IActionResult> Print([FromQuery] ProductQueryModel query, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);

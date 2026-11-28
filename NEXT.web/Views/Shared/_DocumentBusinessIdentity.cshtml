@@ -1,0 +1,16 @@
+@inject NEXT.Application.Features.Settings.StoreProfileSettings StoreSettings
+@{var business = await StoreSettings.ReadAsync(Context.RequestAborted);}
+<div class="document-business-identity">
+    @if(string.IsNullOrWhiteSpace(business.Name))
+    {
+        <div class="document-business-name">NEXT</div><p class="document-business-subtitle">@L["TradingSystem"]</p>
+    }
+    else
+    {
+        <div class="document-business-name">@business.Name</div>
+        @if(!string.IsNullOrWhiteSpace(business.Subtitle)){<p class="document-business-subtitle">@business.Subtitle</p>}
+        @if(!string.IsNullOrWhiteSpace(business.Address)){<p class="document-business-address">@business.Address</p>}
+        @if(!string.IsNullOrWhiteSpace(business.Phone) || !string.IsNullOrWhiteSpace(business.SecondaryPhone))
+        {<p class="document-business-phones">@if(!string.IsNullOrWhiteSpace(business.Phone)){<bdi>@business.Phone</bdi>}@if(!string.IsNullOrWhiteSpace(business.Phone) && !string.IsNullOrWhiteSpace(business.SecondaryPhone)){<span aria-hidden="true"> · </span>}@if(!string.IsNullOrWhiteSpace(business.SecondaryPhone)){<bdi>@business.SecondaryPhone</bdi>}</p>}
+    }
+</div>

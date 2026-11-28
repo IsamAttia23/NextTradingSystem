@@ -15,18 +15,33 @@ public sealed class InvoiceDebtResolver(IInvoiceAccountingStore store,
         if (await items.AnyAsync(item => item.InvoiceId == invoice.Id, ct))
             throw new ConflictException("AccountingInvoiceAlreadyRecognized");
         var customer = await customerResolver.ResolveAsync(invoice, selectedCustomerId, suppliedPhone, true, ct);
-        var account = await store.LockDebtAccountAsync(customer.Id, ct);
-        if (account is null)
-        {
-            account = CustomerDebtAccount.Create(customer.Id, actorId, clock.GetUtcNow());
-            await accounts.AddAsync(account, ct);
-        }
-        else account.RecordActivity(clock.GetUtcNow());
+        var account = await EnsureAccountAsync(customer.Id, actorId, ct);
+        invoice.DebtAccountId = account.Id;
         var item = DebtItem.Create(account.Id, DebtItemKind.InvoiceBalance, invoice.Id, invoice.RemainingAmount,
             date, "متبقي فاتورة رقم " + invoice.InvoiceNumber, actorId);
         await items.AddAsync(item, ct);
         // The posting validator locks the new item. Both this save and the posting remain in the invoice transaction.
         await unitOfWork.SaveChangesAsync(ct);
         return item;
+    }
+    public async Task<CustomerDebtAccount> EnsureAsync(Invoice invoice, Guid actorId, Guid? customerId, CancellationToken ct)
+    {
+        var customer = await customerResolver.ResolveAsync(invoice, customerId, null, false, ct);
+        var account = await EnsureAccountAsync(customer.Id, actorId, ct);
+        invoice.DebtAccountId = account.Id;
+        return account;
+    }
+    private async Task<CustomerDebtAccount> EnsureAccountAsync(Guid customerId, Guid actorId, CancellationToken ct)
+    {
+        await store.LockCustomerAsync(customerId, ct);
+        var account = await store.LockDebtAccountAsync(customerId, ct);
+        if (account is null)
+        {
+            account = CustomerDebtAccount.Create(customerId, actorId, clock.GetUtcNow(), await store.NextDebtCycleAsync(customerId, ct));
+            await accounts.AddAsync(account, ct);
+        }
+        else
+            account.RecordActivity(clock.GetUtcNow());
+        return account;
     }
 }

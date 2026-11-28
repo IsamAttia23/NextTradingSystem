@@ -1,4 +1,4 @@
 namespace NEXT.Application.DTOs.Accounting;
 
 public sealed record InventoryPostingState(decimal TotalCost, int MovementCount, bool IsValidSource,
-    bool IsOpening, Guid? SupplierId);
+    bool IsOpening, Guid? SupplierId, decimal CostAdjustment = 0);

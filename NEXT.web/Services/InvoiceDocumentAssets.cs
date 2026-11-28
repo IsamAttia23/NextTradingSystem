@@ -14,7 +14,10 @@ public sealed class InvoiceDocumentAssets
                 ";font-style:normal;src:url(data:font/ttf;base64," + Convert.ToBase64String(
                     File.ReadAllBytes(Path.Combine(root, "fonts", "tajawal", file))) + ") format('truetype');}";
             return Font("Tajawal-Regular.ttf", 400) + Font("Tajawal-Medium.ttf", 500) +
-                Font("Tajawal-Bold.ttf", 700) + File.ReadAllText(Path.Combine(root, "css", "invoice-document.css"));
+                Font("Tajawal-Bold.ttf", 700) + File.ReadAllText(Path.Combine(root, "css", "invoice-document.css")) +
+                File.ReadAllText(Path.Combine(root, "css", "product-report.css")) +
+                File.ReadAllText(Path.Combine(root, "css", "debt-book.css")) +
+                File.ReadAllText(Path.Combine(root, "css", "store-profile.css"));
         });
     }
 

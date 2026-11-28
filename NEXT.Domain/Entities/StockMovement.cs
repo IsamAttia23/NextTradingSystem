@@ -13,6 +13,7 @@ public class StockMovement : AuditableEntity<Guid>
     public decimal Quantity { get; set; }
     public decimal UnitCost { get; set; }
     public decimal TotalCost { get; set; }
+    public decimal CostAdjustment { get; set; }
     public Guid? SupplierId { get; set; }
     public Supplier? Supplier { get; set; }
     public string? ReferenceType { get; set; }

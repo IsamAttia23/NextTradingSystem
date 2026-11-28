@@ -40,7 +40,7 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
         Dates(query.From, query.To);
         if (query.Account.HasValue && !Enum.IsDefined(query.Account.Value))
             RequestValidation.Fail(nameof(query.Account), "AccountingInvalidReference");
-        foreach (var id in new[] { query.CustomerId, query.InvoiceId, query.PaymentId })
+        foreach (var id in new[] { query.CustomerId, query.InvoiceId, query.PaymentId, query.DebtAccountId })
             if (id.HasValue) RequestValidation.Identifier(id.Value);
         var accountId = query.Account.HasValue ? Account.IdFor(query.Account.Value) : (Guid?)null;
         var term = query.SearchTerm?.Trim().ToLowerInvariant() ?? "";
@@ -53,6 +53,7 @@ public sealed class AccountingReadService(IReadRepository<Account> accounts, IRe
             (!query.To.HasValue || line.LedgerEntry.EntryDate <= query.To.Value) &&
             (!query.CustomerId.HasValue || line.CustomerId == query.CustomerId ||
                 (line.LedgerEntry.Invoice != null && line.LedgerEntry.Invoice.CustomerId == query.CustomerId)) &&
+            (!query.DebtAccountId.HasValue || (line.DebtItem != null && line.DebtItem.DebtAccountId == query.DebtAccountId)) &&
             (!query.PaymentId.HasValue || line.LedgerEntry.PaymentId == query.PaymentId) &&
             (!query.InvoiceId.HasValue || line.LedgerEntry.InvoiceId == query.InvoiceId ||
                 (line.DebtItem != null && line.DebtItem.InvoiceId == query.InvoiceId)));

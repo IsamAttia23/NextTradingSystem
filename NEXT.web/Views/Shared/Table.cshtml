@@ -46,7 +46,7 @@
     <div class="table-toolbar">
         @if (Model.Title == "Products")
         {
-            <a class="btn btn-light" data-native-navigation href="@Url.Action("Print", "ProductReports")@Context.Request.QueryString">@L["ProductPriceReport"]</a>
+            <button class="btn btn-light" type="button" data-modal-url="@Url.Action("Preview", "ProductReports")@Context.Request.QueryString">@L["ProductPriceReport"]</button>
         }
         <div>
             <strong>@L["AllRecords"]</strong>

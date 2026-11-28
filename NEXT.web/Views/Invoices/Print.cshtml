@@ -1,7 +1,9 @@
 @model NEXT.Application.DTOs.Invoices.InvoiceDetails
 @inject NEXT.web.Services.InvoiceDocumentAssets Assets
+@inject NEXT.Application.Features.Settings.StoreProfileSettings StoreSettings
 @{
     Layout = null;
+    var business = await StoreSettings.ReadAsync(Context.RequestAborted);
     var exporting = ViewData["PdfExport"] is true;
     var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
 }
@@ -10,7 +12,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@Model.Summary.Number · NEXT</title>
+    <title>@Model.Summary.Number · @(string.IsNullOrWhiteSpace(business.Name) ? "NEXT" : business.Name)</title>
     <style>@Html.Raw(Assets.Styles)</style>
 </head>
 <body class="invoice-document-page" data-auto-print="@(ViewData["AutoPrint"] is true ? "true" : "false")">

@@ -1,47 +1,9 @@
 @model IReadOnlyList<NEXT.Application.DTOs.Products.ProductDto>
 @inject NEXT.web.Services.InvoiceDocumentAssets Assets
-@{
-    Layout = null;
-    var exporting = ViewData["PdfExport"] is true;
-    var query = Context.Request.QueryString.ToString();
-    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
-}
-<!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.Name" dir="@(rtl ? "rtl" : "ltr")">
-<head>
-<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>@L["ProductPriceReport"] · NEXT</title>
-<style>@Html.Raw(Assets.Styles)
-.report { max-width: 1050px; margin: 24px auto; padding: 24px; background: white; }
-.report h1 { font-size: 25px; } .report h2 { font-size: 18px; margin-block-start: 24px; break-after: avoid; }
-.report table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 20px; }
-.report th, .report td { border: 1px solid #dce3ec; padding: 10px; text-align: start; overflow-wrap: anywhere; }
-.report th { background: #f0f4f8; } .report thead { display: table-header-group; } .report tr { break-inside: avoid; }
-.report th:first-child { width: 40%; } .report bdi { font-variant-numeric: tabular-nums; }
-@@media print { .report { margin: 0; padding: 0; } }
-@@media (max-width: 575px) { .report { margin: 0; padding: 12px; } .report th, .report td { padding: 7px 4px; font-size: 12px; } }
-</style>
-</head>
+@{ Layout=null; var exporting=ViewData["PdfExport"] is true; }
+<!DOCTYPE html><html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>@L["ProductPriceReport"] · NEXT</title><style>@Html.Raw(Assets.Styles)</style></head>
 <body class="invoice-document-page">
-@if (!exporting)
-{
-<nav class="invoice-document-actions" aria-label="@L["InvoiceDocumentActions"]">
-<button type="button" class="invoice-document-button" data-print-invoice>@L["InvoiceDocumentPrint"]</button>
-<a class="invoice-document-button" data-native-navigation href="@Url.Action("Pdf")@query">@L["InvoiceDocumentSavePdf"]</a>
-<a class="invoice-document-button" href="@Url.Action("Index", "Products")@query">@L["Products"]</a>
-</nav>
-}
-<main class="report">
-<h1>@L["ProductPriceReport"]</h1><p>@L["AllRecords"]: @Model.Count · SDG</p>
-@if (Model.Count == 0) { <p>@L["NoRecords"]</p> }
-@foreach (var category in Model.GroupBy(p => new { p.CategoryId, p.CategoryName }))
-{
-<h2>@(category.Key.CategoryName ?? L["UncategorizedProducts"].Value)</h2>
-<table><thead><tr><th>@L["Name"]</th><th>@L["CostPrice"]</th><th>@L["RetailPrice"]</th><th>@L["WholesalePrice"]</th></tr></thead>
-<tbody>@foreach (var product in category) {
-<tr><td>@product.Name</td><td><bdi>@product.CostPrice.ToString("N2")</bdi></td><td><bdi>@product.RetailPrice.ToString("N2")</bdi></td><td><bdi>@product.WholesalePrice.ToString("N2")</bdi></td></tr>
-}</tbody></table>
-}
-</main>
-@if (!exporting) { <script src="~/js/invoice-document.js" asp-append-version="true" defer></script> }
+@if(!exporting) { <nav class="invoice-document-actions"><button class="invoice-document-button" type="button" data-print-invoice>@L["InvoiceDocumentPrint"]</button><a class="invoice-document-button" data-native-navigation href="@Url.Action("Pdf")@Context.Request.QueryString">@L["InvoiceDocumentSavePdf"]</a></nav> }
+<main><partial name="_ProductReportDocument" model="Model" /></main>
+@if(!exporting) { <script src="~/js/invoice-document.js" asp-append-version="true" defer></script> }
 </body></html>

@@ -10,7 +10,7 @@ using NEXT.Domain.Enums;
 namespace NEXT.Application.Features.Accounting;
 
 public sealed class InvoicePaymentAccountingHandler(IAccountingStore ledger, IAccountingPostingService posting,
-    IRepository<DebtItem> debts, IInvoiceAccountingStore invoiceStore, TimeProvider clock)
+    IRepository<DebtItem> debts, IInvoiceAccountingStore invoiceStore, TimeProvider clock, DebtAccountClosure closure)
     : INotificationHandler<InvoicePaymentRecorded>
 {
     public async Task Handle(InvoicePaymentRecorded notification, CancellationToken ct)
@@ -31,14 +31,16 @@ public sealed class InvoicePaymentAccountingHandler(IAccountingStore ledger, IAc
                 throw new ConflictException("AccountingInvoiceReviewRequired");
             credit = AccountType.Receivables;
             if (invoice.CustomerId is null) throw new ConflictException("AccountingInvoiceReviewRequired");
-            var account = await invoiceStore.LockDebtAccountAsync(invoice.CustomerId.Value, ct)
+            var account = await invoiceStore.LockDebtAccountByIdAsync(debt.DebtAccountId, ct)
                 ?? throw new ConflictException("AccountingDebtUnavailable");
             if (account.Id != debt.DebtAccountId) throw new ConflictException("AccountingInvoiceReviewRequired");
+            if(account.ClosedAt.HasValue) throw new ConflictException("DebtBookAccountClosed");
             account.RecordActivity(clock.GetUtcNow());
         }
         await posting.PostAsync(new(payment.Id, LedgerEntryKind.Receipt, AccountingReferenceType.Payment, payment.Id,
             payment.PaymentDate, AccountingDescriptions.InvoiceReceipt,
             [new(payment.CashAccount, payment.Amount, 0, payment.CustomerId),
              new(credit, 0, payment.Amount, payment.CustomerId, debt?.Id)], invoice.Id, payment.Id), ct);
+        if(debt is not null) await closure.TryCloseAsync(debt.DebtAccountId, payment.CreatedBy!.Value, ct);
     }
 }

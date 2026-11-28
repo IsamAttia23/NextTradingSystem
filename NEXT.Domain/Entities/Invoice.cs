@@ -5,6 +5,8 @@ namespace NEXT.Domain.Entities;
 
 public class Invoice : AuditableEntity<Guid>
 {
+    public Guid? DebtAccountId { get; set; }
+    public string? DebtWithdrawalHash { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public Guid? CustomerId { get; set; }
     public string? CustomerName { get; set; }

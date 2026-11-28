@@ -29,7 +29,7 @@ namespace NEXT.Tests;
 public sealed class WorkspaceUiTests
 {
     public static async Task<WebApplication> StartAsync(string? contentRoot = null, string? postgresConnection = null,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null, Action<ConfigurationManager>? configureConfiguration = null)
     {
         var webRoot = contentRoot ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../NEXT.web"));
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -42,9 +42,12 @@ public sealed class WorkspaceUiTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
+            ["Stores:Enabled"] = "false",
+            ["Inventory:AllowInvoiceOverselling"] = "false",
             ["ConnectionStrings:NEXTDatabase"] = postgresConnection ?? "Host=localhost;Database=unused",
             ["AccountSecurity:SecretKey"] = Convert.ToBase64String(new byte[32])
         });
+        configureConfiguration?.Invoke(builder.Configuration);
         builder.Services.AddApplicationServices(builder.Configuration);
         builder.Services.AddInfrastructureServices(builder.Configuration);
         if (postgresConnection is null)
@@ -65,6 +68,7 @@ public sealed class WorkspaceUiTests
         var app = builder.Build();
         app.UseStatusCodePagesWithReExecute("/Status/{0}");
         app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseMiddleware<NEXT.Infrastructure.Stores.StoreResolutionMiddleware>();
         app.UseRequestLocalization();
         app.UseStaticFiles();
         app.UseRouting();

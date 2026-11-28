@@ -65,12 +65,24 @@ public static class PresentationRegistration
             new AcceptLanguageHeaderRequestCultureProvider()
         ]);
         var roles = configuration.GetSection("Security:AdministratorRoles").Get<string[]>() ?? ["Admin"];
-        services.AddAuthorizationBuilder().AddPolicy("ManageSecurity", policy =>
+        services.AddSingleton<Microsoft.AspNetCore.Antiforgery.IAntiforgeryAdditionalDataProvider, Services.StoreAntiforgeryData>();
+        services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Services.RootStoreAuthorization>();
+        services.ConfigureAll<CookieAuthenticationOptions>(options => options.CookieManager = new NEXT.Infrastructure.Stores.StoreCookieManager());
+        services.AddAuthorizationBuilder().AddPolicy("ManageStores", policy =>
+            policy.RequireAuthenticatedUser().RequireRole(roles).AddRequirements(new Services.RootStoreRequirement()))
+            .AddPolicy("ManageSecurity", policy =>
             policy.RequireAuthenticatedUser().RequireRole(roles));
         services.Configure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options =>
         {
             options.Events.OnValidatePrincipal = async context =>
             {
+                var store = context.HttpContext.RequestServices.GetRequiredService<NEXT.Application.Abstractions.Context.ICurrentStore>();
+                if (!NEXT.Infrastructure.Stores.StoreClaimsPrincipalFactory.Matches(context.Principal, store))
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+                    return;
+                }
                 var access = context.HttpContext.RequestServices.GetRequiredService<IAccountAccess>();
                 if (!await access.IsSessionValidAsync(context.Principal))
                 {

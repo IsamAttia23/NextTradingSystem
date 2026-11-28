@@ -1,0 +1,8 @@
+@model NEXT.Application.DTOs.Settings.StoreProfileInput
+@{ViewData["Title"] = L["StoreProfileSettings"];}
+<section class="page-heading"><div><span class="eyebrow">@L["SystemGroup"]</span><h1>@L["StoreProfileSettings"]</h1><p>@L["StoreProfileHint"]</p></div></section>
+<section class="content-card store-profile-card">
+    <div class="table-toolbar"><h2>@L["StoreProfileDocumentHeader"]</h2><button class="btn btn-primary" data-modal-url="@Url.Action("Edit")">@L["Edit"]</button></div>
+    @if(string.IsNullOrWhiteSpace(Model.Name)) {<p class="store-profile-empty">@L["StoreProfileNotConfigured"]</p>}
+    else {<partial name="~/Views/Shared/_DocumentBusinessIdentity.cshtml"/>}
+</section>

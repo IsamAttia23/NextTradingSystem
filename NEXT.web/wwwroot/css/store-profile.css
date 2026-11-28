@@ -1,0 +1,14 @@
+.document-business-identity {min-width:0;max-width:100%;overflow-wrap:anywhere;}
+.document-business-name {color:#254f8a;font-size:25px;font-weight:700;line-height:1.35;}
+.document-business-identity p {margin:5px 0;font-size:13px;line-height:1.5;color:#647890;}
+.document-business-address {white-space:pre-line;}
+.document-business-phones {display:flex;gap:7px;flex-wrap:wrap;}
+.document-business-phones bdi {min-width:0;white-space:normal;overflow-wrap:anywhere;}
+.invoice-document-heading > div,.report-heading > div {min-width:0;}
+.store-profile-card {max-width:850px;}.store-profile-card .table-toolbar h2 {font-size:20px;margin:0;}
+.store-profile-card .document-business-identity {padding:18px 24px;}
+.store-profile-empty {padding:18px 24px;margin:0;}
+@media(max-width:575px){.document-business-name {font-size:22px;}.document-business-identity p {font-size:12px;}}
+@media print {.document-business-identity {break-inside:avoid;}.document-business-name {font-size:23px;}.document-business-identity p {font-size:11px;margin:3px 0;}}
+
+.store-platform-main {padding:22px;margin-bottom:20px;}.store-platform-main h2 {font-size:20px;}.store-platform-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;}.store-platform-card {padding:22px;overflow-wrap:anywhere;}.store-platform-card header {display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap;}.store-platform-card h2 {font-size:21px;}.store-platform-actions {display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}.store-entry-link {direction:ltr;display:inline-block;max-width:100%;overflow-wrap:anywhere;}.store-context-banner {display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;margin-bottom:20px;border:1px solid #dce5f3;border-radius:12px;background:#f4f7fc;color:#254f8a;}.store-login-name {font-size:20px;font-weight:700;color:#254f8a;}

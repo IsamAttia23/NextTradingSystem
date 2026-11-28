@@ -10,6 +10,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
     {
         builder.ToTable("Payments", table => table.HasCheckConstraint("CK_Payments_Purpose", "\"Purpose\" BETWEEN 0 AND 3"));
         builder.ToTable("Payments", t => t.HasCheckConstraint("CK_Payments_CashAccount", "\"CashAccount\" IN (5,13,14,15)"));
+        builder.HasOne<DebtAccountPayment>().WithMany().HasForeignKey(x => x.DebtAccountPaymentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Invoice>().WithMany().HasForeignKey(x => x.ReturnInvoiceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(x => x.Customer).WithMany()
                     .HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);

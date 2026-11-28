@@ -1,0 +1,9 @@
+@model NEXT.Application.DTOs.Accounting.DebtBookStatement
+<form asp-action="Receive" asp-route-id="@Model.Account.Id" method="post" data-modal-form data-title="@L["DebtBookReceive"]">
+<input type="hidden" name="OperationId" value="@Guid.NewGuid()"/><input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.Account.RowVersion)"/>
+<p>@Model.Account.Name</p><dl class="invoice-totals"><dt>@L["RemainingAmount"]</dt><dd><bdi>@Model.Balance.ToString("N2") SDG</bdi></dd></dl><p>@L["DebtBookAllocationHint"]</p>
+<div class="modal-field-grid"><label class="form-label">@L["Amount"]<input class="form-control" name="Amount" type="number" step="0.01" min="0.01" max="@Model.Balance.ToString(CultureInfo.InvariantCulture)" required/></label>
+<label class="form-label">@L["PaymentMethod"]<select class="form-select" name="PaymentMethod" required>@foreach(var m in Enum.GetValues<NEXT.Domain.Enums.PaymentMethod>()){<option value="@m">@L[m.ToString()]</option>}</select></label>
+<label class="form-label">@L["CashAccount"]<select class="form-select" name="CashAccount" required>@foreach(var a in NEXT.Domain.Services.CashAccounts.All){<option value="@a">@L["FinancialAccount"+a]</option>}</select></label></div>
+<label class="form-label w-100">@L["DebtBookPaymentDescription"]<textarea class="form-control" name="Notes" maxlength="500" required placeholder="@L["DebtBookPaymentDescriptionExample"]"></textarea></label>
+<div class="modal-form-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L["DebtBookReceive"]</button></div></form>

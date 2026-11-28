@@ -981,8 +981,11 @@ public sealed class PostgresInventoryTests
                         }
                         var script = database.Db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().GenerateScript(
                                                     "20261027072142_UseApplicationManagedConcurrencyTokens", null, Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGenerationOptions.Idempotent);
-                        await database.Db.Database.ExecuteSqlRawAsync(script);
-                        await database.Db.Database.ExecuteSqlRawAsync(script);
+                        // Generated SQL is literal SQL; regex braces must not be treated as EF parameter placeholders.
+                        await using var scriptConnection = new NpgsqlConnection(database.TestConnection);
+                        await scriptConnection.OpenAsync();
+                        for (var pass = 0; pass < 2; pass++)
+                            await new NpgsqlCommand(script, scriptConnection) { CommandTimeout = 180 }.ExecuteNonQueryAsync();
                     }
                     await database.Db.GetService<IMigrator>().MigrateAsync(migrationTarget);
                 }
@@ -1043,7 +1046,8 @@ public sealed class PostgresInventoryTests
                 new TRepository<StockMovement>(db), new TRepository<ProductBatch>(db), new UnitOfWork(db),
                 new DataAnnotationsEntityValidator<ReceiveStockDto>(), new DataAnnotationsEntityValidator<TransferStockDto>(),
                 new ExchangeRateReader(new SystemSettingRepository(db)), new InvoiceConfirmationStore(db),
-                InventoryTestServices.Posting(db, Branch), new KeyRepository<Supplier, Guid>(db), TimeProvider.System);
+                InventoryTestServices.Posting(db, Branch), new KeyRepository<Supplier, Guid>(db), TimeProvider.System,
+                new NEXT.Application.Features.Invoices.InvoiceStockPolicy(new ConfigurationBuilder().Build()));
         }
         public async Task SetProductCostAsync(decimal cost)
         {

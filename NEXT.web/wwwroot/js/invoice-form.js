@@ -195,7 +195,7 @@
         const value = discountInput.value === "" ? 0 : discountInput.valueAsNumber;
         const discount = discountKind === "Percentage" ? cents(subtotal / 100 * value / 100)
             : discountKind ? cents(value) : 0;
-        const shortage = [...quantities.values()].some(item => item.quantity - item.available > 0.000001);
+        const shortage = form.dataset.allowOverselling !== "true" && [...quantities.values()].some(item => item.quantity - item.available > 0.000001);
         form.querySelector("[data-invoice-subtotal]").textContent = money(subtotal / 100);
         form.querySelector("[data-invoice-discount-amount]").textContent = money(discount / 100);
         form.querySelector("[data-invoice-total]").textContent = money((subtotal - discount) / 100);

@@ -27,6 +27,7 @@ public static class UiIcons
         "AssignPermission" => "link",
         "Dashboard" => "home",
         "FinancialAccounts" or "AccountMovements" => "grid",
+        "TrialStores" or "StoreProfileSettings" => "branch",
         "CurrencySettings" => "transfer",
         _ => "grid"
     };

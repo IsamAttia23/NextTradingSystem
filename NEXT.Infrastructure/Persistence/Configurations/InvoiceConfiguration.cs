@@ -19,6 +19,8 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Ignore(x => x.User);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<CustomerDebtAccount>().WithMany().HasForeignKey(x => x.DebtAccountId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.DebtWithdrawalHash).HasMaxLength(64);
         builder.Property(x => x.InvoiceNumber).HasMaxLength(50).IsRequired();
         builder.Property(x => x.CustomerName).HasMaxLength(200);
         builder.Property(x => x.CreatedByFullName).HasMaxLength(200);

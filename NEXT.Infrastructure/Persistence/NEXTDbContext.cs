@@ -61,6 +61,7 @@ public class NEXTDbContext(DbContextOptions<NEXTDbContext> options, TrackedChang
     public DbSet<AccountOpening> AccountOpenings => Set<AccountOpening>();
     public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
     public DbSet<AccountTransaction> AccountTransactions => Set<AccountTransaction>();
+    public DbSet<DebtAccountPayment> DebtAccountPayments => Set<DebtAccountPayment>();
     public DbSet<CustomerDebtAccount> CustomerDebtAccounts => Set<CustomerDebtAccount>();
     public DbSet<DebtItem> DebtItems => Set<DebtItem>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

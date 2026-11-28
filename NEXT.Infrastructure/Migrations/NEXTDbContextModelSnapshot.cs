@@ -893,6 +893,12 @@ namespace NEXT.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -901,6 +907,11 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("CycleNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<DateTimeOffset>("LastActivityAt")
                         .HasColumnType("timestamp with time zone");
@@ -918,10 +929,87 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClosedBy");
+
                     b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasFilter("\"ClosedAt\" IS NULL");
+
+                    b.HasIndex("CustomerId", "CycleNumber")
                         .IsUnique();
 
                     b.ToTable("CustomerDebtAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.DebtAccountPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<int>("CashAccount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("DebtAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("DebtAccountId");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.ToTable("DebtAccountPayments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DebtAccountPayment_Valid", "\"Amount\" > 0 AND \"CashAccount\" IN (5,13,14,15) AND length(\"RequestHash\") = 64");
+                        });
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.DebtItem", b =>
@@ -1103,6 +1191,13 @@ namespace NEXT.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid?>("DebtAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DebtWithdrawalHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<decimal>("DiscountAmount")
                         .HasPrecision(15, 2)
                         .HasColumnType("numeric(15,2)");
@@ -1186,6 +1281,8 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("DebtAccountId");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
@@ -1515,6 +1612,9 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("DebtAccountPaymentId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("uuid");
 
@@ -1562,6 +1662,8 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("DebtAccountPaymentId");
 
                     b.HasIndex("InvoiceId");
 
@@ -2080,7 +2182,7 @@ namespace NEXT.Infrastructure.Migrations
 
                     b.ToTable("Stocks", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Stocks_TotalCost", "\"TotalCost\" >= 0 AND (\"Quantity\" <> 0 OR \"TotalCost\" = 0)");
+                            t.HasCheckConstraint("CK_Stocks_TotalCost", "(\"Quantity\" > 0 AND \"TotalCost\" >= 0) OR (\"Quantity\" < 0 AND \"TotalCost\" <= 0) OR (\"Quantity\" = 0 AND \"TotalCost\" = 0)");
                         });
                 });
 
@@ -2089,6 +2191,10 @@ namespace NEXT.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("CostAdjustment")
+                        .HasPrecision(15, 2)
+                        .HasColumnType("numeric(15,2)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -2720,13 +2826,33 @@ namespace NEXT.Infrastructure.Migrations
 
             modelBuilder.Entity("NEXT.Domain.Entities.CustomerDebtAccount", b =>
                 {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ClosedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
-                        .WithOne()
-                        .HasForeignKey("NEXT.Domain.Entities.CustomerDebtAccount", "CustomerId")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("NEXT.Domain.Entities.DebtAccountPayment", b =>
+                {
+                    b.HasOne("NEXT.Infrastructure.Identity.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("NEXT.Domain.Entities.CustomerDebtAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DebtAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("NEXT.Domain.Entities.DebtItem", b =>
@@ -2768,6 +2894,11 @@ namespace NEXT.Infrastructure.Migrations
                         .WithMany("Invoices")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NEXT.Domain.Entities.CustomerDebtAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DebtAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("NEXT.Domain.Entities.Invoice", "ParentInvoice")
                         .WithMany("Returns")
@@ -2875,6 +3006,11 @@ namespace NEXT.Infrastructure.Migrations
                     b.HasOne("NEXT.Domain.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NEXT.Domain.Entities.DebtAccountPayment", null)
+                        .WithMany()
+                        .HasForeignKey("DebtAccountPaymentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("NEXT.Domain.Entities.Invoice", "Invoice")

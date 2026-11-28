@@ -243,12 +243,18 @@ public sealed class InvoiceCancellationTests
         await using var f = await PostgresInventoryTests.Database.Create(migrate: true, migrationTarget: previous);
         var migrator = f.Db.GetService<IMigrator>();
         var script = migrator.GenerateScript(previous, null, MigrationsSqlGenerationOptions.Idempotent);
-        await f.Db.Database.ExecuteSqlRawAsync(script);
-        await f.Db.Database.ExecuteSqlRawAsync(script);
+        async Task ExecuteScript()
+        {
+            await using var connection = new NpgsqlConnection(f.TestConnection);
+            await connection.OpenAsync();
+            await new NpgsqlCommand(script, connection) { CommandTimeout = 180 }.ExecuteNonQueryAsync();
+        }
+        await ExecuteScript();
+        await ExecuteScript();
         Assert.Equal(15, await f.Db.Accounts.CountAsync());
         await migrator.MigrateAsync(previous);
         Assert.Equal(7, await f.Db.Accounts.CountAsync());
-        await f.Db.Database.ExecuteSqlRawAsync(script);
+        await ExecuteScript();
         Assert.Equal(15, await f.Db.Accounts.CountAsync());
         var error = await Assert.ThrowsAsync<PostgresException>(() => f.Db.Database.ExecuteSqlRawAsync("UPDATE \"Accounts\" SET \"Name\" = 'Changed' WHERE \"Type\" = 8"));
         Assert.Equal("23514", error.SqlState);

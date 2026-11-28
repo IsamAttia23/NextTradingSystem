@@ -1,0 +1,6 @@
+@model NEXT.Application.DTOs.Accounting.DebtBookStatement
+@inject NEXT.web.Services.InvoiceDocumentAssets Assets
+@{Layout=null;var exporting=ViewData["PdfExport"] is true;}
+<!DOCTYPE html><html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft?"rtl":"ltr")"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>@L["DebtBookStatementTitle", Model.Account.Name]</title><style>@Html.Raw(Assets.Styles)</style></head><body class="invoice-document-page" data-auto-print="@(ViewData["AutoPrint"] is true ? "true" : "false")">
+@if(!exporting){<nav class="invoice-document-actions"><button class="invoice-document-button" type="button" data-print-invoice>@L["InvoiceDocumentPrint"]</button><a class="invoice-document-button" data-native-navigation asp-action="Pdf" asp-route-id="@Model.Account.Id">@L["InvoiceDocumentSavePdf"]</a></nav>}
+<main><partial name="~/Views/DebtBook/_StatementDocument.cshtml" model="Model"/></main>@if(!exporting){<script src="~/js/invoice-document.js" asp-append-version="true" defer></script>}</body></html>

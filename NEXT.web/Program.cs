@@ -44,6 +44,7 @@ catch (Exception error)
 app.UseErrorRequestLogging();
 app.UseStatusCodePagesWithReExecute("/Status/{0}");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<NEXT.Infrastructure.Stores.StoreResolutionMiddleware>();
 app.UseRequestLocalization();
 
 // Configure the HTTP request pipeline.

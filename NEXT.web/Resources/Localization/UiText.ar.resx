@@ -944,4 +944,80 @@
   <data name="CashInsufficientBalance" xml:space="preserve"><value>رصيد الحساب المصدر غير كافٍ للتحويل.</value></data>
   <data name="CashReconciliationInvalid" xml:space="preserve"><value>بيانات المطابقة غير صالحة.</value></data>
   <data name="AccountingEntryCashTransfer" xml:space="preserve"><value>تحويل داخلي</value></data>
+
+<data name="ProductReportSubtitle" xml:space="preserve"><value>قائمة الأسعار حسب التصنيف</value></data>
+<data name="ProductReportCurrency" xml:space="preserve"><value>الأسعار بالجنيه السوداني</value></data>
+<data name="ProductReportPriceNote" xml:space="preserve"><value>أسعار الوحدة وفق الأسعار وسعر الصرف الحاليين عند إصدار التقرير.</value></data>
+
+<data name="DebtBook" xml:space="preserve"><value>دفتر الديون</value></data>
+<data name="DebtBookDescription" xml:space="preserve"><value>حسابات العملاء وديونهم وحركاتهم بعد الشحن أو التسليم.</value></data>
+<data name="DebtBookLastActivity" xml:space="preserve"><value>آخر حركة</value></data>
+<data name="DebtBookTransactions" xml:space="preserve"><value>حركات حساب العميل</value></data>
+<data name="DebtBookTotalGoods" xml:space="preserve"><value>إجمالي سحب البضاعة والأرصدة السابقة</value></data>
+<data name="DebtBookCustomerAccount" xml:space="preserve"><value>حساب العميل</value></data>
+<data name="DebtBookAccountHint" xml:space="preserve"><value>سداد الحساب أو سحب بضاعة إضافية، مع كشف تفصيلي بكل البنود والسداد والمتبقي.</value></data>
+<data name="DebtBookWithdraw" xml:space="preserve"><value>سحب بضاعة</value></data>
+<data name="DebtBookReceive" xml:space="preserve"><value>تسجيل دفعة حساب</value></data>
+<data name="DebtBookStatement" xml:space="preserve"><value>كشف حساب العميل</value></data>
+<data name="DebtBookGoodsDetails" xml:space="preserve"><value>تفاصيل البضاعة والفواتير</value></data>
+<data name="DebtBookPayments" xml:space="preserve"><value>الدفعات والسداد</value></data>
+<data name="DebtBookAllocationHint" xml:space="preserve"><value>توزع الدفعة تلقائيًا على أقدم الفواتير المستحقة، ثم الأرصدة الافتتاحية. لا يقبل مبلغ أكبر من الدين.</value></data>
+<data name="DebtBookStatementNote" xml:space="preserve"><value>يشمل الكشف الفواتير المشحونة أو المسلّمة ودفعاتها المسجّلة. جميع المبالغ بالجنيه السوداني.</value></data>
+<data name="DebtBookAccountNotFound" xml:space="preserve"><value>لم يُعثر على حساب العميل في دفتر الديون.</value></data>
+<data name="DebtBookPaymentInvalid" xml:space="preserve"><value>أدخل دفعة موجبة لا تتجاوز رصيد الديون، وحدد طريقة الدفع والحساب النقدي.</value></data>
+<data name="DebtBookAccountStale" xml:space="preserve"><value>تغير حساب العميل. أعد تحميل الحساب ثم حاول مرة أخرى.</value></data>
+<data name="AccountingDescriptionDebtReceipt" xml:space="preserve"><value>سداد حساب عميل</value></data>
+
+<data name="HasBalance" xml:space="preserve"><value>لديه رصيد مستحق</value></data>
+<data name="Currency" xml:space="preserve"><value>العملة</value></data>
+  <data name="DebtBookOpeningBalances" xml:space="preserve"><value>أرصدة سابقة</value></data>
+  <data name="DebtBookStatementTitle" xml:space="preserve"><value>كشف حساب — {0}</value></data>
+  <data name="StoreProfileSettings" xml:space="preserve"><value>بيانات المحل والفواتير</value></data>
+  <data name="StoreProfileName" xml:space="preserve"><value>اسم المحل</value></data>
+  <data name="StoreProfileSubtitle" xml:space="preserve"><value>النشاط أو الوصف</value></data>
+  <data name="StoreProfileSecondaryPhone" xml:space="preserve"><value>رقم هاتف إضافي</value></data>
+  <data name="StoreProfileDocumentHeader" xml:space="preserve"><value>ترويسة المستندات</value></data>
+  <data name="StoreProfileHint" xml:space="preserve"><value>تظهر بيانات المحل الحالية أعلى الفواتير وكشوف الحساب وتقارير المنتجات، في المعاينة والطباعة وملفات PDF.</value></data>
+  <data name="StoreProfileNotConfigured" xml:space="preserve"><value>أدخل اسم المحل وبياناته من زر التعديل لعرضها أعلى المستندات.</value></data>
+  <data name="StoreProfileChanged" xml:space="preserve"><value>تغيرت بيانات المحل بعد فتحها. أعد فتح التعديل وحاول مجددًا.</value></data>
+<data name="DebtBookPaymentDescription" xml:space="preserve"><value>بيان الدفعة (إلزامي)</value></data>
+<data name="DebtBookPaymentDescriptionRequired" xml:space="preserve"><value>أدخل بيان الدفعة قبل حفظ السداد.</value></data>
+<data name="DebtBookPaymentDescriptionExample" xml:space="preserve"><value>مثال: سداد قيمة بضاعة مسحوبة</value></data>
+<data name="DebtBookLegacyPaymentDescription" xml:space="preserve"><value>دفعة مسجلة سابقًا دون بيان</value></data>
+<data name="DebtBookCycle" xml:space="preserve"><value>دورة الحساب</value></data>
+<data name="DebtBookAccountStatus" xml:space="preserve"><value>حالة الحساب</value></data>
+<data name="DebtBookClosed" xml:space="preserve"><value>مغلق ومسدد</value></data>
+<data name="DebtBookOpen" xml:space="preserve"><value>مفتوح</value></data>
+<data name="DebtBookAccountClosed" xml:space="preserve"><value>هذا الحساب مغلق بعد سداده. سحب البضاعة الجديد يفتح حسابًا جديدًا.</value></data>
+<data name="IsClosed" xml:space="preserve"><value>الحساب مغلق</value></data>
+<data name="TrialStores" xml:space="preserve"><value>المحلات التجريبية</value></data>
+<data name="PlatformGroup" xml:space="preserve"><value>إدارة المحلات</value></data>
+<data name="CreateStore" xml:space="preserve"><value>إضافة محل</value></data>
+<data name="TrialStoresHint" xml:space="preserve"><value>أنشئ حساب صاحب كل محل وشاركه رابط الدخول الخاص به. بيانات كل محل مستقلة.</value></data>
+<data name="MainStore" xml:space="preserve"><value>المحل الرئيسي</value></data>
+<data name="MainStorePreserved" xml:space="preserve"><value>هذا هو المحل الحالي ببياناته السابقة. المحلات الجديدة لا تستخدم بياناته.</value></data>
+<data name="OpenStore" xml:space="preserve"><value>فتح المحل</value></data>
+<data name="StoreOwner" xml:space="preserve"><value>صاحب المحل</value></data>
+<data name="StoreSlug" xml:space="preserve"><value>رمز الرابط بالإنجليزية (اختياري)</value></data>
+<data name="StoreOwnerPassword" xml:space="preserve"><value>كلمة مرور صاحب المحل</value></data>
+<data name="StorePasswordHint" xml:space="preserve"><value>استخدم كلمة مرور قوية حسب شروط النظام. سلّم كلمة المرور والرابط لصاحب المحل بنفسك.</value></data>
+<data name="CreateStoreHint" xml:space="preserve"><value>يجهز المحل وحساب صاحبه ببيانات جديدة مستقلة. قد يستغرق التجهيز بعض الوقت.</value></data>
+<data name="StoreRetryHint" xml:space="preserve"><value>لإكمال التجهيز، استخدم البيانات السابقة وكلمة المرور التي أدخلتها لصاحب المحل.</value></data>
+<data name="RetryStoreProvisioning" xml:space="preserve"><value>إكمال تجهيز المحل</value></data>
+<data name="EnableStore" xml:space="preserve"><value>تفعيل المحل</value></data>
+<data name="DisableStore" xml:space="preserve"><value>تعطيل المحل</value></data>
+<data name="StoreStateActive" xml:space="preserve"><value>مفعّل</value></data>
+<data name="StoreStateDisabled" xml:space="preserve"><value>معطّل</value></data>
+<data name="StoreStateFailed" xml:space="preserve"><value>لم يكتمل التجهيز</value></data>
+<data name="StoreStateProvisioning" xml:space="preserve"><value>قيد التجهيز</value></data>
+<data name="CurrentStore" xml:space="preserve"><value>المحل الحالي</value></data>
+<data name="StoreUnavailable" xml:space="preserve"><value>المحل غير متاح. تحقق من الرابط أو تواصل مع مدير النظام.</value></data>
+<data name="StoreSlugAlreadyUsed" xml:space="preserve"><value>رمز الرابط مستخدم لمحل آخر. اختر رمزًا مختلفًا.</value></data>
+<data name="StoreChanged" xml:space="preserve"><value>تغيرت بيانات المحل. أعد تحميل الصفحة وحاول مجددًا.</value></data>
+<data name="StoreCreationUnavailable" xml:space="preserve"><value>لا يمكن تنفيذ هذا الإجراء على المحل حاليًا.</value></data>
+<data name="StoreProvisioningRoleMismatch" xml:space="preserve"><value>يجب أن يستخدم اتصال تجهيز المحلات نفس مستخدم قاعدة بيانات النظام.</value></data>
+<data name="StoreProvisioningBusy" xml:space="preserve"><value>المحل قيد التجهيز بالفعل. انتظر ثم أعد تحميل القائمة.</value></data>
+<data name="StoreOperationConflict" xml:space="preserve"><value>عملية الإضافة تخص بيانات مختلفة. أعد فتح تجهيز المحل.</value></data>
+<data name="StoreDatabaseAlreadyExists" xml:space="preserve"><value>تعذر تخصيص قاعدة جديدة لهذا المحل. تواصل مع مسؤول النظام.</value></data>
+<data name="StoreOwnerCredentialsConflict" xml:space="preserve"><value>استخدم كلمة مرور صاحب المحل التي أدخلتها عند بدء التجهيز.</value></data>
 </root>

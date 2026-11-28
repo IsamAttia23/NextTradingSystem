@@ -1,0 +1,13 @@
+@model NEXT.Application.DTOs.Stores.CreateStoreInput
+<form asp-action="Create" method="post" data-modal-form data-title="@L["CreateStore"]" data-form-notice="@L["CreateStoreHint"]">
+<input type="hidden" name="OperationId" value="@Model.OperationId"/>
+<div class="modal-field-grid">
+<label class="form-label">@L["StoreProfileName"]<input class="form-control" name="Name" value="@Model.Name" required maxlength="200"/></label>
+<label class="form-label">@L["StoreSlug"]<input class="form-control" name="Slug" value="@Model.Slug" maxlength="40" pattern="[a-z0-9][a-z0-9-]{1,39}" dir="ltr"/></label>
+<label class="form-label">@L["StoreOwner"]<input class="form-control" name="OwnerName" value="@Model.OwnerName" required maxlength="200"/></label>
+<label class="form-label">@L["UserName"]<input class="form-control" name="OwnerUserName" value="@Model.OwnerUserName" required maxlength="100" autocomplete="off"/></label>
+<label class="form-label">@L["Email"]<input class="form-control" name="OwnerEmail" type="email" value="@Model.OwnerEmail" required maxlength="256"/></label>
+<label class="form-label">@L["StoreOwnerPassword"]<input class="form-control" name="OwnerPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password"/></label>
+</div><p>@L["StorePasswordHint"]</p>
+<div class="modal-form-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button><button class="btn btn-primary" type="submit">@L["CreateStore"]</button></div>
+</form>

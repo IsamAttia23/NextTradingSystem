@@ -9,6 +9,7 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
     public void Configure(EntityTypeBuilder<StockMovement> builder)
     {
         builder.ToTable("StockMovements", table => table.HasCheckConstraint("CK_StockMovements_TotalCost", "\"TotalCost\" >= 0"));
+        builder.Property(x => x.CostAdjustment).HasPrecision(15, 2);
         builder.Property(x => x.TotalCost).HasPrecision(15, 2);
         builder.HasOne(x => x.Supplier).WithMany().HasForeignKey(x => x.SupplierId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.ReferenceId, x.Type })

@@ -6,8 +6,9 @@
         is "Login" or "Verify" or "ForgotPassword" or "VerifyOtp" or "SetPassword" or "Locked" or "PasswordChanged" or "Denied" || current == "Status";
     var action = ViewContext.RouteData.Values["action"]?.ToString();
 }
+@inject NEXT.Application.Abstractions.Context.ICurrentStore CurrentStore
 <!DOCTYPE html>
-<html lang="@(rtl ? "ar" : "en")" dir="@(rtl ? "rtl" : "ltr")">
+<html data-app-base="@Context.Request.PathBase" lang="@(rtl ? "ar" : "en")" dir="@(rtl ? "rtl" : "ltr")">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,7 +22,10 @@
         <link rel="preload" href="~/fonts/tajawal/Tajawal-Regular.ttf" as="font" type="font/ttf" crossorigin />
         <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/css/account-security.css" asp-append-version="true" />
-    </head>
+        <link rel="stylesheet" href="~/css/product-report.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/debt-book.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/store-profile.css" asp-append-version="true" />
+</head>
     <body class="@(authenticationPage ? "authentication-page" : "")">
         <a class="skip-link" href="#main">@L["SkipContent"]</a>
         <div class="app-shell">
@@ -48,7 +52,7 @@
                     <div class="breadcrumb-label">
                         NEXT
                         <span>/</span>
-                        @L[current is "FinancialAccounts" or "FinancialControls" ? "FinanceGroup" : "Administration"]
+                        @L[current is "FinancialAccounts" or "FinancialControls" or "DebtBook" or "DebtBookDocuments" ? "FinanceGroup" : "Administration"]
                         <span>/</span>
                         <strong>@ViewData["Title"]</strong>
                     </div>
@@ -56,7 +60,7 @@
                         <button type="button" class="btn btn-sm btn-outline-primary" id="install-app" hidden><partial name="_Icon" model='@("download")' /> @L["InstallApp"]</button>
                         <form asp-controller="Culture" asp-action="Set" method="post">
                             <input type="hidden" name="culture" value="@(rtl ? "en" : "ar")" />
-                            <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                            <input type="hidden" name="returnUrl" value="@(Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString)" />
                             <button class="language-button" lang="@(rtl ? "en" : "ar")" type="submit"><partial name="_Icon" model='@("globe")' /> &nbsp; @(rtl ? "English" : "العربية")</button>
                         </form>
                         @if (signedIn)
@@ -72,6 +76,7 @@
                     </div>
                 </header>
                 <main id="main" tabindex="-1">
+                    @if(!authenticationPage && !CurrentStore.IsDefault){<div class="store-context-banner"><span>@L["CurrentStore"]</span><strong>@CurrentStore.Name</strong></div>}
                     @RenderBody()
                 </main>
                 <footer class="app-footer">

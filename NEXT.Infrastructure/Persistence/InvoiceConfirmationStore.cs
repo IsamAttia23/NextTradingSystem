@@ -18,6 +18,28 @@ public sealed class InvoiceConfirmationStore(NEXTDbContext db) : IInvoiceConfirm
         return invoice;
     }
 
+    public async Task EnsureStocksAsync(Guid warehouseId, Guid[] productIds, CancellationToken ct)
+    {
+        RequireTransaction();
+        foreach (var productId in productIds.Order())
+        {
+            if (db.Database.IsNpgsql())
+            {
+                var id = Guid.NewGuid(); var version = Guid.NewGuid().ToByteArray();
+                await db.Database.ExecuteSqlInterpolatedAsync($"""
+                    INSERT INTO "Stocks" ("Id", "WarehouseId", "ProductId", "Quantity", "ReservedQuantity", "AverageCost", "TotalCost", "LastUpdated", "CreatedAt", "RowVersion")
+                    VALUES ({id}, {warehouseId}, {productId}, 0, 0, 0, 0, now(), now(), {version})
+                    ON CONFLICT ("ProductId", "WarehouseId") DO NOTHING
+                    """, ct);
+            }
+            else if (!await db.Stocks.AnyAsync(s => s.ProductId == productId && s.WarehouseId == warehouseId, ct))
+            {
+                db.Stocks.Add(new Stock { Id = Guid.NewGuid(), ProductId = productId, WarehouseId = warehouseId });
+                await db.SaveChangesAsync(ct);
+            }
+        }
+    }
+
     public async Task<IReadOnlyList<Stock>> LockStocksAsync(Guid warehouseId, Guid[] productIds, CancellationToken ct)
     {
         RequireTransaction();

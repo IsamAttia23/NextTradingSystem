@@ -8,7 +8,7 @@ public sealed class StockConfiguration : IEntityTypeConfiguration<Stock>
 {
     public void Configure(EntityTypeBuilder<Stock> builder)
     {
-        builder.ToTable("Stocks", table => table.HasCheckConstraint("CK_Stocks_TotalCost", "\"TotalCost\" >= 0 AND (\"Quantity\" <> 0 OR \"TotalCost\" = 0)"));
+        builder.ToTable("Stocks", table => table.HasCheckConstraint("CK_Stocks_TotalCost", "(\"Quantity\" > 0 AND \"TotalCost\" >= 0) OR (\"Quantity\" < 0 AND \"TotalCost\" <= 0) OR (\"Quantity\" = 0 AND \"TotalCost\" = 0)"));
         builder.Property(x => x.TotalCost).HasPrecision(15, 2);
         builder.HasOne(x => x.Product).WithMany(x => x.Stocks)
                     .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);

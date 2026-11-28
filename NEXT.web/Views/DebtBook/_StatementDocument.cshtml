@@ -1,0 +1,18 @@
+@model NEXT.Application.DTOs.Accounting.DebtBookStatement
+@inject TimeProvider Clock
+<article class="debt-statement">
+<header class="debt-statement-header"><div><partial name="~/Views/Shared/_DocumentBusinessIdentity.cshtml"/><h1>@L["DebtBookStatementTitle", Model.Account.Name]</h1><p><bdi>@Model.Account.Phone</bdi></p></div><div><p>@L["Date"]: <bdi>@Clock.GetLocalNow().ToString("yyyy-MM-dd")</bdi></p><p>@L["ProductReportCurrency"]</p></div></header>
+<p class="debt-cycle-status">@L["DebtBookCycle"] <bdi>@Model.Account.CycleNumber</bdi> · @(Model.Account.ClosedAt.HasValue ? L["DebtBookClosed"] : L["DebtBookOpen"])</p>
+<div class="report-summary"><div><span>@L["DebtBookTotalGoods"]</span><strong><bdi>@Model.Total.ToString("N2")</bdi></strong></div><div><span>@L["PaidAmount"]</span><strong><bdi>@Model.Paid.ToString("N2")</bdi></strong></div><div><span>@L["RemainingAmount"]</span><strong class="debt-balance"><bdi>@Model.Balance.ToString("N2")</bdi></strong></div></div>
+@if(Model.Openings.Count>0) {<h2>@L["DebtBookOpeningBalances"]</h2><table><thead><tr><th>@L["Date"]</th><th>@L["Description"]</th><th>@L["Amount"]</th></tr></thead><tbody>@foreach(var o in Model.Openings){<tr><td>@o.Date.ToString("yyyy-MM-dd")</td><td>@o.Description</td><td><bdi>@o.Amount.ToString("N2")</bdi></td></tr>}</tbody></table>}
+<h2>@L["DebtBookGoodsDetails"]</h2>
+@foreach(var i in Model.Invoices) {
+<table class="debt-statement-goods"><colgroup><col style="width:43%"/><col style="width:13%"/><col style="width:22%"/><col style="width:22%"/></colgroup><thead><tr><th colspan="4" class="debt-invoice-band"><div class="debt-invoice-meta"><span>@L["InvoiceNumber"]: <bdi>@i.Number</bdi></span><span><bdi>@i.Date.ToLocalTime().ToString("yyyy-MM-dd")</bdi></span></div></th></tr><tr><th class="debt-name-col">@L["Product"]</th><th>@L["Quantity"]</th><th>@L["UnitPrice"]</th><th>@L["TotalAmount"]</th></tr></thead>
+<tbody>@foreach(var line in i.Lines){<tr><td>@line.Name</td><td><bdi>@line.Quantity.ToString("0.###")</bdi></td><td><bdi>@line.UnitPrice.ToString("N2")</bdi></td><td><bdi>@line.Total.ToString("N2")</bdi></td></tr>}</tbody>
+<tfoot><tr><td colspan="4"><div class="debt-invoice-meta"><span>@L["DiscountAmount"]: <bdi>@i.Discount.ToString("N2")</bdi></span><span>@L["TotalAmount"]: <bdi>@i.Total.ToString("N2")</bdi></span><span>@L["PaidAmount"]: <bdi>@i.Paid.ToString("N2")</bdi></span><span>@L["RemainingAmount"]: <bdi>@i.Remaining.ToString("N2")</bdi></span></div></td></tr></tfoot></table>
+}
+<section class="debt-payments-section"><h2>@L["DebtBookPayments"]</h2><table class="debt-statement-payments"><thead><tr><th>@L["Date"]</th><th>@L["PaymentNumber"]</th><th>@L["PaymentMethod"]</th><th>@L["Amount"]</th></tr></thead><tbody>
+@foreach(var p in Model.Receipts){<tr><td>@p.Date.ToString("yyyy-MM-dd")</td><td><bdi>@p.Number</bdi>@if(!string.IsNullOrWhiteSpace(p.Description)){<p class="debt-payment-description">@p.Description</p>}@if(p.InvoiceNumber is not null){<br/><small>@p.InvoiceNumber</small>}</td><td>@L[p.Method.ToString()]<br/><small>@L["FinancialAccount"+p.CashAccount]</small></td><td><bdi>@p.Amount.ToString("N2")</bdi></td></tr>}
+@if(Model.Receipts.Count==0){<tr><td colspan="4">@L["NoRecords"]</td></tr>}
+</tbody></table></section><footer class="report-footnote">@L["DebtBookStatementNote"]</footer>
+</article>

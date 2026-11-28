@@ -92,7 +92,7 @@ public sealed class AccountingStore(NEXTDbContext db) : IAccountingStore
         else valid &= movements.Length == 1;
         return new(movements.Sum(m => m.TotalCost), movements.Length, valid,
             movements.Length == 1 && movements[0].Type == NEXT.Domain.Enums.StockMovementType.OpeningBalance,
-            movements.Length == 1 ? movements[0].SupplierId : null);
+            movements.Length == 1 ? movements[0].SupplierId : null, movements.Sum(m => m.CostAdjustment));
     }
 
     public async Task<OpeningPosition> ReadOpeningPositionAsync(NEXT.Domain.Enums.AccountType account, bool lockStocks, CancellationToken ct)

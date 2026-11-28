@@ -1,3 +1,5 @@
+@inject NEXT.Application.Abstractions.Context.ICurrentStore CurrentStore
+@inject NEXT.Infrastructure.Stores.StoreServerSettings StoreServer
 @{
     var current = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
@@ -14,7 +16,7 @@
     }
 }
 <nav class="grouped-navigation" aria-label="@L["Navigation"]">
-    @foreach (var group in NEXT.web.Services.NavigationCatalog.Groups)
+    @foreach (var group in NEXT.web.Services.NavigationCatalog.Groups.Where(g => g.Title != "PlatformGroup" || (CurrentStore.IsDefault && StoreServer.Enabled)))
     {
         <section class="nav-group" aria-label="@L[group.Title]">
             <h2 class="nav-group-title">@L[group.Title]</h2>

@@ -1,8 +1,10 @@
 @model NEXT.Application.DTOs.Invoices.InvoiceDetails
+@inject NEXT.Application.Features.Settings.StoreProfileSettings StoreSettings
+@{var business = await StoreSettings.ReadAsync(Context.RequestAborted);}
 <article class="invoice-document" lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
          dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
     <header class="invoice-document-heading">
-        <div><div class="invoice-document-brand">NEXT</div><p>@L["TradingSystem"]</p></div>
+        <partial name="~/Views/Shared/_DocumentBusinessIdentity.cshtml" />
         <div><h1>@L["InvoiceDocumentTitle"]</h1><bdi class="invoice-document-number">@Model.Summary.Number</bdi></div>
     </header>
     <dl class="invoice-document-meta">
@@ -53,5 +55,5 @@
     {
         <section class="invoice-document-notes"><h2>@L["Notes"]</h2><p>@Model.Notes</p></section>
     }
-    <footer class="invoice-document-footer"><span>NEXT · @L["TradingSystem"]</span><bdi>@Model.Summary.Number</bdi></footer>
+    <footer class="invoice-document-footer"><span>@(string.IsNullOrWhiteSpace(business.Name) ? "NEXT · " + L["TradingSystem"].Value : business.Name)</span><bdi>@Model.Summary.Number</bdi></footer>
 </article>

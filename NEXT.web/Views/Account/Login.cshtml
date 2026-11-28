@@ -1,4 +1,5 @@
 @model LoginDto
+@inject NEXT.Application.Abstractions.Context.ICurrentStore CurrentStore
 @{
     ViewData["Title"] = L["Login"];
 }
@@ -7,6 +8,7 @@
     <section class="content-card login-card auth-card">
         <span class="eyebrow">@L["Welcome"]</span>
         <h2>@L["Login"]</h2>
+        @if(!CurrentStore.IsDefault){<p class="store-login-name">@CurrentStore.Name</p>}
         <p>@L["LoginDescription"]</p>
         <form asp-action="Login" method="post" class="auth-form">
             <input asp-for="ReturnUrl" type="hidden" />

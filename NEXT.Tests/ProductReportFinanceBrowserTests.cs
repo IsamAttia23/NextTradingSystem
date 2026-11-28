@@ -32,7 +32,8 @@ public sealed class ProductReportFinanceBrowserTests
         await page.Locator("[name=UserName]").FillAsync("ui-admin");await page.Locator("[name=Password]").FillAsync("Test-only!2026");
         await page.Locator("form:has([name=UserName]) button[type=submit]").ClickAsync();await page.WaitForURLAsync(origin+"/");
         await page.GotoAsync(origin+"/Products?CategoryId="+categoryId+"&PageSize=10&culture="+culture);
-        await page.Locator("a[href*='/ProductReports/Print']").ClickAsync();
+        await page.Locator("button[data-modal-url*='/ProductReports/Preview']").ClickAsync();
+        await page.Locator("#workspaceModal.show .product-report").WaitForAsync();
         Assert.Equal(24,await page.Locator(".report tbody tr").CountAsync());Assert.Equal(1,await page.Locator(".report h2").CountAsync());
         Assert.DoesNotContain("Excluded",await page.Locator(".report").InnerTextAsync());
         Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= innerWidth"));

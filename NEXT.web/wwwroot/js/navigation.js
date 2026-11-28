@@ -218,7 +218,7 @@
                 notice(messages().expired);
                 return navigate(
                     new URL(
-                        (messages().loginUrl ?? "/Account/Login") +
+                        (messages().loginUrl ?? ((document.documentElement.dataset.appBase ?? "") + "/Account/Login")) +
                             "?returnUrl=" +
                             encodeURIComponent(target.pathname + target.search),
                         location.origin,

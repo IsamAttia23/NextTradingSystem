@@ -18,7 +18,7 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
     IRepository<InvoiceStatusHistory> history, IRepository<Payment> payments, IReadRepository<Warehouse> warehouses,
     IReadRepository<Product> products, ICurrentUserService currentUser, IUserQueryService users,
     IInvoiceStateMachine stateMachine, IUnitOfWork unitOfWork, TimeProvider clock, IQueryExecutor executor, IPublisher publisher,
-    InvoiceCustomerResolver customerResolver)
+    InvoiceCustomerResolver customerResolver, InvoiceStockPolicy stockPolicy)
 {
     public Task<Guid> ConfirmAsync(Guid id, ConfirmInvoiceInput input, CancellationToken ct)
     {
@@ -83,8 +83,9 @@ public sealed class InvoiceConfirmation(IInvoiceConfirmationStore store, IInvoic
             var productIds = quantities.Keys.Order().ToArray();
             if (await products.CountAsync(item => productIds.Contains(item.Id) && item.IsActive, token) != quantities.Count)
                 RequestValidation.Fail("Lines", "InvoiceProductUnavailable");
+            if (stockPolicy.AllowOverselling) await store.EnsureStocksAsync(invoice.WarehouseId, productIds, token);
             var stocks = await store.LockStocksAsync(invoice.WarehouseId, productIds, token);
-            if (stocks.Count != quantities.Count || stocks.Any(stock => stock.Quantity - stock.ReservedQuantity < quantities[stock.ProductId]))
+            if (stocks.Count != quantities.Count || (!stockPolicy.AllowOverselling && stocks.Any(stock => stock.Quantity - stock.ReservedQuantity < quantities[stock.ProductId])))
                 RequestValidation.Fail("Lines", "InvoiceInsufficientStock");
             var now = clock.GetUtcNow();
             foreach (var stock in stocks)

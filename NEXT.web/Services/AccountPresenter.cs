@@ -23,6 +23,23 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
     IStringLocalizer<UiText> text, IAntiforgery antiforgery, TimeProvider clock,
     IOptions<AccountSecurityOptions> securityOptions)
 {
+    private string LocalPath(string value) => (HttpContext.Request.PathBase.Value ?? "") + value;
+    private string ReturnPath(string? value, IUrlHelper url)
+    {
+        var prefix = HttpContext.Request.PathBase.Value ?? "";
+        if(url.IsLocalUrl(value))
+        {
+            var path = url.Content(value!);
+            if(Uri.TryCreate("https://local.invalid" + path, UriKind.Absolute, out var parsed))
+            {
+                var decoded = Uri.UnescapeDataString(parsed.AbsolutePath);
+                if(!decoded.Contains('\\') && !decoded.Contains("/../") && !decoded.Contains("/./") &&
+                    (prefix.Length == 0 || decoded == prefix || decoded.StartsWith(prefix + "/", StringComparison.Ordinal))) return path;
+            }
+        }
+        return prefix + "/";
+    }
+
     public IActionResult Antiforgery() => new OkObjectResult(new { token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken });
     public IActionResult LoginPage(string? returnUrl) => View("Login", new LoginDto { ReturnUrl = returnUrl });
     public IActionResult ForgotPasswordPage() => View("ForgotPassword", new RecoveryEmailInput());
@@ -37,7 +54,7 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
         {
             case LoginOutcome.Succeeded:
                 flow.Clear();
-                return new LocalRedirectResult(url.IsLocalUrl(input.ReturnUrl) ? input.ReturnUrl! : "/");
+                return new LocalRedirectResult(ReturnPath(input.ReturnUrl, url));
             case LoginOutcome.RequiresTwoFactor:
                 return new RedirectToActionResult("Verify", "Account", new { input.ReturnUrl, input.RememberMe });
             case LoginOutcome.RequiresPasswordChange:
@@ -68,7 +85,7 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
         var result = await access.VerifyAsync(input);
         if (result == LoginOutcome.MissingChallenge) return Redirect("Login");
         if (result == LoginOutcome.Succeeded)
-            return new LocalRedirectResult(url.IsLocalUrl(input.ReturnUrl) ? input.ReturnUrl! : "/");
+            return new LocalRedirectResult(ReturnPath(input.ReturnUrl, url));
         state.AddModelError("", text["LoginFailed"]);
         return View("Verify", input, state);
     }
@@ -91,7 +108,7 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
     public async Task<IActionResult> VerifyOtpAsync(OtpInput input, ModelStateDictionary state, CancellationToken ct)
     {
         var recovery = flow.GetRecovery();
-        if (recovery is null) return Failure("RecoverySessionExpired", "expired", "/Account/ForgotPassword");
+        if (recovery is null) return Failure("RecoverySessionExpired", "expired", LocalPath("/Account/ForgotPassword"));
         if (!state.IsValid) return Failure("OtpFiveDigits", "invalid");
         var verified = await sender.Send(new VerifyPasswordResetOtpCommand(recovery.ChallengeId, input.Code), ct);
         if (!verified.Succeeded || verified.Grant is null)
@@ -101,14 +118,14 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
             return View("VerifyOtp", OtpModel(recovery), state);
         }
         flow.SetGrant(new(verified.Grant, false, clock.GetUtcNow().AddMinutes(securityOptions.Value.GrantLifetimeMinutes)));
-        return Ajax ? new JsonResult(new { succeeded = true, redirectUrl = "/Account/SetPassword", message = text["OtpVerified"].Value })
+        return Ajax ? new JsonResult(new { succeeded = true, redirectUrl = LocalPath("/Account/SetPassword"), message = text["OtpVerified"].Value })
             : Redirect("SetPassword");
     }
 
     public async Task<IActionResult> ResendOtpAsync(CancellationToken ct)
     {
         var recovery = flow.GetRecovery();
-        if (recovery is null) return Failure("RecoverySessionExpired", "expired", "/Account/ForgotPassword");
+        if (recovery is null) return Failure("RecoverySessionExpired", "expired", LocalPath("/Account/ForgotPassword"));
         if (recovery.ResendAt > clock.GetUtcNow()) return Failure("WaitBeforeResend", "throttled");
         var response = await sender.Send(new RequestPasswordResetCommand(recovery.Email), ct);
         var updated = SaveRecovery(response.ChallengeId, recovery.Email);
@@ -172,7 +189,7 @@ public sealed class AccountPresenter(IAccountAccess access, ISender sender, User
     {
         HttpContext.Response.Headers.XContentTypeOptions = "nosniff";
         var image = await access.AvatarAsync();
-        return image is { Length: > 0 } ? new FileContentResult(image, "image/png") : new RedirectResult("/logo.svg");
+        return image is { Length: > 0 } ? new FileContentResult(image, "image/png") : new RedirectResult(LocalPath("/logo.svg"));
     }
 
 

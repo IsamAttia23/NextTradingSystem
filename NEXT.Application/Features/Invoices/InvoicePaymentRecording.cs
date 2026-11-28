@@ -70,9 +70,15 @@ public sealed class InvoicePaymentRecording(IInvoiceConfirmationStore store, IIn
             var status = InvoicePaymentRules.Status(invoice.TotalAmount, paid);
             var payment = new Payment
             {
-                Id = input.OperationId, PaymentNumber = "PAY-" + input.OperationId.ToString("N"),
-                PaymentType = PaymentType.Receipt, Purpose = PaymentPurpose.InvoiceReceipt, InvoiceId = id, CustomerId = invoice.CustomerId,
-                Amount = input.Amount, PaymentMethod = input.PaymentMethod!.Value,
+                Id = input.OperationId,
+                DebtAccountPaymentId = input.DebtAccountPaymentId,
+                PaymentNumber = "PAY-" + input.OperationId.ToString("N"),
+                PaymentType = PaymentType.Receipt,
+                Purpose = PaymentPurpose.InvoiceReceipt,
+                InvoiceId = id,
+                CustomerId = invoice.CustomerId,
+                Amount = input.Amount,
+                PaymentMethod = input.PaymentMethod!.Value,
                 CashAccount = NEXT.Domain.Services.CashAccounts.Resolve(input.CashAccount, input.PaymentMethod.Value),
                 PaymentDate = DateOnly.FromDateTime(clock.GetLocalNow().DateTime),
                 CreatedBy = actor.Id,

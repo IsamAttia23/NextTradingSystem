@@ -1,0 +1,15 @@
+@model DebtBookDetailsView
+@{var s=Model.Statement;ViewData["Title"]=s.Account.Name;}
+<section class="page-heading"><div><span class="eyebrow">@L["DebtBook"]</span><h1>@s.Account.Name</h1><p><bdi>@s.Account.Phone</bdi></p></div><a class="btn btn-light" asp-action="Index">@L["DebtBook"]</a></section>
+<partial name="_FinanceNavigation" />
+<p class="debt-cycle-status">@L["DebtBookCycle"] <bdi>@s.Account.CycleNumber</bdi> · @(s.Account.ClosedAt.HasValue ? L["DebtBookClosed"] : L["DebtBookOpen"]) @if(s.Account.ClosedAt is {} closed){<bdi>@closed.ToLocalTime().ToString("yyyy-MM-dd")</bdi>}</p>
+<div class="stats-grid finance-summary">@foreach(var metric in new[]{("DebtBookTotalGoods",s.Total),("PaidAmount",s.Paid),("RemainingAmount",s.Balance)}) {<article class="stat-card"><div><span>@L[metric.Item1]</span></div><strong><bdi>@metric.Item2.ToString("N2") <small>SDG</small></bdi></strong></article>}</div>
+<section class="content-card finance-action-card"><div><h2>@L["DebtBookCustomerAccount"]</h2><p>@L["DebtBookAccountHint"]</p></div><div class="debt-book-actions">
+@if(s.Account.Active) {<button class="btn btn-primary" data-modal-url="@Url.Action("Withdraw",new{id=s.Account.Id})">@L["DebtBookWithdraw"]</button>}
+@if(s.Account.Active && !s.Account.ClosedAt.HasValue && s.Balance>0) {<button class="btn btn-primary" data-modal-url="@Url.Action("Receive",new{id=s.Account.Id})">@L["DebtBookReceive"]</button>}
+<button class="btn btn-light" data-modal-url="@Url.Action("Preview","DebtBookDocuments",new{id=s.Account.Id})">@L["DebtBookStatement"]</button></div></section>
+@if(s.Receipts.Count>0){<section class="content-card debt-book-receipts"><h2>@L["DebtBookPayments"]</h2>@foreach(var receipt in s.Receipts){<article><div><bdi>@receipt.Date.ToString("yyyy-MM-dd")</bdi><strong><bdi>@receipt.Amount.ToString("N2") SDG</bdi></strong></div><p>@(receipt.Description ?? L["DebtBookLegacyPaymentDescription"].Value)</p><small><bdi>@receipt.Number</bdi></small></article>}</section>}
+<partial name="~/Views/Shared/Table.cshtml" model="Model.Movements" />
+<section class="content-card finance-compact-card"><div class="table-toolbar"><strong>@L["Invoices"]</strong><span class="count-pill">@s.Invoices.Count</span></div><div class="table-responsive"><table class="table align-middle financial-debt-invoices"><thead><tr><th>@L["InvoiceNumber"]</th><th>@L["TotalAmount"]</th><th>@L["PaidAmount"]</th><th>@L["RemainingAmount"]</th></tr></thead><tbody>
+@foreach(var i in s.Invoices) {<tr><td><a asp-controller="Invoices" asp-action="Details" asp-route-id="@i.Id">@i.Number</a><details class="finance-row-details"><summary>@L["Details"]</summary>@foreach(var line in i.Lines){<p>@line.Name · <bdi>@line.Quantity.ToString("0.###") × @line.UnitPrice.ToString("N2") = @line.Total.ToString("N2")</bdi></p>}</details></td><td data-label="@L["TotalAmount"]"><bdi>@i.Total.ToString("N2")</bdi></td><td data-label="@L["PaidAmount"]"><bdi>@i.Paid.ToString("N2")</bdi></td><td data-label="@L["RemainingAmount"]"><bdi>@i.Remaining.ToString("N2")</bdi></td></tr>}
+</tbody></table></div></section>

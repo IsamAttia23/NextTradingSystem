@@ -112,7 +112,7 @@ public sealed class InvoiceAccountingTests
             Assert.True(delivered.IsSuccessStatusCode, await delivered.Content.ReadAsStringAsync());
         Assert.Single(await f.Db.Customers.ToListAsync());
         Assert.NotNull(invoice.CustomerId);
-        Assert.Empty(await f.Db.CustomerDebtAccounts.ToListAsync());
+        Assert.Single(await f.Db.CustomerDebtAccounts.ToListAsync());
         Assert.Empty(await f.Db.DebtItems.ToListAsync());
         Assert.Equal(-10m, await Net(f.Db, AccountType.Sales));
         Assert.Equal(10m, await Net(f.Db, AccountType.Treasury));
@@ -187,7 +187,8 @@ public sealed class InvoiceAccountingTests
         var token = WorkspaceUiTests.Token(form);
         var shipped = await Task.WhenAll(Fulfill(client, left, token, Guid.NewGuid(), InvoiceStatus.Shipped),
             Fulfill(client, right, token, Guid.NewGuid(), InvoiceStatus.Delivered));
-        foreach (var response in shipped) { using(response) Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync()); }
+        foreach (var response in shipped)
+        { using (response) Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync()); }
         Assert.Equal(1, await f.Db.CustomerDebtAccounts.CountAsync());
         Assert.Equal(2, await f.Db.DebtItems.CountAsync());
         f.Db.ChangeTracker.Clear();
@@ -197,7 +198,8 @@ public sealed class InvoiceAccountingTests
         token = WorkspaceUiTests.Token(form);
         var receipts = await Task.WhenAll(Pay(client, left, token, Guid.NewGuid(), "3", "Cash"),
             Pay(client, right, token, Guid.NewGuid(), "3", "Cash"));
-        foreach (var response in receipts) { using(response) Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync()); }
+        foreach (var response in receipts)
+        { using (response) Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync()); }
         Assert.Equal(14m, await Net(f.Db, AccountType.Receivables));
         Assert.Equal(6m, await Net(f.Db, AccountType.Treasury));
         Assert.Equal(-20m, await Net(f.Db, AccountType.Sales));
@@ -212,7 +214,9 @@ public sealed class InvoiceAccountingTests
         await WorkspaceUiTests.Login(client, "ui-admin");
         var actor = await f.Db.Users.SingleAsync(item => item.UserName == "ui-admin");
         var invoice = await Seed(f, actor.Id, InvoiceStatus.Confirmed);
-        invoice.PaidAmount = 3; invoice.RemainingAmount = 7; invoice.PaymentStatus = PaymentStatus.Partial;
+        invoice.PaidAmount = 3;
+        invoice.RemainingAmount = 7;
+        invoice.PaymentStatus = PaymentStatus.Partial;
         f.Db.Payments.Add(new Payment { InvoiceId = invoice.Id, Amount = 3, PaymentNumber = "LEGACY-UNPOSTED", PaymentType = PaymentType.Receipt });
         await f.Db.SaveChangesAsync();
         var form = await client.GetStringAsync($"/Invoices/Fulfill/{invoice.Id}");
@@ -239,14 +243,31 @@ public sealed class InvoiceAccountingTests
 
     private static async Task<Invoice> Seed(PostgresInventoryTests.Database f, Guid actor, InvoiceStatus status, Guid? customerId = null)
     {
-        var invoice = new Invoice { Id = Guid.NewGuid(), InvoiceNumber = "ACCOUNTING-" + Guid.NewGuid().ToString("N"),
-            CustomerName = customerId.HasValue ? "Shared accounting customer" : "Accounting integration customer", CustomerId = customerId,
-            UserId = actor, WarehouseId = f.Source, Status = status, SubTotal = 10, TotalAmount = 10, RemainingAmount = 10,
-            Items = [new InvoiceItem { ProductId = f.Product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }] };
+        var invoice = new Invoice
+        {
+            Id = Guid.NewGuid(),
+            InvoiceNumber = "ACCOUNTING-" + Guid.NewGuid().ToString("N"),
+            CustomerName = customerId.HasValue ? "Shared accounting customer" : "Accounting integration customer",
+            CustomerId = customerId,
+            UserId = actor,
+            WarehouseId = f.Source,
+            Status = status,
+            SubTotal = 10,
+            TotalAmount = 10,
+            RemainingAmount = 10,
+            Items = [new InvoiceItem { ProductId = f.Product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }]
+        };
         var stock = await f.Db.Stocks.SingleOrDefaultAsync();
-        if (stock is null) f.Db.Stocks.Add(new Stock { ProductId = f.Product, WarehouseId = f.Source, Quantity = 20,
-            ReservedQuantity = status == InvoiceStatus.Confirmed ? 2 : 0 });
-        else if (status == InvoiceStatus.Confirmed) stock.ReservedQuantity += 2;
+        if (stock is null)
+            f.Db.Stocks.Add(new Stock
+            {
+                ProductId = f.Product,
+                WarehouseId = f.Source,
+                Quantity = 20,
+                ReservedQuantity = status == InvoiceStatus.Confirmed ? 2 : 0
+            });
+        else if (status == InvoiceStatus.Confirmed)
+            stock.ReservedQuantity += 2;
         f.Db.Invoices.Add(invoice);
         await f.Db.SaveChangesAsync();
         return invoice;

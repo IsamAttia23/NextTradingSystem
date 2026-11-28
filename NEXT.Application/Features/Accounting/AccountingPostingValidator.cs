@@ -53,11 +53,14 @@ public sealed class AccountingPostingValidator(IAccountingStore store, TimeProvi
         if (entry.Kind != LedgerEntryKind.GoodsReceipt) return;
         var source = await store.GetInventorySourceAsync(entry.ReferenceId, false, ct);
         var counter = Account.IdFor(source.IsOpening ? AccountType.OpeningBalances : AccountType.GoodsReceivedNotInvoiced);
-        if (!source.IsValidSource || source.TotalCost <= 0 || entry.Lines.Count != 2 ||
+        var total = source.TotalCost + source.CostAdjustment;
+        decimal Net(Guid account) => entry.Lines.Where(l => l.AccountId == account).Sum(l => l.Debit - l.Credit);
+        if (!source.IsValidSource || source.TotalCost < 0 || !MoneyRules.IsValid(total) ||
             (!source.IsOpening && source.SupplierId is null) ||
             entry.Lines.Any(l => l.CustomerId.HasValue || l.DebtItemId.HasValue) ||
-            !entry.Lines.Any(l => l.AccountId == Account.IdFor(AccountType.Inventory) && l.Debit == source.TotalCost) ||
-            !entry.Lines.Any(l => l.AccountId == counter && l.Credit == source.TotalCost))
+            Net(Account.IdFor(AccountType.Inventory)) != source.TotalCost || Net(counter) != -total ||
+            Net(Account.IdFor(AccountType.CostOfSales)) != source.CostAdjustment ||
+            entry.Lines.Count != (source.TotalCost > 0 ? 1 : 0) + (total > 0 ? 1 : 0) + (source.CostAdjustment != 0 ? 1 : 0))
             throw new ConflictException("AccountingInventoryPostingMismatch");
     }
 

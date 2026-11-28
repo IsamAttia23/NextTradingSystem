@@ -26,9 +26,18 @@ public sealed class InvoiceAccountingBrowserTests
             var actor = await db.Users.SingleAsync(item => item.UserName == "ui-admin");
             var warehouse = new Warehouse { Name = "Accounting browser warehouse", Code = "ACCOUNTING-UI", IsActive = true };
             var product = new Product { Name = "منتج الحسابات / Accounting product", IsActive = true };
-            var invoice = new Invoice { InvoiceNumber = number, CustomerName = "عميل الحسابات / Accounting customer",
-                UserId = actor.Id, Warehouse = warehouse, Status = InvoiceStatus.Confirmed, SubTotal = 10, TotalAmount = 10,
-                RemainingAmount = 10, Items = [new InvoiceItem { Product = product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }] };
+            var invoice = new Invoice
+            {
+                InvoiceNumber = number,
+                CustomerName = "عميل الحسابات / Accounting customer",
+                UserId = actor.Id,
+                Warehouse = warehouse,
+                Status = InvoiceStatus.Confirmed,
+                SubTotal = 10,
+                TotalAmount = 10,
+                RemainingAmount = 10,
+                Items = [new InvoiceItem { Product = product, Quantity = 2, UnitPrice = 5, TotalAmount = 10 }]
+            };
             db.AddRange(invoice, new Stock { Product = product, Warehouse = warehouse, Quantity = 10, ReservedQuantity = 2 });
             await db.SaveChangesAsync();
             id = invoice.Id;
@@ -79,7 +88,7 @@ public sealed class InvoiceAccountingBrowserTests
         await page.GotoAsync(origin + "/FinancialAccounts?culture=" + culture);
         Assert.Equal(15, await page.Locator("tbody tr").CountAsync());
         Assert.Equal(0, await page.Locator(".finance-summary .stat-card").CountAsync());
-        Assert.Equal(8, await page.Locator(".finance-tabs a").CountAsync());
+        Assert.Equal(9, await page.Locator(".finance-tabs a").CountAsync());
         Assert.Contains(culture == "ar" ? "تكلفة المبيعات" : "Cost of sales", await page.Locator("tbody").InnerTextAsync());
         Assert.Equal(culture == "ar" ? "بحث" : "Search", await page.Locator(".financial-date-filter [type=submit]").InnerTextAsync());
         Assert.Equal(1, await page.Locator("thead .numeric-cell").CountAsync());
@@ -107,7 +116,8 @@ public sealed class InvoiceAccountingBrowserTests
     private static async Task Screenshot(IPage page, string name)
     {
         var root = Environment.GetEnvironmentVariable("NEXT_PDF_QA_DIRECTORY");
-        if (string.IsNullOrWhiteSpace(root)) return;
+        if (string.IsNullOrWhiteSpace(root))
+            return;
         Directory.CreateDirectory(root);
         await page.ScreenshotAsync(new() { Path = Path.Combine(root, name), FullPage = true, Animations = ScreenshotAnimations.Disabled });
     }

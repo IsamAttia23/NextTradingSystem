@@ -2,6 +2,7 @@
 @{ ViewData["Title"] = L["FinancialAccount" + Model.Account.Type]; }
 <section class="page-heading"><div><span class="eyebrow">@L["FinanceGroup"]</span><h1>@L["FinancialAccount" + Model.Account.Type]</h1><p>@L["AccountingCategory" + Model.Account.Category]</p></div><a class="btn btn-light" asp-action="Index">@L["FinancialAccounts"]</a></section>
 <partial name="_FinanceNavigation" />
+@if(Model.Account.Type==NEXT.Domain.Enums.AccountType.Receivables) {<section class="content-card finance-action-card"><div><h2>@L["DebtBook"]</h2><p>@L["DebtBookDescription"]</p></div><a class="btn btn-primary" asp-controller="DebtBook" asp-action="Index">@L["DebtBook"]</a></section>}
 <div class="stats-grid finance-summary">
     @foreach (var metric in new[] { ("AccountingPriorBalance", Model.Account.OpeningBalance), ("AccountingDebit", Model.Account.Debit), ("AccountingCredit", Model.Account.Credit), ("AccountingClosingBalance", Model.Account.Balance) })
     { <article class="stat-card"><div><span>@L[metric.Item1]</span></div><strong><bdi>@metric.Item2.ToString("N2") <small>SDG</small></bdi></strong></article> }

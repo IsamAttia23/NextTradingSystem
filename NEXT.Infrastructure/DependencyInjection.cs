@@ -1,3 +1,4 @@
+using NEXT.Infrastructure.Stores;
 using NEXT.Infrastructure.Identity.Security.Services;
 using NEXT.Infrastructure.Identity.Security.Email;
 using NEXT.Infrastructure.Identity.Security.Storage;
@@ -36,9 +37,16 @@ public static class DependencyInjection
         {
             throw new InvalidOperationException("Connection string 'NEXTDatabase' was not configured.");
         }
-        services.AddDbContext<NEXTDbContext>(options =>
+        services.AddSingleton<StoreServerSettings>();
+        services.AddScoped<StoreContext>();
+        services.AddScoped<ICurrentStore>(sp => sp.GetRequiredService<StoreContext>());
+        services.AddScoped<StoreCatalog>();
+        services.AddScoped<StoreProvisioningService>();
+        services.AddScoped<NEXT.Application.Abstractions.Services.IStoreManagement, StoreManagement>();
+        services.AddSingleton<StoreScopeFactory>();
+        services.AddDbContext<NEXTDbContext>((sp, options) =>
         {
-            options.UseNpgsql(connectionString, npgsql => npgsql.CommandTimeout(30));
+            options.UseNpgsql(sp.GetRequiredService<StoreContext>().ResolveConnection(), npgsql => npgsql.CommandTimeout(30));
         });
         services.AddSingleton<NEXT.Application.Abstractions.Media.IProfileImageProcessor, NEXT.Infrastructure.Media.ProfileImageProcessor>();
         services.AddScoped<ILoginAccessPolicy, LoginAccessPolicy>();
@@ -116,6 +124,7 @@ public static class DependencyInjection
         services.AddScoped<TrackedChangesProcessor>();
         services.AddScoped(typeof(IRecycleBinStore<,>), typeof(NEXT.Infrastructure.Features.RecycleBin.RecycleBinStore<,>));
         services.AddNEXTIdentity();
+        services.AddScoped<IUserClaimsPrincipalFactory<NEXT.Infrastructure.Identity.Entities.ApplicationUser>, StoreClaimsPrincipalFactory>();
         return services;
     }
 }

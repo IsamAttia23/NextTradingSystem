@@ -1,13 +1,14 @@
 @model InvoiceDraftForm
+@inject NEXT.Application.Features.Invoices.InvoiceStockPolicy StockPolicy
 @{
     var input = Model.Input;
-    var title = Model.Action == "Edit" ? "EditInvoice" : "CreateInvoice";
+    var title = Model.Action == "Withdraw" ? "DebtBookWithdraw" : Model.Action == "Edit" ? "EditInvoice" : "CreateInvoice";
     var initial = input.Lines.Select(line => new { product = Model.Products?.Where(p => p.Id == line.ProductId)
         .Select(p => new { id = p.Id, name = p.Name, unitPrice = line.QuotedUnitPrice, availableQuantity = p.AvailableQuantity }).FirstOrDefault(),
         quantity = line.Quantity, manualName = line.ManualName, unitPrice = line.QuotedUnitPrice });
 }
-<form asp-action="@Model.Action" asp-route-id="@Model.Id" method="post" data-modal-form="true" data-title="@L[title]" data-invoice-form
-      data-customers-url="@Url.Action("Customers")" data-products-url="@Url.Action("Products")"
+<form asp-action="@Model.Action" asp-route-id="@Model.Id" method="post" data-modal-form="true" data-title="@L[title]" data-invoice-form data-allow-overselling="@StockPolicy.AllowOverselling.ToString().ToLowerInvariant()"
+      data-customers-url="@Url.Action("Customers", "Invoices")" data-products-url="@Url.Action("Products", "Invoices")"
       data-search-error="@L["RequestFailed"]" data-empty-results="@L["NoResults"]"
       data-available-label="@L["AvailableQuantity"]" data-stock-error="@L["InvoiceInsufficientStock"]"
       data-product-merged="@L["InvoiceProductMerged"]">
@@ -20,13 +21,14 @@
     <div class="invoice-picker mb-3" data-invoice-picker="customer">
         <label class="form-label" id="invoice-customer-label" for="invoice-customer-name">@L["CustomerName"]</label>
         <input class="form-control" id="invoice-customer-name" name="CustomerName" data-invoice-search type="text"
-               value="@input.CustomerName" required maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list"
+               value="@input.CustomerName" readonly="@(Model.Action == "Withdraw")" required maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list"
                aria-expanded="false" aria-controls="invoice-customer-options" placeholder="@L["InvoiceCustomerHint"]" />
         <input name="CustomerId" type="hidden" data-invoice-id value="@input.CustomerId" />
         <div class="reference-options invoice-options" id="invoice-customer-options" data-invoice-options role="listbox"
              aria-labelledby="invoice-customer-label" hidden></div>
         <small data-invoice-search-status role="status"></small>
     </div>
+    @if(input is NEXT.Application.DTOs.Accounting.DebtBookWithdrawalInput withdrawal) {<label class="form-label w-100">@L["CustomerPhone"]<input class="form-control" name="CustomerPhone" value="@withdrawal.CustomerPhone" required maxlength="50"/></label>}
     <fieldset class="modal-field-group">
         <legend>@L["InvoiceItems"]</legend>
         <div data-invoice-lines></div>
@@ -86,6 +88,6 @@
     </label>
     <div class="modal-form-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
-        <button type="submit" class="btn btn-primary" data-save-invoice disabled>@L["SaveInvoice"]</button>
+        <button type="submit" class="btn btn-primary" data-save-invoice disabled>@L[Model.Action == "Withdraw" ? "DebtBookWithdraw" : "SaveInvoice"]</button>
     </div>
 </form>

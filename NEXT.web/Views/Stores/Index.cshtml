@@ -1,0 +1,15 @@
+@model IReadOnlyList<NEXT.Application.DTOs.Stores.TrialStoreView>
+@using NEXT.Application.DTOs.Stores
+@{ViewData["Title"]=L["TrialStores"];}
+<section class="page-heading"><div><span class="eyebrow">@L["SystemGroup"]</span><h1>@L["TrialStores"]</h1><p>@L["TrialStoresHint"]</p></div><button class="btn btn-primary" data-modal-url="@Url.Action("Create")">@L["CreateStore"]</button></section>
+<section class="content-card store-platform-main"><h2>@L["MainStore"]</h2><p>@L["MainStorePreserved"]</p><a class="btn btn-light" asp-controller="Home" asp-action="Index">@L["OpenStore"]</a></section>
+<div class="store-platform-list">
+@foreach(var store in Model){
+<section class="content-card store-platform-card"><header><h2>@store.Name</h2><span class="count-pill">@L["StoreState"+store.State]</span></header>
+<p>@L["StoreOwner"]: @store.OwnerName · <bdi>@store.OwnerUserName</bdi></p>
+@if(store.State==StoreState.Active){<a class="store-entry-link" href="@Url.Content("~/s/"+store.Slug+"/")" target="_blank" rel="noopener">@Url.Content("~/s/"+store.Slug+"/")</a>}
+<div class="store-platform-actions">
+@if(store.State is StoreState.Active or StoreState.Disabled){<form asp-action="Activate" method="post"><input type="hidden" name="Id" value="@store.Id"/><input type="hidden" name="Version" value="@store.Version"/><input type="hidden" name="Active" value="@(store.State==StoreState.Disabled ? "true" : "false")"/><button class="btn btn-light" type="submit">@L[store.State==StoreState.Disabled ? "EnableStore" : "DisableStore"]</button></form>}
+@if(store.State is StoreState.Failed or StoreState.Provisioning){<p>@L["StoreRetryHint"]</p><button class="btn btn-primary" data-modal-url="@Url.Action("Create",new{id=store.Id})">@L["RetryStoreProvisioning"]</button>}
+</div></section>}
+</div>

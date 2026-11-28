@@ -7,6 +7,7 @@ public sealed class RecordInvoicePaymentInput
 {
     [EnumDataType(typeof(AccountType))]
     public AccountType? CashAccount { get; set; }
+    public Guid? DebtAccountPaymentId { get; internal set; }
     public Guid OperationId { get; set; }
     public Guid? CustomerId { get; set; }
     [Required]

@@ -172,8 +172,10 @@ public sealed class InvoiceRevisionTests
             PaymentNumber = "REMOVAL-RECEIPT", Invoice = invoice, Customer = customer,
             Amount = 4, PaymentType = PaymentType.Receipt, RecordedByFullName = actor.FullName
         };
-        f.Db.AddRange(actor, invoice, new SystemSetting { Key = "Accounting.InvoiceAccounts", Category = "Finance" });
+        f.Db.AddRange(actor, customer, new SystemSetting { Key = "Accounting.InvoiceAccounts", Category = "Finance" });
         await f.Db.SaveChangesAsync();
+        invoice.CustomerId = customer.Id;
+        await HistoricalInvoiceSeed.InsertAsync(f.Db, invoice);
         var accountId = Guid.NewGuid();
         var journalId = Guid.NewGuid();
         var lineId = Guid.NewGuid();

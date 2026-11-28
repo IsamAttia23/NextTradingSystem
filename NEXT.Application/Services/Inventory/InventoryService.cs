@@ -19,7 +19,7 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
     IUnitOfWork unitOfWork, IEntityValidator<ReceiveStockDto> receiptValidator,
     IEntityValidator<TransferStockDto> transferValidator, ExchangeRateReader exchangeRates,
     IInvoiceConfirmationStore invoiceStore, IAccountingPostingService posting,
-    IKeyRepository<Supplier, Guid> suppliers, TimeProvider clock) : IInventoryService
+    IKeyRepository<Supplier, Guid> suppliers, TimeProvider clock, NEXT.Application.Features.Invoices.InvoiceStockPolicy stockPolicy) : IInventoryService
 {
     public async Task IssueReservedInvoiceAsync(InvoiceDispatchInput input, CancellationToken ct = default)
     {
@@ -47,23 +47,27 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
             selectedProducts.Add(id, product);
         }
         if (lockedStocks.Count != quantities.Count || lockedStocks.Any(stock =>
-            stock.Quantity < quantities[stock.ProductId] || stock.ReservedQuantity < quantities[stock.ProductId]))
+            (!stockPolicy.AllowOverselling && stock.Quantity < quantities[stock.ProductId]) || stock.ReservedQuantity < quantities[stock.ProductId]))
             Fail("Lines", "InvoiceReservedStockInsufficient");
         var today = DateOnly.FromDateTime(input.ActionAt.UtcDateTime);
         var expiryProducts = productIds.Where(id => selectedProducts[id].HasExpiry).ToArray();
         var lockedBatches = expiryProducts.Length == 0 ? Array.Empty<ProductBatch>() :
             await invoiceStore.LockBatchesAsync(input.WarehouseId, expiryProducts, today, ct);
+        var rate = await exchangeRates.GetUsdRateAsync(ct);
         foreach (var stock in lockedStocks)
         {
             var quantity = quantities[stock.ProductId];
-            var issuedCost = InventoryValuation.IssueValue(stock.Quantity, stock.TotalCost, quantity);
+            var unitCost = stock.AverageCost > 0 ? stock.AverageCost : MoneyRules.Round(selectedProducts[stock.ProductId].CostPrice * rate);
+            var issuedCost = stockPolicy.AllowOverselling
+                ? TrialInventoryValuation.Issue(stock.Quantity, stock.TotalCost, quantity, unitCost)
+                : InventoryValuation.IssueValue(stock.Quantity, stock.TotalCost, quantity);
             var unallocatedQuantity = quantity;
             var unallocatedCost = issuedCost;
             if (selectedProducts[stock.ProductId].HasExpiry)
             {
                 var candidates = lockedBatches.Where(batch => batch.ProductId == stock.ProductId)
                     .OrderBy(batch => batch.ExpiryDate).ThenBy(batch => batch.Id).ToArray();
-                if (candidates.Sum(batch => batch.Quantity) < quantity)
+                if (!stockPolicy.AllowOverselling && candidates.Sum(batch => batch.Quantity) < quantity)
                     Fail("Lines", "InvoiceValidBatchesInsufficient");
                 var remaining = quantity;
                 foreach (var batch in candidates)
@@ -80,6 +84,12 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
                     remaining -= issued;
                     if (remaining == 0) break;
                 }
+                if (remaining > 0)
+                {
+                    var shortage = Movement(stock.ProductId, remaining, input.InvoiceId, input.WarehouseId, StockMovementType.Sale, unitCost, "Invoice", input.ActionAt, "Trial shortage");
+                    shortage.TotalCost = unallocatedCost;
+                    await movements.AddAsync(shortage, ct);
+                }
             }
             else
             {
@@ -90,7 +100,7 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
             }
             stock.TotalCost -= issuedCost;
             stock.Quantity -= quantity;
-            stock.AverageCost = InventoryValuation.Average(stock.Quantity, stock.TotalCost);
+            stock.AverageCost = stock.Quantity == 0 ? unitCost : InventoryValuation.Average(stock.Quantity, stock.TotalCost);
             stock.ReservedQuantity -= quantity;
             stock.LastUpdated = input.ActionAt;
         }
@@ -141,18 +151,23 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
         decimal value;
         try { value = InventoryValuation.ReceiptValue(quantity, cost); }
         catch (ArgumentOutOfRangeException) { Fail("ProductId", "ReceiptCostOutOfRange"); throw; }
-        Receive(stock, quantity, value, now);
+        var correction = TrialInventoryValuation.ReceiptAdjustment(stock.Quantity, stock.TotalCost, quantity, cost);
+        Receive(stock, quantity, value - correction, now);
         var movement = Movement(input, input.WarehouseId, opening ? StockMovementType.OpeningBalance : StockMovementType.Purchase, cost, "Receipt", now);
         movement.Quantity = quantity;
-        movement.TotalCost = value;
+        movement.TotalCost = value - correction;
+        movement.CostAdjustment = correction;
         movement.SupplierId = opening ? null : input.SupplierId;
         await movements.AddAsync(movement, ct);
-        if (value > 0)
+        var receiptLines = new List<PostingLineDto>();
+        if (movement.TotalCost > 0) receiptLines.Add(new(AccountType.Inventory, movement.TotalCost, 0));
+        if (correction != 0) receiptLines.Add(new(AccountType.CostOfSales, Math.Max(correction, 0), Math.Max(-correction, 0)));
+        if (value > 0) receiptLines.Add(new(opening ? AccountType.OpeningBalances : AccountType.GoodsReceivedNotInvoiced, 0, value));
+        if (receiptLines.Count > 0)
             await posting.PostAsync(new(input.OperationId, LedgerEntryKind.GoodsReceipt, AccountingReferenceType.InventoryReceipt,
                 input.OperationId, DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, clock.LocalTimeZone).DateTime),
                 opening ? AccountingDescriptions.InventoryOpening : AccountingDescriptions.GoodsReceipt,
-                [new(AccountType.Inventory, value, 0),
-                 new(opening ? AccountType.OpeningBalances : AccountType.GoodsReceivedNotInvoiced, 0, value)]), ct);
+                receiptLines), ct);
     }
 
     private static decimal ReceiptQuantity(Product product, ReceiveStockDto input)
@@ -326,7 +341,7 @@ public sealed class InventoryService(IKeyRepository<Product, Guid> products, IKe
     }
     private static void Receive(Stock stock, decimal quantity, decimal value, DateTimeOffset now)
     {
-        if (!MoneyRules.IsValid(stock.TotalCost + value)) Fail("ProductId", "ReceiptCostOutOfRange");
+        if (!MoneyRules.IsValid(Math.Abs(stock.TotalCost + value))) Fail("ProductId", "ReceiptCostOutOfRange");
         stock.TotalCost += value;
         stock.Quantity += quantity;
         stock.AverageCost = InventoryValuation.Average(stock.Quantity, stock.TotalCost);

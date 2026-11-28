@@ -7,7 +7,7 @@ using NEXT.Domain.Services;
 namespace NEXT.Application.Features.Invoices;
 
 // Creation and pending-invoice editing share validation, product merging, pricing and rounding.
-public sealed class InvoiceDraftBuilder(InvoiceLookups lookups)
+public sealed class InvoiceDraftBuilder(InvoiceLookups lookups, InvoiceStockPolicy stockPolicy)
 {
     public async Task<InvoiceDraft> BuildAsync(InvoiceDraftInput input, Guid warehouse,
         IReadOnlyCollection<InvoiceItem> existing, CancellationToken ct)
@@ -31,7 +31,7 @@ public sealed class InvoiceDraftBuilder(InvoiceLookups lookups)
             var quantity = group.Sum(line => line.Quantity!.Value);
             if (quantity > InvoiceAmounts.MaximumQuantity) RequestValidation.Fail("Lines", "InvoiceLinesInvalid");
             if (!products.TryGetValue(group.Key, out var product)) RequestValidation.Fail("Lines", "InvoiceProductUnavailable");
-            if (quantity > product.AvailableQuantity) RequestValidation.Fail("Lines", "InvoiceInsufficientStock");
+            if (!stockPolicy.AllowOverselling && quantity > product.AvailableQuantity) RequestValidation.Fail("Lines", "InvoiceInsufficientStock");
             var quote = group.First().QuotedUnitPrice!.Value;
             var old = existing.Where(item => item.ProductId == group.Key).ToArray();
             // Editing notes/quantities preserves existing prices; selecting a product again can explicitly refresh its quote.

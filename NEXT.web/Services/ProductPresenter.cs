@@ -8,7 +8,7 @@ using NEXT.web.Models;
 
 namespace NEXT.web.Services;
 
-public sealed class ProductPresenter(ISender sender, TablePresenter tables, FormFieldPresenter fields, ExchangeRateReader exchangeRates, Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText> text)
+public sealed class ProductPresenter(ISender sender, TablePresenter tables, FormFieldPresenter fields, ExchangeRateReader exchangeRates, Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText> text, IHttpContextAccessor context)
     : EntityPresenter<ProductDto, ProductInputDto>(sender, tables, fields)
 {
     protected override IReadOnlyList<string> TableColumns =>
@@ -33,7 +33,7 @@ public sealed class ProductPresenter(ISender sender, TablePresenter tables, Form
         var actions = row.Actions;
         if (item.IsActive)
         {
-            actions = [new("Receive", $"/Inventory/Receive?productId={item.Id}"), ..actions];
+            actions = [new("Receive", (context.HttpContext?.Request.PathBase.Value ?? "") + $"/Inventory/Receive?productId={item.Id}"), ..actions];
         }
         return row with { Actions = actions, StockLevel = StockLevel(item) };
     }

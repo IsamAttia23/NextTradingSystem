@@ -6,14 +6,14 @@ using NEXT.Application.DTOs.Presentation;
 
 namespace NEXT.web.Services;
 
-public sealed class InventoryPresenter(IInventoryQueryService queries, TablePresenter tables, FormFieldPresenter fields, Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText> text)
+public sealed class InventoryPresenter(IInventoryQueryService queries, TablePresenter tables, FormFieldPresenter fields, Microsoft.Extensions.Localization.IStringLocalizer<NEXT.web.Localization.UiText> text, IHttpContextAccessor context)
 {
     public async Task<TableModel> StocksAsync(PaginationQuery query, CancellationToken ct) =>
         await tables.BuildAsync("Stocks", ["Product", "Warehouse", "Quantity", "ReservedQuantity", "AvailableQuantity", "CostPrice", "AverageCost", "InventoryCarryingValue"],
             await queries.StocksAsync(query, ct), query,
             x => new TableRow([x.ProductName, x.WarehouseName, InventoryQuantityDisplay.Format(x.Quantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.ReservedQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), InventoryQuantityDisplay.Format(x.AvailableQuantity, x.UnitsPerPackage, x.BaseUnitName, x.PackagingUnitName, text), x.CostPrice.ToString("N2"), x.AverageCost.ToString("N2"), x.TotalCost.ToString("N2")],
-                [new("Transfer", "/Inventory/Transfer?productId=" + x.ProductId + "&sourceWarehouseId=" + x.WarehouseId)]),
-            [new("Quantity", "Quantity"), new("ReservedQuantity", "ReservedQuantity"), new("CreatedAt", "CreatedAt")], ct, new("Receive", "/Inventory/Receive"));
+                [new("Transfer", (context.HttpContext?.Request.PathBase.Value ?? "") + "/Inventory/Transfer?productId=" + x.ProductId + "&sourceWarehouseId=" + x.WarehouseId)]),
+            [new("Quantity", "Quantity"), new("ReservedQuantity", "ReservedQuantity"), new("CreatedAt", "CreatedAt")], ct, new("Receive", (context.HttpContext?.Request.PathBase.Value ?? "") + "/Inventory/Receive"));
 
     public async Task<TableModel> MovementsAsync(StockMovementQueryModel query, CancellationToken ct) =>
         await tables.BuildAsync("StockMovements", ["Product", "Warehouse", "MovementType", "Quantity", "UnitCost", "InventoryMovementValue", "Supplier", "OperationId", "CreatedAt"],

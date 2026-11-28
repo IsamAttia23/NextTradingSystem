@@ -13,6 +13,8 @@
     let saving = false;
     let filterMode = false;
     let allowClose = false;
+    let opening = false;
+    let closeRequested = false;
     let initialValues;
     let lastFocus;
     const messageFor = (status) => window.NextHttp.messageFor(status, modalElement.dataset);
@@ -54,7 +56,8 @@
 
     function closeModal() {
         allowClose = true;
-        modal.hide();
+        closeRequested = true;
+        if (!opening) modal.hide();
     }
 
     discard.addEventListener("click", event => {
@@ -135,9 +138,12 @@
             }
         }
     });
-    modalElement.addEventListener("shown.bs.modal", () =>
-        body.querySelector(firstControl + ",[data-modal-view] a[href],[data-modal-view] button")?.focus(),
-    );
+    modalElement.addEventListener("show.bs.modal", () => { opening = true; closeRequested = false; });
+    modalElement.addEventListener("shown.bs.modal", () => {
+        opening = false;
+        if (closeRequested) { modal.hide(); return; }
+        body.querySelector(firstControl + ",[data-modal-view] a[href],[data-modal-view] button")?.focus();
+    });
     modalElement.addEventListener("hide.bs.modal", (event) => {
         if (saving) {
             event.preventDefault();
@@ -168,6 +174,8 @@
         const nextFilter = filterMode ? document.querySelector("[data-modal-template]") : null;
         filterMode = false;
         allowClose = false;
+        opening = false;
+        closeRequested = false;
         initialValues = undefined;
         lastFocus = undefined;
         modalElement.classList.remove("filter-modal");
